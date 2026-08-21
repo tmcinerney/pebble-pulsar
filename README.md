@@ -1,5 +1,7 @@
 # Pulsar 1970 (Pebble Time 2 / Pebble Time Watchface)
 
+![Pulsar 1970 Watchface Mockup](screenshots/pulsar-dual-state-mockup.png)
+
 A retro digital watchface inspired by the iconic **1970s Hamilton Pulsar** ("Time Computer" P1, P2, and P3 models)—the world's first commercial digital LED wristwatch.
 
 Built for the **Rebble / RePebble** ecosystem with native support for the **Pebble Time 2 (`emery`)** and **Pebble Time (`basalt`)**.
@@ -22,22 +24,20 @@ Built for the **Rebble / RePebble** ecosystem with native support for the **Pebb
 
 ---
 
-## Development & Building
+## Quickstart with Nix / Devenv
 
-### Prerequisites
-
-You need the modern Python 3 `pebble-tool` and Pebble SDK 4.3 installed via [Rebble](https://rebble.io) / [CoreDevices](https://github.com/coredevices/pebble-tool):
+This repository includes a reproducible [`devenv.nix`](devenv.nix) providing the ARM embedded GCC cross-compiler (`gcc-arm-embedded`) and `pebble-tool`:
 
 ```bash
-# Install pebble-tool via pipx
-pipx install git+https://github.com/coredevices/pebble-tool.git
+# 1. Enter the devenv environment
+devenv shell
 
-# Install and activate Pebble SDK 4.3
-pebble sdk install https://github.com/daveconc/pebble-sdk-4.3-dist/releases/download/v4.3/sdk-core-4.3.tar.bz2
-pebble sdk activate 4.3
+# 2. Build the .pbw watchface bundle for all platforms
+pebble build
+
+# 3. Test in the Pebble Time 2 emulator
+pebble install --emulator emery
 ```
-
-### Build
 
 ```bash
 pebble build
