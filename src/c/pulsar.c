@@ -22,7 +22,7 @@
   #define DOT_SPACING_Y     8
   #define DIGIT_GAP         10
   #define COLON_GAP         16
-  #define TOP_MARGIN        66
+  #define TOP_MARGIN        54
   #define HEADER_FONT       FONT_KEY_GOTHIC_18_BOLD
   #define FOOTER_FONT       FONT_KEY_GOTHIC_14_BOLD
   #define INDICATOR_RADIUS  2
@@ -32,7 +32,7 @@
   #define DOT_SPACING_Y     7
   #define DIGIT_GAP         7
   #define COLON_GAP         12
-  #define TOP_MARGIN        44
+  #define TOP_MARGIN        38
   #define HEADER_FONT       FONT_KEY_GOTHIC_14_BOLD
   #define FOOTER_FONT       FONT_KEY_GOTHIC_14
   #define INDICATOR_RADIUS  1
@@ -130,7 +130,7 @@ static const Colorway PALETTES[NUM_COLORWAYS] = {
     .accent = GColorSunsetOrange,
     .outer_bg = GColorBulgarianRose,
     .inner_bg = GColorBlack,
-    .text_outer = GColorSunsetOrange
+    .text_outer = GColorLightGray
 #else
     .lit = GColorWhite,
     .ghost = GColorBlack,
@@ -147,7 +147,7 @@ static const Colorway PALETTES[NUM_COLORWAYS] = {
     .accent = GColorDarkCandyAppleRed,
     .outer_bg = GColorBulgarianRose,
     .inner_bg = GColorBlack,
-    .text_outer = GColorDarkCandyAppleRed
+    .text_outer = GColorLightGray
 #else
     .lit = GColorWhite,
     .ghost = GColorBlack,
@@ -164,7 +164,7 @@ static const Colorway PALETTES[NUM_COLORWAYS] = {
     .accent = GColorIslamicGreen,
     .outer_bg = GColorDarkGreen,
     .inner_bg = GColorBlack,
-    .text_outer = GColorMintGreen
+    .text_outer = GColorLightGray
 #else
     .lit = GColorWhite,
     .ghost = GColorBlack,
@@ -181,7 +181,7 @@ static const Colorway PALETTES[NUM_COLORWAYS] = {
     .accent = GColorWindsorTan,
     .outer_bg = GColorWindsorTan,
     .inner_bg = GColorBlack,
-    .text_outer = GColorChromeYellow
+    .text_outer = GColorLightGray
 #else
     .lit = GColorWhite,
     .ghost = GColorBlack,
@@ -198,7 +198,7 @@ static const Colorway PALETTES[NUM_COLORWAYS] = {
     .accent = GColorVividCerulean,
     .outer_bg = GColorOxfordBlue,
     .inner_bg = GColorBlack,
-    .text_outer = GColorElectricUltramarine
+    .text_outer = GColorLightGray
 #else
     .lit = GColorWhite,
     .ghost = GColorBlack,
@@ -394,7 +394,7 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
   int bead_radius = bounds.size.w > 180 ? 2 : 1;
   int total_bead_width = (num_beads - 1) * bead_spacing;
   int start_x = (bounds.size.w - total_bead_width) / 2;
-  int bead_y = bounds.size.w > 180 ? 152 : 114;
+  int bead_y = bounds.size.w > 180 ? 128 : 96;
   
   bool is_active = (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake;
   int goal = s_step_goal > 0 ? s_step_goal : 10000;
@@ -419,7 +419,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
   
   // 2. Vintage Ruby Cushion Mask (Surrounds Text and LED Display)
-  GRect outer_cushion = bounds.size.w > 180 ? GRect(6, 6, 188, 216) : GRect(4, 4, 136, 160);
+  GRect outer_cushion = bounds.size.w > 180 ? GRect(4, 4, 192, 220) : GRect(3, 3, 138, 162);
   int outer_radius = bounds.size.w > 180 ? 14 : 10;
   graphics_context_set_fill_color(ctx, palette->outer_bg);
   graphics_fill_rect(ctx, outer_cushion, outer_radius, GCornersAll);
@@ -442,8 +442,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     }
   }
 
-  int header_y = bounds.size.w > 180 ? 14 : 8;
-  int header_h = bounds.size.w > 180 ? 24 : 18;
+  int header_y = bounds.size.w > 180 ? 6 : 4;
+  int header_h = bounds.size.w > 180 ? 20 : 16;
   graphics_context_set_text_color(ctx, palette->text_outer);
   graphics_draw_text(ctx, header_text,
                      fonts_get_system_font(HEADER_FONT),
@@ -453,7 +453,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
                      NULL);
 
   // 4. Central Inner Obsidian Display Aperture (Frames LED Digits & Progress Beads)
-  GRect frame_rect = bounds.size.w > 180 ? GRect(14, 44, 172, 132) : GRect(10, 30, 124, 100);
+  GRect frame_rect = bounds.size.w > 180 ? GRect(10, 32, 180, 140) : GRect(6, 22, 132, 108);
   int frame_radius = bounds.size.w > 180 ? 10 : 6;
   graphics_context_set_fill_color(ctx, palette->inner_bg);
   graphics_fill_rect(ctx, frame_rect, frame_radius, GCornersAll);
@@ -598,7 +598,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   draw_step_beads(ctx, bounds, palette, steps);
   
   // 6. Status Indicators (Left: BT, Right: Battery - inside bottom of window)
-  int indicator_y = bounds.size.w > 180 ? 170 : 126;
+  int indicator_y = bounds.size.w > 180 ? 154 : 118;
   if (!s_bluetooth_connected) {
     graphics_context_set_fill_color(ctx, palette->lit);
     graphics_fill_circle(ctx, GPoint(bounds.size.w / 4, indicator_y), INDICATOR_RADIUS);
@@ -628,8 +628,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
       }
     }
     
-    int footer_y = bounds.size.w > 180 ? 186 : 138;
-    int footer_h = bounds.size.w > 180 ? 22 : 18;
+    int footer_y = bounds.size.w > 180 ? 190 : 142;
+    int footer_h = bounds.size.w > 180 ? 20 : 16;
     graphics_context_set_text_color(ctx, palette->text_outer);
     graphics_draw_text(ctx, footer_text,
                        fonts_get_system_font(FOOTER_FONT),
