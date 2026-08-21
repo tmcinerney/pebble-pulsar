@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+import time
 import uuid
 from libpebble2.communication import PebbleConnection
 from libpebble2.communication.transports.websocket import WebsocketTransport
@@ -7,13 +8,32 @@ from libpebble2.services.install import AppInstaller
 from libpebble2.protocol.apps import AppRunState, AppRunStateStart
 
 def install(phone_ip="192.168.10.203", pbw_path="build/pebble-pulsar.pbw"):
-    print(f"Connecting to watch via phone at ws://{phone_ip}:9000/ ...")
-    transport = WebsocketTransport(f"ws://{phone_ip}:9000/")
-    pebble = PebbleConnection(transport)
-    pebble.connect()
-    pebble.run_async()
+    url = f"ws://{phone_ip}:9000/"
+    print(f"Connecting to watch via phone at {url} ...")
+    print("Ensure the Pebble app is OPEN on your phone with 'Developer Connection' enabled.")
     
-    print(f"Connected to watch: {pebble.watch_info.board} (Platform {pebble.watch_info.running.hardware_platform}, FW {pebble.watch_info.running.version_tag})")
+    pebble = None
+    max_retries = 15
+    for attempt in range(1, max_retries + 1):
+        try:
+            transport = WebsocketTransport(url)
+            pebble = PebbleConnection(transport)
+            pebble.connect()
+            pebble.run_async()
+            break
+        except Exception as e:
+            if attempt < max_retries:
+                print(f"  [Attempt {attempt}/{max_retries}] Waiting for Pebble App Developer Connection on {phone_ip}:9000 ...")
+                time.sleep(2)
+            else:
+                print(f"\n❌ Could not connect to {url}.")
+                print("Troubleshooting steps:")
+                print("1. Open the Pebble app on your phone.")
+                print("2. Go to Settings -> Developer -> Toggle 'Developer Connection' ON.")
+                print(f"3. Confirm your phone's Wi-Fi IP is {phone_ip}.")
+                sys.exit(1)
+    
+    print(f"\n✓ Connected to watch: {pebble.watch_info.board} (Platform {pebble.watch_info.running.hardware_platform}, FW {pebble.watch_info.running.version_tag})")
     
     installer = AppInstaller(pebble, pbw_path)
     def progress(sent, total_sent, total_size):

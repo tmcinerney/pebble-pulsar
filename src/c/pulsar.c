@@ -40,7 +40,7 @@
 
 #define DIGIT_WIDTH 5
 #define DIGIT_HEIGHT 7
-#define WAKE_DURATION_MS 4000
+#define WAKE_DURATION_MS 6000
 
 // Storage & Message Keys
 #define STORAGE_KEY_OPERATING_MODE   10000
@@ -352,19 +352,33 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   bool is_active = (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake;
   
   // 1. Synthetic Ruby Crystal / Black Dial Background
+  // 1. Synthetic Ruby Crystal / Black Dial Background
   graphics_context_set_fill_color(ctx, GColorBlack);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
   
-  // 2. Cushion Bezel Inner Chamfer (Emery highlight)
-#if defined(PBL_PLATFORM_EMERY)
+  // 2. Cushion Bezel Inner Chamfer (All Platforms)
   graphics_context_set_stroke_color(ctx, palette->ghost);
-  graphics_context_set_stroke_width(ctx, 2);
-  graphics_draw_round_rect(ctx, grect_inset(bounds, GEdgeInsets(6)), 12);
-#endif
+  graphics_context_set_stroke_width(ctx, bounds.size.w > 180 ? 2 : 1);
+  int inset = bounds.size.w > 180 ? 6 : 4;
+  int radius = bounds.size.w > 180 ? 12 : 8;
+  graphics_draw_round_rect(ctx, grect_inset(bounds, GEdgeInsets(inset)), radius);
 
-  // 3. Vintage "P U L S A R" Space-Age Header
+  // 3. Dynamic Space-Age Header (Reflects Active Mode)
+  const char *header_text = "P U L S A R";
+  if (is_active) {
+    if (s_display_mode == DISPLAY_MODE_SECONDS) {
+      header_text = "S E C O N D S";
+    } else if (s_display_mode == DISPLAY_MODE_DATE) {
+      header_text = "D A T E";
+    } else if (s_display_mode == DISPLAY_MODE_STEPS) {
+      header_text = "S T E P S";
+    } else if (s_display_mode == DISPLAY_MODE_BATTERY) {
+      header_text = "B A T T E R Y";
+    }
+  }
+
   graphics_context_set_text_color(ctx, palette->accent);
-  graphics_draw_text(ctx, "P U L S A R",
+  graphics_draw_text(ctx, header_text,
                      fonts_get_system_font(HEADER_FONT),
                      GRect(0, bounds.size.h / 7, bounds.size.w, 24),
                      GTextOverflowModeWordWrap,
@@ -382,10 +396,10 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   if (s_display_mode == DISPLAY_MODE_STEPS && is_active) {
     // 5-Digit Step Count Layout (e.g., 08420)
     int clamped_steps = steps > 99999 ? 99999 : steps;
-    int s1 = (clamped_steps >= 10000) ? ((clamped_steps / 10000) % 10) : 10;
-    int s2 = (clamped_steps >= 1000) ? ((clamped_steps / 1000) % 10) : 10;
-    int s3 = (clamped_steps >= 100) ? ((clamped_steps / 100) % 10) : 10;
-    int s4 = (clamped_steps >= 10) ? ((clamped_steps / 10) % 10) : 10;
+    int s1 = (clamped_steps / 10000) % 10;
+    int s2 = (clamped_steps / 1000) % 10;
+    int s3 = (clamped_steps / 100) % 10;
+    int s4 = (clamped_steps / 10) % 10;
     int s5 = clamped_steps % 10;
 
     int step_gap = bounds.size.w > 180 ? 6 : 4;
@@ -398,7 +412,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
       draw_matrix_digit(ctx, dx, start_y, s_digits[i], palette, is_active, bounds.size.w);
     }
   } else {
-    // 4-Digit Layout (Time, Seconds, Date)
+    // 4-Digit Layout (Time, Seconds, Date, Battery)
     int d1 = 10, d2 = 10, d3 = 10, d4 = 10;
     bool show_colon = false;
     bool colon_blinking = false;
@@ -485,6 +499,12 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     graphics_fill_circle(ctx, GPoint(colon_x1, colon_y1), colon_lit ? DOT_RADIUS : 1);
     graphics_fill_circle(ctx, GPoint(colon_x2, colon_y2), colon_lit ? DOT_RADIUS : 1);
     
+    // Middle separator dot for Date Mode
+    if (s_display_mode == DISPLAY_MODE_DATE) {
+      graphics_context_set_fill_color(ctx, is_active ? palette->lit : palette->ghost);
+      graphics_fill_circle(ctx, GPoint(colon_x2, colon_y2), is_active ? DOT_RADIUS : 1);
+    }
+    
     // AM/PM Indicator Dot
     if (is_active && !clock_is_24h_style() && s_display_mode == DISPLAY_MODE_TIME) {
       bool is_pm = tick_time->tm_hour >= 12;
@@ -511,10 +531,20 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   // 7. Vintage Footer with Breathing Room
   if (s_footer_style != FOOTER_STYLE_NONE) {
     const char *footer_text = "TIME COMPUTER";
-    if (s_footer_style == FOOTER_STYLE_HAMILTON) {
-      footer_text = "HAMILTON";
-    } else if (s_footer_style == FOOTER_STYLE_PULSAR) {
-      footer_text = "PULSAR";
+    if (s_display_mode == DISPLAY_MODE_STEPS && is_active) {
+      footer_text = "DAILY STEPS";
+    } else if (s_display_mode == DISPLAY_MODE_BATTERY && is_active) {
+      footer_text = "POWER LEVEL";
+    } else if (s_display_mode == DISPLAY_MODE_DATE && is_active) {
+      footer_text = "MONTH / DAY";
+    } else if (s_display_mode == DISPLAY_MODE_SECONDS && is_active) {
+      footer_text = "LIVE SECONDS";
+    } else {
+      if (s_footer_style == FOOTER_STYLE_HAMILTON) {
+        footer_text = "HAMILTON";
+      } else if (s_footer_style == FOOTER_STYLE_PULSAR) {
+        footer_text = "PULSAR";
+      }
     }
     
     int footer_y = bounds.size.h > 180 ? (bounds.size.h - 30) : (bounds.size.h - 20);

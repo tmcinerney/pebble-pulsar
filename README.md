@@ -41,7 +41,7 @@ Cycle through 5 interactive display modes via wrist flick or tap:
 
 ## Modes Preview
 
-| Time (`HH:MM`) | Seconds (`:SS`) | Date (`MM DD`) | Steps (`08420`) | Battery (`85%`) |
+| Time (`HH:MM`) | Live Seconds (`:SS`) | Date (`MM.DD`) | Daily Steps (`5-Digit`) | Battery (`Pct %`) |
 | :---: | :---: | :---: | :---: | :---: |
 | ![Time](screenshots/emery-time-italic.png) | ![Seconds](screenshots/emery-mode-seconds.png) | ![Date](screenshots/emery-mode-date.png) | ![Steps](screenshots/emery-mode-steps.png) | ![Battery](screenshots/emery-mode-battery.png) |
 
