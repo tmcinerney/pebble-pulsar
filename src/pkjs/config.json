@@ -42,20 +42,28 @@
         "defaultValue": "0",
         "options": [
           {
-            "label": "Ruby Red (GaAsP 1972)",
+            "label": "Neon Ruby (GaAsP High-Luminance)",
             "value": "0"
           },
           {
-            "label": "Prototype Green (GaP 1975)",
+            "label": "Deep Red (Classic 1972)",
             "value": "1"
           },
           {
-            "label": "Amber Gold (HP-01 Style)",
+            "label": "Prototype Green (GaP 1975)",
             "value": "2"
           },
           {
-            "label": "Cobalt Blue",
+            "label": "Amber Gold (HP-01 Style)",
             "value": "3"
+          },
+          {
+            "label": "Cobalt Blue",
+            "value": "4"
+          },
+          {
+            "label": "Lunar White (High-Contrast)",
+            "value": "5"
           }
         ]
       },

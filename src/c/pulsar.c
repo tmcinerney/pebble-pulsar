@@ -17,14 +17,14 @@
  */
 
 #if defined(PBL_PLATFORM_EMERY)
-  #define DOT_RADIUS        2
-  #define DOT_SPACING_X     6
-  #define DOT_SPACING_Y     9
-  #define DIGIT_GAP         12
-  #define COLON_GAP         32
+  #define DOT_RADIUS        3
+  #define DOT_SPACING_X     7
+  #define DOT_SPACING_Y     8
+  #define DIGIT_GAP         8
+  #define COLON_GAP         22
   #define TOP_MARGIN        84
   #define HEADER_FONT       FONT_KEY_GOTHIC_18_BOLD
-  #define FOOTER_FONT       FONT_KEY_GOTHIC_14
+  #define FOOTER_FONT       FONT_KEY_GOTHIC_14_BOLD
   #define INDICATOR_RADIUS  2
 #else // Basalt, Diorite, Aplite, Chalk (144x168)
   #define DOT_RADIUS        2
@@ -79,12 +79,14 @@ enum FooterStyle {
 
 // Colorways
 enum ColorwayId {
-  COLORWAY_RUBY_RED = 0,
-  COLORWAY_PROTOTYPE_GREEN = 1,
-  COLORWAY_AMBER_GOLD = 2,
-  COLORWAY_COBALT_BLUE = 3
+  COLORWAY_VIBRANT_RUBY = 0,
+  COLORWAY_DEEP_RED = 1,
+  COLORWAY_PROTOTYPE_GREEN = 2,
+  COLORWAY_AMBER_GOLD = 3,
+  COLORWAY_COBALT_BLUE = 4,
+  COLORWAY_LUNAR_WHITE = 5
 };
-#define NUM_COLORWAYS 4
+#define NUM_COLORWAYS 6
 
 // Display Modes
 enum DisplayMode {
@@ -118,7 +120,18 @@ typedef struct {
 } Colorway;
 
 static const Colorway PALETTES[NUM_COLORWAYS] = {
-  [COLORWAY_RUBY_RED] = {
+  [COLORWAY_VIBRANT_RUBY] = {
+#if defined(PBL_COLOR)
+    .lit = GColorSunsetOrange,
+    .ghost = GColorBulgarianRose,
+    .accent = GColorSunsetOrange
+#else
+    .lit = GColorWhite,
+    .ghost = GColorBlack,
+    .accent = GColorWhite
+#endif
+  },
+  [COLORWAY_DEEP_RED] = {
 #if defined(PBL_COLOR)
     .lit = GColorRed,
     .ghost = GColorBulgarianRose,
@@ -161,6 +174,17 @@ static const Colorway PALETTES[NUM_COLORWAYS] = {
     .ghost = GColorBlack,
     .accent = GColorWhite
 #endif
+  },
+  [COLORWAY_LUNAR_WHITE] = {
+#if defined(PBL_COLOR)
+    .lit = GColorWhite,
+    .ghost = GColorDarkGray,
+    .accent = GColorLightGray
+#else
+    .lit = GColorWhite,
+    .ghost = GColorBlack,
+    .accent = GColorWhite
+#endif
   }
 };
 
@@ -172,7 +196,7 @@ static int s_display_mode = DISPLAY_MODE_TIME;
 static bool s_stealth_awake = false;
 
 static int s_operating_mode = MODE_ALWAYS_ON;
-static int s_colorway = COLORWAY_RUBY_RED;
+static int s_colorway = COLORWAY_VIBRANT_RUBY;
 static int s_flick_action = FLICK_ACTION_CYCLE;
 static int s_hourly_vibe = HOURLY_VIBE_OFF;
 static bool s_show_step_beads = true;
