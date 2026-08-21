@@ -16,8 +16,8 @@
 #if defined(PBL_PLATFORM_EMERY)
   #define DOT_RADIUS        3
   #define DOT_SPACING       8
-  #define DIGIT_SPACING     46
-  #define COLON_OFFSET      7
+  #define DIGIT_GAP         6
+  #define COLON_GAP         16
   #define TOP_MARGIN        78
   #define HEADER_FONT       FONT_KEY_GOTHIC_18_BOLD
   #define FOOTER_FONT       FONT_KEY_GOTHIC_14
@@ -25,8 +25,8 @@
 #else // Basalt, Diorite, Aplite (144x168)
   #define DOT_RADIUS        2
   #define DOT_SPACING       6
-  #define DIGIT_SPACING     34
-  #define COLON_OFFSET      5
+  #define DIGIT_GAP         4
+  #define COLON_GAP         12
   #define TOP_MARGIN        58
   #define HEADER_FONT       FONT_KEY_GOTHIC_14_BOLD
   #define FOOTER_FONT       FONT_KEY_GOTHIC_14
@@ -39,49 +39,44 @@
 
 static Window *s_main_window;
 static Layer *s_canvas_layer;
-static AppTimer *s_wake_timer = NULL;
-static bool s_is_awake = true;   // Starts awake on load
-static bool s_show_date = false;  // Toggle between Time and P3 Date Mode
+static AppTimer *s_date_timer = NULL;
+static bool s_show_date = false;  // False = Time Mode (always on), True = Pulsar P3 Date Mode
 static bool s_bluetooth_connected = true;
 static int s_battery_level = 100;
 
-// 5x7 GaAsP Dot Matrix Font (0-9, Blank)
+// Authentic 1970s GaAsP 5x7 LED Dot Matrix Font (0-9, Blank)
 static const uint8_t FONT_5X7[11][7] = {
-    {0x1F, 0x11, 0x11, 0x11, 0x11, 0x11, 0x1F}, // 0
+    {0x0E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E}, // 0
     {0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E}, // 1
-    {0x1F, 0x01, 0x01, 0x1F, 0x10, 0x10, 0x1F}, // 2
-    {0x1F, 0x01, 0x01, 0x1F, 0x01, 0x01, 0x1F}, // 3
-    {0x11, 0x11, 0x11, 0x1F, 0x01, 0x01, 0x01}, // 4
-    {0x1F, 0x10, 0x10, 0x1F, 0x01, 0x01, 0x1F}, // 5
-    {0x1F, 0x10, 0x10, 0x1F, 0x11, 0x11, 0x1F}, // 6
+    {0x0E, 0x11, 0x01, 0x06, 0x08, 0x10, 0x1F}, // 2
+    {0x1E, 0x01, 0x01, 0x0E, 0x01, 0x01, 0x1E}, // 3
+    {0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02}, // 4
+    {0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E}, // 5
+    {0x06, 0x08, 0x10, 0x1E, 0x11, 0x11, 0x0E}, // 6
     {0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08}, // 7
-    {0x1F, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x1F}, // 8
-    {0x1F, 0x11, 0x11, 0x1F, 0x01, 0x01, 0x1F}, // 9
+    {0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E}, // 8
+    {0x0E, 0x11, 0x11, 0x0F, 0x01, 0x02, 0x0C}, // 9
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}  // 10 = Blank
 };
 
-static void wake_timer_callback(void *data) {
-    s_wake_timer = NULL;
-    s_is_awake = false; // Return to authentic stealth / ghost mode
-    s_show_date = false;
+static void date_timer_callback(void *data) {
+    s_date_timer = NULL;
+    s_show_date = false; // Return to Time mode
     layer_mark_dirty(s_canvas_layer);
 }
 
-static void trigger_wake(bool toggle_date) {
-    s_is_awake = true;
-    if (toggle_date) {
-        s_show_date = !s_show_date;
+static void trigger_date_display(void) {
+    s_show_date = true;
+    if (s_date_timer) {
+        app_timer_cancel(s_date_timer);
     }
-    if (s_wake_timer) {
-        app_timer_cancel(s_wake_timer);
-    }
-    s_wake_timer = app_timer_register(WAKE_DURATION_MS, wake_timer_callback, NULL);
+    s_date_timer = app_timer_register(WAKE_DURATION_MS, date_timer_callback, NULL);
     layer_mark_dirty(s_canvas_layer);
 }
 
 static void tap_handler(AccelAxisType axis, int32_t direction) {
-    // Wrist flick or tap wakes up the LEDs and toggles date
-    trigger_wake(true);
+    // Wrist flick or tap triggers Pulsar P3 Date Command (MM:DD) for 4 seconds
+    trigger_date_display();
 }
 
 static void bluetooth_callback(bool connected) {
@@ -107,7 +102,7 @@ static void draw_matrix_digit(GContext *ctx, int x_offset, int y_offset, int dig
             int dot_x = x_offset + (c * DOT_SPACING);
             int dot_y = y_offset + (r * DOT_SPACING);
             
-            if (is_lit && s_is_awake) {
+            if (is_lit) {
                 graphics_context_set_fill_color(ctx, lit_color);
                 graphics_fill_circle(ctx, GPoint(dot_x, dot_y), DOT_RADIUS);
             } else {
@@ -161,41 +156,48 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
         if (!clock_is_24h_style()) {
             hours = hours % 12;
             if (hours == 0) hours = 12;
+            d1 = (hours >= 10) ? (hours / 10) : 10; // Blank leading zero in 12h mode
+        } else {
+            d1 = hours / 10; // Explicit leading zero in 24h mode (00:00 - 23:59)
         }
-        int mins = tick_time->tm_min;
-        d1 = (hours >= 10) ? (hours / 10) : 10; // Blank leading zero if single digit
         d2 = hours % 10;
+        int mins = tick_time->tm_min;
         d3 = mins / 10;
         d4 = mins % 10;
     }
     
     // 5. Centered Horizontal Origin Calculation
-    int total_width = (DIGIT_SPACING * 3) + (DIGIT_WIDTH * DOT_SPACING) + (COLON_OFFSET * 2);
+    int digit_span = (DIGIT_WIDTH - 1) * DOT_SPACING;
+    int total_width = (digit_span * 4) + (DIGIT_GAP * 2) + COLON_GAP;
     int start_x = (bounds.size.w - total_width) / 2;
     int start_y = TOP_MARGIN;
     
-    // Digits 1 & 2 (Hours or Month)
-    draw_matrix_digit(ctx, start_x, start_y, d1);
-    draw_matrix_digit(ctx, start_x + DIGIT_SPACING, start_y, d2);
+    int d1_x = start_x;
+    int d2_x = d1_x + digit_span + DIGIT_GAP;
+    int d3_x = d2_x + digit_span + COLON_GAP;
+    int d4_x = d3_x + digit_span + DIGIT_GAP;
     
-    // Colon Dots (Active in Time mode, unlit in Date mode)
-    int colon_x = start_x + (DIGIT_SPACING * 2) - COLON_OFFSET;
+    // Digits
+    draw_matrix_digit(ctx, d1_x, start_y, d1);
+    draw_matrix_digit(ctx, d2_x, start_y, d2);
+    draw_matrix_digit(ctx, d3_x, start_y, d3);
+    draw_matrix_digit(ctx, d4_x, start_y, d4);
+    
+    // Colon Dots (Equidistant between Digit 2 and Digit 3)
+    int d2_right = d2_x + digit_span;
+    int colon_x = d2_right + (COLON_GAP / 2);
     int colon_y1 = start_y + (DOT_SPACING * 2);
     int colon_y2 = start_y + (DOT_SPACING * 4);
-    GColor colon_color = (s_is_awake && !s_show_date) ? GColorRed : GColorBulgarianRose;
+    bool colon_active = !s_show_date && (tick_time->tm_sec % 2 == 0);
+    GColor colon_color = colon_active ? GColorRed : GColorBulgarianRose;
     graphics_context_set_fill_color(ctx, colon_color);
     graphics_fill_circle(ctx, GPoint(colon_x, colon_y1), DOT_RADIUS);
     graphics_fill_circle(ctx, GPoint(colon_x, colon_y2), DOT_RADIUS);
     
-    // Digits 3 & 4 (Minutes or Day)
-    int right_x = start_x + (DIGIT_SPACING * 2) + (COLON_OFFSET * 2);
-    draw_matrix_digit(ctx, right_x, start_y, d3);
-    draw_matrix_digit(ctx, right_x + DIGIT_SPACING, start_y, d4);
-    
     // 6. AM/PM Indicator Dot (GaAsP LED dot on bottom-left)
     if (!clock_is_24h_style() && !s_show_date) {
         bool is_pm = tick_time->tm_hour >= 12;
-        GColor pm_dot_color = (s_is_awake && is_pm) ? GColorRed : GColorBulgarianRose;
+        GColor pm_dot_color = is_pm ? GColorRed : GColorBulgarianRose;
         graphics_context_set_fill_color(ctx, pm_dot_color);
         graphics_fill_circle(ctx, GPoint(start_x, start_y + (DIGIT_HEIGHT * DOT_SPACING) + 6), INDICATOR_RADIUS);
     }
@@ -249,8 +251,8 @@ static void init(void) {
     });
     window_stack_push(s_main_window, true);
     
-    // Subscribe to services
-    tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+    // Subscribe to services (update every second for blinking colon and accurate ticking)
+    tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
     accel_tap_service_subscribe(tap_handler);
     connection_service_subscribe((ConnectionHandlers) {
         .pebble_app_connection_handler = bluetooth_callback
@@ -261,9 +263,6 @@ static void init(void) {
     s_bluetooth_connected = connection_service_peek_pebble_app_connection();
     BatteryChargeState charge_state = battery_state_service_peek();
     s_battery_level = charge_state.charge_percent;
-    
-    // Auto-dim after initial wake
-    s_wake_timer = app_timer_register(WAKE_DURATION_MS, wake_timer_callback, NULL);
 }
 
 static void deinit(void) {
@@ -271,8 +270,8 @@ static void deinit(void) {
     connection_service_unsubscribe();
     accel_tap_service_unsubscribe();
     tick_timer_service_unsubscribe();
-    if (s_wake_timer) {
-        app_timer_cancel(s_wake_timer);
+    if (s_date_timer) {
+        app_timer_cancel(s_date_timer);
     }
     window_destroy(s_main_window);
 }
