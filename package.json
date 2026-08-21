@@ -15,17 +15,23 @@
   "pebble": {
     "uuid": "8b5f3a12-9c4e-4f71-8b23-6e4d7a8c9b01",
     "displayName": "Pulsar 1970",
+    "capabilities": [
+      "configurable"
+    ],
     "watchapp": {
       "watchface": true
     },
     "enableMultiJS": true,
-    "messageKeys": {
-      "AppKeyOperatingMode": 10000,
-      "AppKeyColorway": 10001,
-      "AppKeyFlickAction": 10002,
-      "AppKeyHourlyVibe": 10003,
-      "AppKeyShowStepBeads": 10004
-    },
+    "messageKeys": [
+      "AppKeyOperatingMode",
+      "AppKeyColorway",
+      "AppKeyFlickAction",
+      "AppKeyHourlyVibe",
+      "AppKeyShowStepBeads",
+      "AppKeyItalicSlant",
+      "AppKeyFooterStyle",
+      "AppKeyStepGoal"
+    ],
     "targetPlatforms": [
       "emery",
       "basalt",

@@ -48,6 +48,9 @@
 #define STORAGE_KEY_FLICK_ACTION     10002
 #define STORAGE_KEY_HOURLY_VIBE      10003
 #define STORAGE_KEY_SHOW_STEP_BEADS  10004
+#define STORAGE_KEY_ITALIC_SLANT     10005
+#define STORAGE_KEY_FOOTER_STYLE     10006
+#define STORAGE_KEY_STEP_GOAL        10007
 
 #ifndef MESSAGE_KEY_AppKeyOperatingMode
 #define MESSAGE_KEY_AppKeyOperatingMode   10000
@@ -55,12 +58,23 @@
 #define MESSAGE_KEY_AppKeyFlickAction     10002
 #define MESSAGE_KEY_AppKeyHourlyVibe      10003
 #define MESSAGE_KEY_AppKeyShowStepBeads  10004
+#define MESSAGE_KEY_AppKeyItalicSlant    10005
+#define MESSAGE_KEY_AppKeyFooterStyle    10006
+#define MESSAGE_KEY_AppKeyStepGoal       10007
 #endif
 
 // Operating Modes
 enum OperatingMode {
   MODE_ALWAYS_ON = 0,
   MODE_STEALTH = 1
+};
+
+// Footer Styles
+enum FooterStyle {
+  FOOTER_STYLE_TIME_COMPUTER = 0,
+  FOOTER_STYLE_HAMILTON = 1,
+  FOOTER_STYLE_PULSAR = 2,
+  FOOTER_STYLE_NONE = 3
 };
 
 // Colorways
@@ -77,7 +91,8 @@ enum DisplayMode {
   DISPLAY_MODE_TIME = 0,
   DISPLAY_MODE_SECONDS = 1,
   DISPLAY_MODE_DATE = 2,
-  DISPLAY_MODE_STEPS = 3
+  DISPLAY_MODE_STEPS = 3,
+  DISPLAY_MODE_BATTERY = 4
 };
 
 // Flick Actions
@@ -85,7 +100,8 @@ enum FlickAction {
   FLICK_ACTION_CYCLE = 0,
   FLICK_ACTION_SECONDS = 1,
   FLICK_ACTION_DATE = 2,
-  FLICK_ACTION_STEPS = 3
+  FLICK_ACTION_STEPS = 3,
+  FLICK_ACTION_BATTERY = 4
 };
 
 // Hourly Vibe
@@ -160,13 +176,16 @@ static int s_colorway = COLORWAY_RUBY_RED;
 static int s_flick_action = FLICK_ACTION_CYCLE;
 static int s_hourly_vibe = HOURLY_VIBE_OFF;
 static bool s_show_step_beads = true;
+static bool s_italic_slant = true;
+static int s_footer_style = FOOTER_STYLE_TIME_COMPUTER;
+static int s_step_goal = 10000;
 
 static bool s_bluetooth_connected = true;
 static int s_battery_level = 100;
 static int s_last_vibe_hour = -1;
 
-// Authentic 1970s Hamilton Pulsar Rigid 5x7 GaAsP LED Matrix Font (0-9, Blank)
-static const uint8_t FONT_5X7[11][7] = {
+// Authentic 1970s Hamilton Pulsar Rigid 5x7 GaAsP LED Matrix Font (0-9, Blank, B, A, T, %)
+static const uint8_t FONT_5X7[15][7] = {
     {0x1F, 0x11, 0x11, 0x11, 0x11, 0x11, 0x1F}, // 0 - Classic rigid rectangular frame
     {0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E}, // 1 - Clean centered digital 1
     {0x1F, 0x01, 0x01, 0x1F, 0x10, 0x10, 0x1F}, // 2 - Space-age block 2
@@ -177,7 +196,11 @@ static const uint8_t FONT_5X7[11][7] = {
     {0x1F, 0x01, 0x01, 0x02, 0x04, 0x04, 0x04}, // 7 - Clean digital 7 with centered stem
     {0x1F, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x1F}, // 8 - Space-age block 8
     {0x1F, 0x11, 0x11, 0x1F, 0x01, 0x01, 0x1F}, // 9 - Space-age block 9
-    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}  // 10 = Blank
+    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, // 10 = Blank
+    {0x1E, 0x11, 0x11, 0x1E, 0x11, 0x11, 0x1E}, // 11 = 'B'
+    {0x0E, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11}, // 12 = 'A'
+    {0x1F, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04}, // 13 = 'T'
+    {0x18, 0x19, 0x02, 0x04, 0x08, 0x13, 0x03}  // 14 = '%'
 };
 
 static int get_step_count(void) {
@@ -201,11 +224,10 @@ static void mode_timer_callback(void *data) {
   layer_mark_dirty(s_canvas_layer);
 }
 
-static void trigger_display_change(int target_mode) {
-  s_display_mode = target_mode;
+static void trigger_display_change(int mode) {
+  s_display_mode = mode;
   if (s_mode_timer) {
     app_timer_cancel(s_mode_timer);
-    s_mode_timer = NULL;
   }
   s_mode_timer = app_timer_register(WAKE_DURATION_MS, mode_timer_callback, NULL);
   layer_mark_dirty(s_canvas_layer);
@@ -215,13 +237,15 @@ static void tap_handler(AccelAxisType axis, int32_t direction) {
   if (s_operating_mode == MODE_STEALTH) {
     s_stealth_awake = true;
     if (s_flick_action == FLICK_ACTION_CYCLE) {
-      s_display_mode = (s_display_mode + 1) % 4;
+      s_display_mode = (s_display_mode + 1) % 5;
     } else if (s_flick_action == FLICK_ACTION_SECONDS) {
       s_display_mode = DISPLAY_MODE_SECONDS;
     } else if (s_flick_action == FLICK_ACTION_DATE) {
       s_display_mode = DISPLAY_MODE_DATE;
     } else if (s_flick_action == FLICK_ACTION_STEPS) {
       s_display_mode = DISPLAY_MODE_STEPS;
+    } else if (s_flick_action == FLICK_ACTION_BATTERY) {
+      s_display_mode = DISPLAY_MODE_BATTERY;
     } else {
       s_display_mode = DISPLAY_MODE_TIME;
     }
@@ -234,7 +258,7 @@ static void tap_handler(AccelAxisType axis, int32_t direction) {
   } else {
     // MODE_ALWAYS_ON
     if (s_flick_action == FLICK_ACTION_CYCLE) {
-      s_display_mode = (s_display_mode + 1) % 4;
+      s_display_mode = (s_display_mode + 1) % 5;
       if (s_mode_timer) {
         app_timer_cancel(s_mode_timer);
         s_mode_timer = NULL;
@@ -249,6 +273,8 @@ static void tap_handler(AccelAxisType axis, int32_t direction) {
       trigger_display_change(DISPLAY_MODE_DATE);
     } else if (s_flick_action == FLICK_ACTION_STEPS) {
       trigger_display_change(DISPLAY_MODE_STEPS);
+    } else if (s_flick_action == FLICK_ACTION_BATTERY) {
+      trigger_display_change(DISPLAY_MODE_BATTERY);
     }
   }
 }
@@ -271,14 +297,18 @@ static void health_handler(HealthEventType event, void *context) {
 }
 #endif
 
-static void draw_matrix_digit(GContext *ctx, int x_offset, int y_offset, int digit_index, const Colorway *palette, bool is_active) {
-  if (digit_index < 0 || digit_index > 10) digit_index = 10;
+static void draw_matrix_digit(GContext *ctx, int x_offset, int y_offset, int digit_index, const Colorway *palette, bool is_active, int bounds_w) {
+  if (digit_index < 0 || digit_index > 14) digit_index = 10;
+  
+  int slant_scale = (bounds_w > 180) ? 5 : 3;
   
   for (int r = 0; r < DIGIT_HEIGHT; r++) {
     uint8_t row_bits = FONT_5X7[digit_index][r];
+    int slant_x = s_italic_slant ? (((DIGIT_HEIGHT - 1 - r) * slant_scale) / 6) : 0;
+    
     for (int c = 0; c < DIGIT_WIDTH; c++) {
       bool is_lit = is_active && ((row_bits >> (4 - c)) & 0x01);
-      int dot_x = x_offset + (c * DOT_SPACING_X);
+      int dot_x = x_offset + (c * DOT_SPACING_X) + slant_x;
       int dot_y = y_offset + (r * DOT_SPACING_Y);
       
       if (is_lit) {
@@ -301,12 +331,13 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
   int bead_radius = bounds.size.w > 180 ? 2 : 1;
   int total_bead_width = (num_beads - 1) * bead_spacing;
   int start_x = (bounds.size.w - total_bead_width) / 2;
-  int bead_y = bounds.size.h - (bounds.size.w > 180 ? 44 : 36);
+  int bead_y = bounds.size.h - (bounds.size.w > 180 ? 48 : 34);
   
   bool is_active = (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake;
+  int goal = s_step_goal > 0 ? s_step_goal : 10000;
   
   for (int i = 0; i < num_beads; i++) {
-    int threshold = (i + 1) * 1000;
+    int threshold = ((i + 1) * goal) / num_beads;
     bool lit = is_active && (steps >= threshold);
     int bx = start_x + (i * bead_spacing);
     
@@ -364,7 +395,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     int s_digits[5] = {s1, s2, s3, s4, s5};
     for (int i = 0; i < 5; i++) {
       int dx = start_5_x + (i * (digit_span_x + step_gap));
-      draw_matrix_digit(ctx, dx, start_y, s_digits[i], palette, is_active);
+      draw_matrix_digit(ctx, dx, start_y, s_digits[i], palette, is_active, bounds.size.w);
     }
   } else {
     // 4-Digit Layout (Time, Seconds, Date)
@@ -390,6 +421,21 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
         d4 = tick_time->tm_sec % 10;
         show_colon = true;
         colon_blinking = false; // Solid colon in seconds mode
+      } else if (s_display_mode == DISPLAY_MODE_BATTERY) {
+        // Battery Percentage Mode: e.g. " 85%" or "100%"
+        int bat = s_battery_level > 100 ? 100 : (s_battery_level < 0 ? 0 : s_battery_level);
+        if (bat == 100) {
+          d1 = 1;
+          d2 = 0;
+          d3 = 0;
+          d4 = 14; // '%'
+        } else {
+          d1 = 10; // Blank
+          d2 = (bat >= 10) ? (bat / 10) : 10;
+          d3 = bat % 10;
+          d4 = 14; // '%'
+        }
+        show_colon = false;
       } else {
         // Time Mode: HH:MM
         int hours = tick_time->tm_hour;
@@ -417,22 +463,27 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     int d3_x = d2_x + digit_span_x + COLON_GAP;
     int d4_x = d3_x + digit_span_x + DIGIT_GAP;
     
-    draw_matrix_digit(ctx, d1_x, start_y, d1, palette, is_active);
-    draw_matrix_digit(ctx, d2_x, start_y, d2, palette, is_active);
-    draw_matrix_digit(ctx, d3_x, start_y, d3, palette, is_active);
-    draw_matrix_digit(ctx, d4_x, start_y, d4, palette, is_active);
+    draw_matrix_digit(ctx, d1_x, start_y, d1, palette, is_active, bounds.size.w);
+    draw_matrix_digit(ctx, d2_x, start_y, d2, palette, is_active, bounds.size.w);
+    draw_matrix_digit(ctx, d3_x, start_y, d3, palette, is_active, bounds.size.w);
+    draw_matrix_digit(ctx, d4_x, start_y, d4, palette, is_active, bounds.size.w);
     
-    // Colon Dots
+    // Colon Dots with matching slant angle
     int d2_right = d2_x + digit_span_x;
-    int colon_x = d2_right + (COLON_GAP / 2);
+    int colon_base_x = d2_right + (COLON_GAP / 2);
+    int slant_scale = (bounds.size.w > 180) ? 5 : 3;
+    int colon_slant1 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 2) * slant_scale) / 6) : 0;
+    int colon_slant2 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 4) * slant_scale) / 6) : 0;
+    int colon_x1 = colon_base_x + colon_slant1;
+    int colon_x2 = colon_base_x + colon_slant2;
     int colon_y1 = start_y + (DOT_SPACING_Y * 2);
     int colon_y2 = start_y + (DOT_SPACING_Y * 4);
     
     bool colon_lit = show_colon && is_active && (!colon_blinking || (tick_time->tm_sec % 2 == 0));
     GColor colon_color = colon_lit ? palette->lit : palette->ghost;
     graphics_context_set_fill_color(ctx, colon_color);
-    graphics_fill_circle(ctx, GPoint(colon_x, colon_y1), colon_lit ? DOT_RADIUS : 1);
-    graphics_fill_circle(ctx, GPoint(colon_x, colon_y2), colon_lit ? DOT_RADIUS : 1);
+    graphics_fill_circle(ctx, GPoint(colon_x1, colon_y1), colon_lit ? DOT_RADIUS : 1);
+    graphics_fill_circle(ctx, GPoint(colon_x2, colon_y2), colon_lit ? DOT_RADIUS : 1);
     
     // AM/PM Indicator Dot
     if (is_active && !clock_is_24h_style() && s_display_mode == DISPLAY_MODE_TIME) {
@@ -449,22 +500,32 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   // 6. Status Indicators (Left: BT, Right: Battery)
   if (!s_bluetooth_connected) {
     graphics_context_set_fill_color(ctx, palette->lit);
-    graphics_fill_circle(ctx, GPoint(bounds.size.w / 4, bounds.size.h - (bounds.size.w > 180 ? 32 : 26)), INDICATOR_RADIUS);
+    graphics_fill_circle(ctx, GPoint(bounds.size.w / 4, bounds.size.h - (bounds.size.w > 180 ? 34 : 24)), INDICATOR_RADIUS);
   }
   
   if (s_battery_level <= 20) {
     graphics_context_set_fill_color(ctx, palette->lit);
-    graphics_fill_circle(ctx, GPoint((bounds.size.w * 3) / 4, bounds.size.h - (bounds.size.w > 180 ? 32 : 26)), INDICATOR_RADIUS);
+    graphics_fill_circle(ctx, GPoint((bounds.size.w * 3) / 4, bounds.size.h - (bounds.size.w > 180 ? 34 : 24)), INDICATOR_RADIUS);
   }
 
-  // 7. Vintage "TIME COMPUTER" Footer
-  graphics_context_set_text_color(ctx, palette->ghost);
-  graphics_draw_text(ctx, "TIME COMPUTER",
-                     fonts_get_system_font(FOOTER_FONT),
-                     GRect(0, bounds.size.h - 24, bounds.size.w, 20),
-                     GTextOverflowModeWordWrap,
-                     GTextAlignmentCenter,
-                     NULL);
+  // 7. Vintage Footer with Breathing Room
+  if (s_footer_style != FOOTER_STYLE_NONE) {
+    const char *footer_text = "TIME COMPUTER";
+    if (s_footer_style == FOOTER_STYLE_HAMILTON) {
+      footer_text = "HAMILTON";
+    } else if (s_footer_style == FOOTER_STYLE_PULSAR) {
+      footer_text = "PULSAR";
+    }
+    
+    int footer_y = bounds.size.h > 180 ? (bounds.size.h - 30) : (bounds.size.h - 20);
+    graphics_context_set_text_color(ctx, palette->ghost);
+    graphics_draw_text(ctx, footer_text,
+                       fonts_get_system_font(FOOTER_FONT),
+                       GRect(0, footer_y, bounds.size.w, 18),
+                       GTextOverflowModeWordWrap,
+                       GTextAlignmentCenter,
+                       NULL);
+  }
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
@@ -533,6 +594,22 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     s_show_step_beads = tuple_to_bool(t_beads, s_show_step_beads);
     persist_write_bool(STORAGE_KEY_SHOW_STEP_BEADS, s_show_step_beads);
   }
+  Tuple *t_slant = dict_find(iterator, MESSAGE_KEY_AppKeyItalicSlant);
+  if (t_slant) {
+    s_italic_slant = tuple_to_bool(t_slant, s_italic_slant);
+    persist_write_bool(STORAGE_KEY_ITALIC_SLANT, s_italic_slant);
+  }
+  Tuple *t_footer = dict_find(iterator, MESSAGE_KEY_AppKeyFooterStyle);
+  if (t_footer) {
+    s_footer_style = tuple_to_int(t_footer, s_footer_style);
+    persist_write_int(STORAGE_KEY_FOOTER_STYLE, s_footer_style);
+  }
+  Tuple *t_goal = dict_find(iterator, MESSAGE_KEY_AppKeyStepGoal);
+  if (t_goal) {
+    s_step_goal = tuple_to_int(t_goal, s_step_goal);
+    if (s_step_goal <= 0) s_step_goal = 10000;
+    persist_write_int(STORAGE_KEY_STEP_GOAL, s_step_goal);
+  }
   layer_mark_dirty(s_canvas_layer);
 }
 
@@ -552,6 +629,16 @@ static void load_settings(void) {
   }
   if (persist_exists(STORAGE_KEY_SHOW_STEP_BEADS)) {
     s_show_step_beads = persist_read_bool(STORAGE_KEY_SHOW_STEP_BEADS);
+  }
+  if (persist_exists(STORAGE_KEY_ITALIC_SLANT)) {
+    s_italic_slant = persist_read_bool(STORAGE_KEY_ITALIC_SLANT);
+  }
+  if (persist_exists(STORAGE_KEY_FOOTER_STYLE)) {
+    s_footer_style = persist_read_int(STORAGE_KEY_FOOTER_STYLE);
+  }
+  if (persist_exists(STORAGE_KEY_STEP_GOAL)) {
+    s_step_goal = persist_read_int(STORAGE_KEY_STEP_GOAL);
+    if (s_step_goal <= 0) s_step_goal = 10000;
   }
 }
 
