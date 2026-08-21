@@ -15,19 +15,21 @@
 
 #if defined(PBL_PLATFORM_EMERY)
   #define DOT_RADIUS        2
-  #define DOT_SPACING       6
-  #define DIGIT_GAP         8
-  #define COLON_GAP         28
-  #define TOP_MARGIN        92
+  #define DOT_SPACING_X     6
+  #define DOT_SPACING_Y     9
+  #define DIGIT_GAP         12
+  #define COLON_GAP         32
+  #define TOP_MARGIN        84
   #define HEADER_FONT       FONT_KEY_GOTHIC_18_BOLD
   #define FOOTER_FONT       FONT_KEY_GOTHIC_14
   #define INDICATOR_RADIUS  2
 #else // Basalt, Diorite, Aplite (144x168)
   #define DOT_RADIUS        2
-  #define DOT_SPACING       5
-  #define DIGIT_GAP         5
-  #define COLON_GAP         20
-  #define TOP_MARGIN        66
+  #define DOT_SPACING_X     5
+  #define DOT_SPACING_Y     7
+  #define DIGIT_GAP         8
+  #define COLON_GAP         22
+  #define TOP_MARGIN        60
   #define HEADER_FONT       FONT_KEY_GOTHIC_14_BOLD
   #define FOOTER_FONT       FONT_KEY_GOTHIC_14
   #define INDICATOR_RADIUS  1
@@ -99,8 +101,8 @@ static void draw_matrix_digit(GContext *ctx, int x_offset, int y_offset, int dig
         uint8_t row_bits = FONT_5X7[digit_index][r];
         for (int c = 0; c < DIGIT_WIDTH; c++) {
             bool is_lit = (row_bits >> (4 - c)) & 0x01;
-            int dot_x = x_offset + (c * DOT_SPACING);
-            int dot_y = y_offset + (r * DOT_SPACING);
+            int dot_x = x_offset + (c * DOT_SPACING_X);
+            int dot_y = y_offset + (r * DOT_SPACING_Y);
             
             if (is_lit) {
                 graphics_context_set_fill_color(ctx, lit_color);
@@ -132,7 +134,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     graphics_context_set_text_color(ctx, GColorDarkCandyAppleRed);
     graphics_draw_text(ctx, "P U L S A R",
                        fonts_get_system_font(HEADER_FONT),
-                       GRect(0, bounds.size.h / 9, bounds.size.w, 24),
+                       GRect(0, bounds.size.h / 7, bounds.size.w, 24),
                        GTextOverflowModeWordWrap,
                        GTextAlignmentCenter,
                        NULL);
@@ -167,15 +169,15 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     }
     
     // 5. Centered Horizontal Origin Calculation
-    int digit_span = (DIGIT_WIDTH - 1) * DOT_SPACING;
-    int total_width = (digit_span * 4) + (DIGIT_GAP * 2) + COLON_GAP;
+    int digit_span_x = (DIGIT_WIDTH - 1) * DOT_SPACING_X;
+    int total_width = (digit_span_x * 4) + (DIGIT_GAP * 2) + COLON_GAP;
     int start_x = (bounds.size.w - total_width) / 2;
     int start_y = TOP_MARGIN;
     
     int d1_x = start_x;
-    int d2_x = d1_x + digit_span + DIGIT_GAP;
-    int d3_x = d2_x + digit_span + COLON_GAP;
-    int d4_x = d3_x + digit_span + DIGIT_GAP;
+    int d2_x = d1_x + digit_span_x + DIGIT_GAP;
+    int d3_x = d2_x + digit_span_x + COLON_GAP;
+    int d4_x = d3_x + digit_span_x + DIGIT_GAP;
     
     // Digits
     draw_matrix_digit(ctx, d1_x, start_y, d1);
@@ -184,10 +186,10 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     draw_matrix_digit(ctx, d4_x, start_y, d4);
     
     // Colon Dots (Centered with generous margin between Digit 2 and Digit 3)
-    int d2_right = d2_x + digit_span;
+    int d2_right = d2_x + digit_span_x;
     int colon_x = d2_right + (COLON_GAP / 2);
-    int colon_y1 = start_y + (DOT_SPACING * 2);
-    int colon_y2 = start_y + (DOT_SPACING * 4);
+    int colon_y1 = start_y + (DOT_SPACING_Y * 2);
+    int colon_y2 = start_y + (DOT_SPACING_Y * 4);
     bool colon_active = !s_show_date && (tick_time->tm_sec % 2 == 0);
     GColor colon_color = colon_active ? GColorRed : GColorBulgarianRose;
     graphics_context_set_fill_color(ctx, colon_color);
@@ -199,7 +201,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
         bool is_pm = tick_time->tm_hour >= 12;
         GColor pm_dot_color = is_pm ? GColorRed : GColorBulgarianRose;
         graphics_context_set_fill_color(ctx, pm_dot_color);
-        graphics_fill_circle(ctx, GPoint(start_x, start_y + (DIGIT_HEIGHT * DOT_SPACING) + 6), INDICATOR_RADIUS);
+        graphics_fill_circle(ctx, GPoint(start_x, start_y + (DIGIT_HEIGHT * DOT_SPACING_Y) + 6), INDICATOR_RADIUS);
     }
     
     // 7. Status Dots (Bottom Indicators)
