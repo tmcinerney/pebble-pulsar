@@ -429,19 +429,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_stroke_width(ctx, 1);
   graphics_draw_round_rect(ctx, outer_cushion, outer_radius);
 
-  // 3. Dynamic Space-Age Header at Top of Cushion Window
+  // 3. Vintage Space-Age Brand Header at Top of Cushion Window
   const char *header_text = "P U L S A R";
-  if (is_active) {
-    if (s_display_mode == DISPLAY_MODE_SECONDS) {
-      header_text = "S E C O N D S";
-    } else if (s_display_mode == DISPLAY_MODE_DATE) {
-      header_text = "D A T E";
-    } else if (s_display_mode == DISPLAY_MODE_STEPS) {
-      header_text = "S T E P S";
-    } else if (s_display_mode == DISPLAY_MODE_BATTERY) {
-      header_text = "B A T T E R Y";
-    }
-  }
 
   GFont font_header = bounds.size.w > 180 ? 
                       fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD) : 
@@ -641,13 +630,13 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   if (s_footer_style != FOOTER_STYLE_NONE) {
     const char *footer_text = "T I M E   C O M P U T E R";
     if (s_display_mode == DISPLAY_MODE_STEPS && is_active) {
-      footer_text = "D A I L Y   S T E P S";
+      footer_text = "S T E P S";
     } else if (s_display_mode == DISPLAY_MODE_BATTERY && is_active) {
-      footer_text = "P O W E R   L E V E L";
+      footer_text = "B A T T E R Y";
     } else if (s_display_mode == DISPLAY_MODE_DATE && is_active) {
-      footer_text = "M O N T H  /  D A Y";
+      footer_text = "D A T E";
     } else if (s_display_mode == DISPLAY_MODE_SECONDS && is_active) {
-      footer_text = "L I V E   S E C O N D S";
+      footer_text = "S E C O N D S";
     } else {
       if (s_footer_style == FOOTER_STYLE_HAMILTON) {
         footer_text = "H A M I L T O N";
