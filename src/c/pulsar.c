@@ -22,9 +22,9 @@
   #define DOT_SPACING_Y     8
   #define DIGIT_GAP         10
   #define COLON_GAP         16
-  #define TOP_MARGIN        54
-  #define HEADER_FONT       FONT_KEY_GOTHIC_18_BOLD
-  #define FOOTER_FONT       FONT_KEY_GOTHIC_14_BOLD
+  #define TOP_MARGIN        68
+  #define HEADER_FONT       FONT_KEY_GOTHIC_14_BOLD
+  #define FOOTER_FONT       FONT_KEY_GOTHIC_14
   #define INDICATOR_RADIUS  2
 #else // Basalt, Diorite, Aplite, Chalk (144x168)
   #define DOT_RADIUS        2
@@ -32,7 +32,7 @@
   #define DOT_SPACING_Y     7
   #define DIGIT_GAP         7
   #define COLON_GAP         12
-  #define TOP_MARGIN        38
+  #define TOP_MARGIN        48
   #define HEADER_FONT       FONT_KEY_GOTHIC_14_BOLD
   #define FOOTER_FONT       FONT_KEY_GOTHIC_14
   #define INDICATOR_RADIUS  1
@@ -394,7 +394,7 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
   int bead_radius = bounds.size.w > 180 ? 2 : 1;
   int total_bead_width = (num_beads - 1) * bead_spacing;
   int start_x = (bounds.size.w - total_bead_width) / 2;
-  int bead_y = bounds.size.w > 180 ? 128 : 96;
+  int bead_y = bounds.size.w > 180 ? 168 : 124;
   
   bool is_active = (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake;
   int goal = s_step_goal > 0 ? s_step_goal : 10000;
@@ -404,9 +404,30 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
     bool lit = is_active && (steps >= threshold);
     int bx = start_x + (i * bead_spacing);
     
-    graphics_context_set_fill_color(ctx, lit ? palette->lit : palette->ghost);
+    GColor bead_color = lit ? GColorLightGray : GColorDarkGray;
+    graphics_context_set_fill_color(ctx, bead_color);
     graphics_fill_circle(ctx, GPoint(bx, bead_y), lit ? bead_radius : 1);
   }
+}
+
+static void draw_ghost_matrix_row(GContext *ctx, int start_x, int y_offset, const Colorway *palette, int digit_span_x, int digit_gap, int colon_gap, int bounds_w) {
+  int d1_x = start_x;
+  int d2_x = d1_x + digit_span_x + digit_gap;
+  int d3_x = d2_x + digit_span_x + colon_gap;
+  int d4_x = d3_x + digit_span_x + digit_gap;
+
+  draw_matrix_digit(ctx, d1_x, y_offset, 0, palette, false, bounds_w);
+  draw_matrix_digit(ctx, d2_x, y_offset, 0, palette, false, bounds_w);
+  draw_matrix_digit(ctx, d3_x, y_offset, 0, palette, false, bounds_w);
+  draw_matrix_digit(ctx, d4_x, y_offset, 0, palette, false, bounds_w);
+
+  int d2_right = d2_x + digit_span_x;
+  int colon_base_x = d2_right + (colon_gap / 2);
+  int colon_y1 = y_offset + (DOT_SPACING_Y * 2);
+  int colon_y2 = y_offset + (DOT_SPACING_Y * 4);
+  graphics_context_set_fill_color(ctx, palette->ghost);
+  graphics_fill_circle(ctx, GPoint(colon_base_x, colon_y1), 1);
+  graphics_fill_circle(ctx, GPoint(colon_base_x, colon_y2), 1);
 }
 
 static void canvas_update_proc(Layer *layer, GContext *ctx) {
@@ -419,8 +440,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
   
   // 2. Vintage Ruby Cushion Mask (Surrounds Text and LED Display)
-  GRect outer_cushion = bounds.size.w > 180 ? GRect(4, 4, 192, 220) : GRect(3, 3, 138, 162);
-  int outer_radius = bounds.size.w > 180 ? 14 : 10;
+  GRect outer_cushion = bounds.size.w > 180 ? GRect(6, 6, 188, 216) : GRect(4, 4, 136, 160);
+  int outer_radius = bounds.size.w > 180 ? 12 : 8;
   graphics_context_set_fill_color(ctx, palette->outer_bg);
   graphics_fill_rect(ctx, outer_cushion, outer_radius, GCornersAll);
   
@@ -442,8 +463,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     }
   }
 
-  int header_y = bounds.size.w > 180 ? 6 : 4;
-  int header_h = bounds.size.w > 180 ? 20 : 16;
+  int header_y = bounds.size.w > 180 ? 10 : 6;
+  int header_h = bounds.size.w > 180 ? 16 : 14;
   graphics_context_set_text_color(ctx, palette->text_outer);
   graphics_draw_text(ctx, header_text,
                      fonts_get_system_font(HEADER_FONT),
@@ -452,15 +473,10 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
                      GTextAlignmentCenter,
                      NULL);
 
-  // 4. Central Inner Obsidian Display Aperture (Frames LED Digits & Progress Beads)
-  GRect frame_rect = bounds.size.w > 180 ? GRect(10, 32, 180, 140) : GRect(6, 22, 132, 108);
-  int frame_radius = bounds.size.w > 180 ? 10 : 6;
+  // 4. Central Inner Obsidian Display Aperture (Square-Cornered Rectangle)
+  GRect frame_rect = bounds.size.w > 180 ? GRect(12, 28, 176, 154) : GRect(8, 20, 128, 114);
   graphics_context_set_fill_color(ctx, palette->inner_bg);
-  graphics_fill_rect(ctx, frame_rect, frame_radius, GCornersAll);
-
-  graphics_context_set_stroke_color(ctx, palette->ghost);
-  graphics_context_set_stroke_width(ctx, 1);
-  graphics_draw_round_rect(ctx, frame_rect, frame_radius);
+  graphics_fill_rect(ctx, frame_rect, 0, GCornerNone);
 
   // 5. Data Extraction
   time_t temp = time(NULL);
@@ -553,6 +569,11 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     int total_width = (digit_span_x * 4) + (DIGIT_GAP * 2) + COLON_GAP + max_slant;
     int start_x = (bounds.size.w - total_width) / 2;
     
+    // Multi-tier Ghost Matrix Rows (Above and Below Active Line)
+    int ghost_spacing = bounds.size.w > 180 ? 36 : 26;
+    draw_ghost_matrix_row(ctx, start_x, start_y - ghost_spacing, palette, digit_span_x, DIGIT_GAP, COLON_GAP, bounds.size.w);
+    draw_ghost_matrix_row(ctx, start_x, start_y + ghost_spacing, palette, digit_span_x, DIGIT_GAP, COLON_GAP, bounds.size.w);
+
     int d1_x = start_x;
     int d2_x = d1_x + digit_span_x + DIGIT_GAP;
     int d3_x = d2_x + digit_span_x + COLON_GAP;
@@ -594,11 +615,11 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     }
   }
 
-  // 5. 10-Dot Micro-LED Step Progress Bar
+  // 5. 10-Dot Micro-LED Step Progress Bar (Gray)
   draw_step_beads(ctx, bounds, palette, steps);
   
   // 6. Status Indicators (Left: BT, Right: Battery - inside bottom of window)
-  int indicator_y = bounds.size.w > 180 ? 154 : 118;
+  int indicator_y = bounds.size.w > 180 ? 168 : 124;
   if (!s_bluetooth_connected) {
     graphics_context_set_fill_color(ctx, palette->lit);
     graphics_fill_circle(ctx, GPoint(bounds.size.w / 4, indicator_y), INDICATOR_RADIUS);
@@ -628,8 +649,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
       }
     }
     
-    int footer_y = bounds.size.w > 180 ? 190 : 142;
-    int footer_h = bounds.size.w > 180 ? 20 : 16;
+    int footer_y = bounds.size.w > 180 ? 192 : 142;
+    int footer_h = bounds.size.w > 180 ? 16 : 14;
     graphics_context_set_text_color(ctx, palette->text_outer);
     graphics_draw_text(ctx, footer_text,
                        fonts_get_system_font(FOOTER_FONT),
