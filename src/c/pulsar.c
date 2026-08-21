@@ -20,8 +20,8 @@
   #define DOT_RADIUS        3
   #define DOT_SPACING_X     7
   #define DOT_SPACING_Y     8
-  #define DIGIT_GAP         8
-  #define COLON_GAP         22
+  #define DIGIT_GAP         6
+  #define COLON_GAP         12
   #define TOP_MARGIN        70
   #define HEADER_FONT       FONT_KEY_GOTHIC_18_BOLD
   #define FOOTER_FONT       FONT_KEY_GOTHIC_14_BOLD
@@ -30,8 +30,8 @@
   #define DOT_RADIUS        2
   #define DOT_SPACING_X     5
   #define DOT_SPACING_Y     7
-  #define DIGIT_GAP         8
-  #define COLON_GAP         22
+  #define DIGIT_GAP         5
+  #define COLON_GAP         10
   #define TOP_MARGIN        48
   #define HEADER_FONT       FONT_KEY_GOTHIC_14_BOLD
   #define FOOTER_FONT       FONT_KEY_GOTHIC_14
@@ -324,7 +324,7 @@ static void health_handler(HealthEventType event, void *context) {
 static void draw_matrix_digit(GContext *ctx, int x_offset, int y_offset, int digit_index, const Colorway *palette, bool is_active, int bounds_w) {
   if (digit_index < 0 || digit_index > 14) digit_index = 10;
   
-  int slant_scale = (bounds_w > 180) ? 5 : 3;
+  int slant_scale = (bounds_w > 180) ? 4 : 3;
   
   for (int r = 0; r < DIGIT_HEIGHT; r++) {
     uint8_t row_bits = FONT_5X7[digit_index][r];
@@ -404,11 +404,10 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
                      NULL);
 
   // 3. Central Cushion Bezel / Ruby Window Border (Frames only LED Time & Beads)
-  GRect frame_rect = bounds.size.w > 180 ? GRect(12, 42, 176, 142) : GRect(8, 26, 128, 110);
+  GRect frame_rect = bounds.size.w > 180 ? GRect(10, 42, 180, 142) : GRect(8, 26, 128, 110);
   int frame_radius = bounds.size.w > 180 ? 12 : 8;
-  int frame_stroke = bounds.size.w > 180 ? 2 : 1;
   graphics_context_set_stroke_color(ctx, palette->ghost);
-  graphics_context_set_stroke_width(ctx, frame_stroke);
+  graphics_context_set_stroke_width(ctx, 1);
   graphics_draw_round_rect(ctx, frame_rect, frame_radius);
 
   // 4. Data Extraction
@@ -428,8 +427,10 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     int s4 = (clamped_steps / 10) % 10;
     int s5 = clamped_steps % 10;
 
-    int step_gap = bounds.size.w > 180 ? 6 : 4;
-    int total_5_width = (5 * digit_span_x) + (4 * step_gap);
+    int slant_scale = (bounds.size.w > 180) ? 4 : 3;
+    int max_slant = s_italic_slant ? slant_scale : 0;
+    int step_gap = bounds.size.w > 180 ? 4 : 3;
+    int total_5_width = (5 * digit_span_x) + (4 * step_gap) + max_slant;
     int start_5_x = (bounds.size.w - total_5_width) / 2;
 
     int s_digits[5] = {s1, s2, s3, s4, s5};
@@ -495,7 +496,9 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
       }
     }
 
-    int total_width = (digit_span_x * 4) + (DIGIT_GAP * 2) + COLON_GAP;
+    int slant_scale = (bounds.size.w > 180) ? 4 : 3;
+    int max_slant = s_italic_slant ? slant_scale : 0;
+    int total_width = (digit_span_x * 4) + (DIGIT_GAP * 2) + COLON_GAP + max_slant;
     int start_x = (bounds.size.w - total_width) / 2;
     
     int d1_x = start_x;
@@ -511,7 +514,6 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     // Colon Dots with matching slant angle
     int d2_right = d2_x + digit_span_x;
     int colon_base_x = d2_right + (COLON_GAP / 2);
-    int slant_scale = (bounds.size.w > 180) ? 5 : 3;
     int colon_slant1 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 2) * slant_scale) / 6) : 0;
     int colon_slant2 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 4) * slant_scale) / 6) : 0;
     int colon_x1 = colon_base_x + colon_slant1;
