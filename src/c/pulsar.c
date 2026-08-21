@@ -22,7 +22,7 @@
   #define DOT_SPACING_Y     8
   #define DIGIT_GAP         8
   #define COLON_GAP         22
-  #define TOP_MARGIN        84
+  #define TOP_MARGIN        70
   #define HEADER_FONT       FONT_KEY_GOTHIC_18_BOLD
   #define FOOTER_FONT       FONT_KEY_GOTHIC_14_BOLD
   #define INDICATOR_RADIUS  2
@@ -32,7 +32,7 @@
   #define DOT_SPACING_Y     7
   #define DIGIT_GAP         8
   #define COLON_GAP         22
-  #define TOP_MARGIN        60
+  #define TOP_MARGIN        48
   #define HEADER_FONT       FONT_KEY_GOTHIC_14_BOLD
   #define FOOTER_FONT       FONT_KEY_GOTHIC_14
   #define INDICATOR_RADIUS  1
@@ -355,7 +355,7 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
   int bead_radius = bounds.size.w > 180 ? 2 : 1;
   int total_bead_width = (num_beads - 1) * bead_spacing;
   int start_x = (bounds.size.w - total_bead_width) / 2;
-  int bead_y = bounds.size.h - (bounds.size.w > 180 ? 48 : 34);
+  int bead_y = bounds.size.w > 180 ? 152 : 114;
   
   bool is_active = (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake;
   int goal = s_step_goal > 0 ? s_step_goal : 10000;
@@ -375,19 +375,11 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   const Colorway *palette = &PALETTES[s_colorway % NUM_COLORWAYS];
   bool is_active = (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake;
   
-  // 1. Synthetic Ruby Crystal / Black Dial Background
-  // 1. Synthetic Ruby Crystal / Black Dial Background
+  // 1. Black Dial / Bezel Background
   graphics_context_set_fill_color(ctx, GColorBlack);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
   
-  // 2. Cushion Bezel Inner Chamfer (All Platforms)
-  graphics_context_set_stroke_color(ctx, palette->ghost);
-  graphics_context_set_stroke_width(ctx, bounds.size.w > 180 ? 2 : 1);
-  int inset = bounds.size.w > 180 ? 6 : 4;
-  int radius = bounds.size.w > 180 ? 12 : 8;
-  graphics_draw_round_rect(ctx, grect_inset(bounds, GEdgeInsets(inset)), radius);
-
-  // 3. Dynamic Space-Age Header (Reflects Active Mode)
+  // 2. Dynamic Space-Age Header OUTSIDE the border at Top
   const char *header_text = "P U L S A R";
   if (is_active) {
     if (s_display_mode == DISPLAY_MODE_SECONDS) {
@@ -401,13 +393,23 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     }
   }
 
+  int header_y = bounds.size.w > 180 ? 12 : 4;
+  int header_h = bounds.size.w > 180 ? 24 : 20;
   graphics_context_set_text_color(ctx, palette->accent);
   graphics_draw_text(ctx, header_text,
                      fonts_get_system_font(HEADER_FONT),
-                     GRect(0, bounds.size.h / 7, bounds.size.w, 24),
+                     GRect(0, header_y, bounds.size.w, header_h),
                      GTextOverflowModeWordWrap,
                      GTextAlignmentCenter,
                      NULL);
+
+  // 3. Central Cushion Bezel / Ruby Window Border (Frames only LED Time & Beads)
+  GRect frame_rect = bounds.size.w > 180 ? GRect(12, 42, 176, 142) : GRect(8, 26, 128, 110);
+  int frame_radius = bounds.size.w > 180 ? 12 : 8;
+  int frame_stroke = bounds.size.w > 180 ? 2 : 1;
+  graphics_context_set_stroke_color(ctx, palette->ghost);
+  graphics_context_set_stroke_width(ctx, frame_stroke);
+  graphics_draw_round_rect(ctx, frame_rect, frame_radius);
 
   // 4. Data Extraction
   time_t temp = time(NULL);
@@ -541,18 +543,19 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   // 5. 10-Dot Micro-LED Step Progress Bar
   draw_step_beads(ctx, bounds, palette, steps);
   
-  // 6. Status Indicators (Left: BT, Right: Battery)
+  // 6. Status Indicators (Left: BT, Right: Battery - inside bottom of window)
+  int indicator_y = bounds.size.w > 180 ? 166 : 124;
   if (!s_bluetooth_connected) {
     graphics_context_set_fill_color(ctx, palette->lit);
-    graphics_fill_circle(ctx, GPoint(bounds.size.w / 4, bounds.size.h - (bounds.size.w > 180 ? 34 : 24)), INDICATOR_RADIUS);
+    graphics_fill_circle(ctx, GPoint(bounds.size.w / 4, indicator_y), INDICATOR_RADIUS);
   }
   
   if (s_battery_level <= 20) {
     graphics_context_set_fill_color(ctx, palette->lit);
-    graphics_fill_circle(ctx, GPoint((bounds.size.w * 3) / 4, bounds.size.h - (bounds.size.w > 180 ? 34 : 24)), INDICATOR_RADIUS);
+    graphics_fill_circle(ctx, GPoint((bounds.size.w * 3) / 4, indicator_y), INDICATOR_RADIUS);
   }
 
-  // 7. Vintage Footer with Breathing Room
+  // 7. Vintage Footer OUTSIDE the border at Bottom
   if (s_footer_style != FOOTER_STYLE_NONE) {
     const char *footer_text = "TIME COMPUTER";
     if (s_display_mode == DISPLAY_MODE_STEPS && is_active) {
@@ -571,11 +574,12 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
       }
     }
     
-    int footer_y = bounds.size.h > 180 ? (bounds.size.h - 30) : (bounds.size.h - 20);
+    int footer_y = bounds.size.w > 180 ? 194 : 144;
+    int footer_h = bounds.size.w > 180 ? 22 : 18;
     graphics_context_set_text_color(ctx, palette->ghost);
     graphics_draw_text(ctx, footer_text,
                        fonts_get_system_font(FOOTER_FONT),
-                       GRect(0, footer_y, bounds.size.w, 18),
+                       GRect(0, footer_y, bounds.size.w, footer_h),
                        GTextOverflowModeWordWrap,
                        GTextAlignmentCenter,
                        NULL);
