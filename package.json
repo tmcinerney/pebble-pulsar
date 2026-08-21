@@ -1,0 +1,30 @@
+{
+  "name": "pebble-pulsar",
+  "author": "Travers McInerney",
+  "versionLabel": "1.0.0",
+  "keywords": [
+    "watchface",
+    "pulsar",
+    "retro",
+    "1970s",
+    "led",
+    "hamilton",
+    "vintage"
+  ],
+  "pebble": {
+    "uuid": "8b5f3a12-9c4e-4f71-8b23-6e4d7a8c9b01",
+    "displayName": "Pulsar 1970",
+    "watchapp": {
+      "watchface": true
+    },
+    "targetPlatforms": [
+      "emery",
+      "basalt",
+      "diorite",
+      "chalk",
+      "aplite"
+    ],
+    "sdkVersion": "3"
+  },
+  "dependencies": {}
+}

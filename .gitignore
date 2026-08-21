@@ -1,0 +1,15 @@
+# Pebble Build Artifacts
+build/
+.waf*
+*.pbw
+*.elf
+*.bin
+
+# OS & Editor Files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.worktreeinclude
+*.swp
+*~
