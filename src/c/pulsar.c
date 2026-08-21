@@ -356,7 +356,7 @@ static void health_handler(HealthEventType event, void *context) {
 }
 #endif
 
-static void draw_matrix_digit(GContext *ctx, int x_offset, int y_offset, int digit_index, const Colorway *palette, bool is_active, int bounds_w) {
+static void draw_matrix_digit_custom(GContext *ctx, int x_offset, int y_offset, int digit_index, const Colorway *palette, bool is_active, int bounds_w, int spacing_x, int spacing_y, int dot_radius) {
   if (digit_index < 0 || digit_index > 14) digit_index = 10;
   
   int slant_scale = (bounds_w > 180) ? 3 : 2;
@@ -367,12 +367,12 @@ static void draw_matrix_digit(GContext *ctx, int x_offset, int y_offset, int dig
     
     for (int c = 0; c < DIGIT_WIDTH; c++) {
       bool is_lit = is_active && ((row_bits >> (4 - c)) & 0x01);
-      int dot_x = x_offset + (c * DOT_SPACING_X) + slant_x;
-      int dot_y = y_offset + (r * DOT_SPACING_Y);
+      int dot_x = x_offset + (c * spacing_x) + slant_x;
+      int dot_y = y_offset + (r * spacing_y);
       
       if (is_lit) {
         graphics_context_set_fill_color(ctx, palette->lit);
-        graphics_fill_circle(ctx, GPoint(dot_x, dot_y), DOT_RADIUS);
+        graphics_fill_circle(ctx, GPoint(dot_x, dot_y), dot_radius);
       } else {
         // Unlit GaAsP ghost die
         graphics_context_set_fill_color(ctx, palette->ghost);
@@ -380,6 +380,10 @@ static void draw_matrix_digit(GContext *ctx, int x_offset, int y_offset, int dig
       }
     }
   }
+}
+
+static void draw_matrix_digit(GContext *ctx, int x_offset, int y_offset, int digit_index, const Colorway *palette, bool is_active, int bounds_w) {
+  draw_matrix_digit_custom(ctx, x_offset, y_offset, digit_index, palette, is_active, bounds_w, DOT_SPACING_X, DOT_SPACING_Y, DOT_RADIUS);
 }
 
 #define GLYPH_3X5(r0, r1, r2, r3, r4) \
@@ -400,8 +404,8 @@ static uint16_t get_glyph_3x5(char c) {
     case 'J': return GLYPH_3X5(1, 1, 1, 5, 2);
     case 'K': return GLYPH_3X5(5, 6, 4, 6, 5);
     case 'L': return GLYPH_3X5(4, 4, 4, 4, 7);
-    case 'M': return GLYPH_3X5(5, 7, 5, 5, 5);
-    case 'N': return GLYPH_3X5(5, 6, 5, 3, 5);
+    case 'M': return GLYPH_3X5(5, 7, 7, 5, 5);
+    case 'N': return GLYPH_3X5(5, 6, 5, 5, 5);
     case 'O': return GLYPH_3X5(7, 5, 5, 5, 7);
     case 'P': return GLYPH_3X5(6, 5, 6, 4, 4);
     case 'Q': return GLYPH_3X5(7, 5, 5, 6, 3);
@@ -522,7 +526,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_stroke_width(ctx, 1);
   graphics_draw_round_rect(ctx, outer_cushion, outer_radius);
 
-  // 3. Dynamic Space-Age Header at Top of Cushion Window (Symmetrical 11px padding)
+  // 3. Dynamic Space-Age Header at Top of Cushion Window (Hairline 1px stroke weight)
   const char *header_text = "PULSAR";
   if (is_active) {
     if (s_display_mode == DISPLAY_MODE_SECONDS) {
@@ -537,16 +541,16 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   }
 
   int header_center_y = bounds.size.w > 180 ? 22 : 16;
-  int header_scale = bounds.size.w > 180 ? 2 : 1;
-  int header_letter_spacing = bounds.size.w > 180 ? 6 : 4;
-  int header_word_spacing = bounds.size.w > 180 ? 10 : 6;
+  int header_letter_spacing = bounds.size.w > 180 ? 5 : 3;
+  int header_word_spacing = bounds.size.w > 180 ? 8 : 5;
   draw_micro_text(ctx, header_text, header_center_y, palette->text_outer, bounds.size.w,
-                  header_scale, header_letter_spacing, header_word_spacing);
+                  1, header_letter_spacing, header_word_spacing);
 
-  // 4. Central Inner Obsidian Display Aperture (Square-Cornered Rectangle with Symmetrical 32px Margins)
+  // 4. Central Inner Obsidian Display Aperture (Rounded Corners)
   GRect frame_rect = bounds.size.w > 180 ? GRect(12, 38, 176, 152) : GRect(8, 28, 128, 112);
+  int inner_radius = bounds.size.w > 180 ? 8 : 5;
   graphics_context_set_fill_color(ctx, palette->inner_bg);
-  graphics_fill_rect(ctx, frame_rect, 0, GCornerNone);
+  graphics_fill_rect(ctx, frame_rect, inner_radius, GCornersAll);
 
   // 5. Data Extraction
   time_t temp = time(NULL);
@@ -557,7 +561,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   int start_y = TOP_MARGIN;
 
   if (s_display_mode == DISPLAY_MODE_STEPS && is_active) {
-    // 5-Digit Step Count Layout (e.g., 08420)
+    // 5-Digit Step Count Layout with clear digit separation (e.g., 0 8 4 2 0)
     int clamped_steps = steps > 99999 ? 99999 : steps;
     int s1 = (clamped_steps / 10000) % 10;
     int s2 = (clamped_steps / 1000) % 10;
@@ -565,16 +569,23 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     int s4 = (clamped_steps / 10) % 10;
     int s5 = clamped_steps % 10;
 
+    int step_spacing_x = bounds.size.w > 180 ? 6 : 4;
+    int step_spacing_y = bounds.size.w > 180 ? 6 : 5;
+    int step_dot_radius = bounds.size.w > 180 ? 2 : 1;
+    int step_gap = bounds.size.w > 180 ? 9 : 5;
+    int step_digit_span = (DIGIT_WIDTH - 1) * step_spacing_x;
+
     int slant_scale = (bounds.size.w > 180) ? 3 : 2;
     int max_slant = s_italic_slant ? slant_scale : 0;
-    int step_gap = bounds.size.w > 180 ? 4 : 3;
-    int total_5_width = (5 * digit_span_x) + (4 * step_gap) + max_slant;
+    int total_5_width = (5 * step_digit_span) + (4 * step_gap) + max_slant;
     int start_5_x = (bounds.size.w - total_5_width) / 2;
+    int step_start_y = bounds.size.w > 180 ? (TOP_MARGIN + 3) : TOP_MARGIN;
 
     int s_digits[5] = {s1, s2, s3, s4, s5};
     for (int i = 0; i < 5; i++) {
-      int dx = start_5_x + (i * (digit_span_x + step_gap));
-      draw_matrix_digit(ctx, dx, start_y, s_digits[i], palette, is_active, bounds.size.w);
+      int dx = start_5_x + (i * (step_digit_span + step_gap));
+      draw_matrix_digit_custom(ctx, dx, step_start_y, s_digits[i], palette, is_active, bounds.size.w,
+                               step_spacing_x, step_spacing_y, step_dot_radius);
     }
   } else {
     // 4-Digit Layout (Time, Seconds, Date, Battery)
@@ -715,11 +726,10 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     }
     
     int footer_center_y = bounds.size.w > 180 ? 207 : 152;
-    int footer_scale = bounds.size.w > 180 ? 2 : 1;
     int footer_letter_spacing = bounds.size.w > 180 ? 2 : 1;
-    int footer_word_spacing = bounds.size.w > 180 ? 8 : 4;
+    int footer_word_spacing = bounds.size.w > 180 ? 6 : 4;
     draw_micro_text(ctx, footer_text, footer_center_y, palette->text_outer, bounds.size.w,
-                    footer_scale, footer_letter_spacing, footer_word_spacing);
+                    1, footer_letter_spacing, footer_word_spacing);
   }
 }
 
