@@ -31,9 +31,7 @@
       "basalt",
       "diorite",
       "chalk",
-      "aplite",
-      "flint",
-      "gabbro"
+      "aplite"
     ],
     "sdkVersion": "3"
   },

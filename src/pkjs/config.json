@@ -14,15 +14,15 @@
         "type": "radiogroup",
         "messageKey": "AppKeyOperatingMode",
         "label": "Operating Mode",
-        "defaultValue": 0,
+        "defaultValue": "0",
         "options": [
           {
             "label": "Always-On",
-            "value": 0
+            "value": "0"
           },
           {
             "label": "Stealth (Push-to-Wake 4s)",
-            "value": 1
+            "value": "1"
           }
         ]
       }
@@ -39,23 +39,23 @@
         "type": "select",
         "messageKey": "AppKeyColorway",
         "label": "LED Colorway",
-        "defaultValue": 0,
+        "defaultValue": "0",
         "options": [
           {
             "label": "Ruby Red (GaAsP 1972)",
-            "value": 0
+            "value": "0"
           },
           {
             "label": "Prototype Green (GaP 1975)",
-            "value": 1
+            "value": "1"
           },
           {
             "label": "Amber Gold (HP-01 Style)",
-            "value": 2
+            "value": "2"
           },
           {
             "label": "Cobalt Blue",
-            "value": 3
+            "value": "3"
           }
         ]
       },
@@ -78,23 +78,23 @@
         "type": "select",
         "messageKey": "AppKeyFlickAction",
         "label": "Wrist Flick / Tap Action",
-        "defaultValue": 0,
+        "defaultValue": "0",
         "options": [
           {
             "label": "Cycle All (Time -> Sec -> Date -> Steps)",
-            "value": 0
+            "value": "0"
           },
           {
             "label": "Live Seconds Counter",
-            "value": 1
+            "value": "1"
           },
           {
             "label": "Date (Month / Day)",
-            "value": 2
+            "value": "2"
           },
           {
             "label": "Daily Step Count",
-            "value": 3
+            "value": "3"
           }
         ]
       }
@@ -111,19 +111,19 @@
         "type": "select",
         "messageKey": "AppKeyHourlyVibe",
         "label": "Hourly Chime",
-        "defaultValue": 0,
+        "defaultValue": "0",
         "options": [
           {
             "label": "Off",
-            "value": 0
+            "value": "0"
           },
           {
             "label": "Single Pulse",
-            "value": 1
+            "value": "1"
           },
           {
             "label": "Double Pulse",
-            "value": 2
+            "value": "2"
           }
         ]
       }
