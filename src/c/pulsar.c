@@ -20,16 +20,16 @@
   #define DOT_RADIUS        2
   #define DOT_SPACING_X     7
   #define DOT_SPACING_Y     8
-  #define DIGIT_GAP         10
-  #define COLON_GAP         16
+  #define DIGIT_GAP         12
+  #define COLON_GAP         22
   #define TOP_MARGIN        76
   #define INDICATOR_RADIUS  2
 #else // Basalt, Diorite, Aplite, Chalk (144x168)
   #define DOT_RADIUS        2
   #define DOT_SPACING_X     5
   #define DOT_SPACING_Y     7
-  #define DIGIT_GAP         7
-  #define COLON_GAP         12
+  #define DIGIT_GAP         8
+  #define COLON_GAP         16
   #define TOP_MARGIN        54
   #define INDICATOR_RADIUS  1
 #endif
@@ -386,103 +386,6 @@ static void draw_matrix_digit(GContext *ctx, int x_offset, int y_offset, int dig
   draw_matrix_digit_custom(ctx, x_offset, y_offset, digit_index, palette, is_active, bounds_w, DOT_SPACING_X, DOT_SPACING_Y, DOT_RADIUS);
 }
 
-#define GLYPH_3X5(r0, r1, r2, r3, r4) \
-  (((r0) << 12) | ((r1) << 9) | ((r2) << 6) | ((r3) << 3) | (r4))
-
-static uint16_t get_glyph_3x5(char c) {
-  if (c >= 'a' && c <= 'z') c = c - 'a' + 'A';
-  switch (c) {
-    case 'A': return GLYPH_3X5(2, 5, 7, 5, 5);
-    case 'B': return GLYPH_3X5(6, 5, 6, 5, 6);
-    case 'C': return GLYPH_3X5(3, 4, 4, 4, 3);
-    case 'D': return GLYPH_3X5(6, 5, 5, 5, 6);
-    case 'E': return GLYPH_3X5(7, 4, 6, 4, 7);
-    case 'F': return GLYPH_3X5(7, 4, 6, 4, 4);
-    case 'G': return GLYPH_3X5(3, 4, 5, 5, 3);
-    case 'H': return GLYPH_3X5(5, 5, 7, 5, 5);
-    case 'I': return GLYPH_3X5(7, 2, 2, 2, 7);
-    case 'J': return GLYPH_3X5(1, 1, 1, 5, 2);
-    case 'K': return GLYPH_3X5(5, 6, 4, 6, 5);
-    case 'L': return GLYPH_3X5(4, 4, 4, 4, 7);
-    case 'M': return GLYPH_3X5(5, 7, 7, 5, 5);
-    case 'N': return GLYPH_3X5(5, 6, 5, 5, 5);
-    case 'O': return GLYPH_3X5(7, 5, 5, 5, 7);
-    case 'P': return GLYPH_3X5(6, 5, 6, 4, 4);
-    case 'Q': return GLYPH_3X5(7, 5, 5, 6, 3);
-    case 'R': return GLYPH_3X5(6, 5, 6, 5, 5);
-    case 'S': return GLYPH_3X5(7, 4, 7, 1, 7);
-    case 'T': return GLYPH_3X5(7, 2, 2, 2, 2);
-    case 'U': return GLYPH_3X5(5, 5, 5, 5, 7);
-    case 'V': return GLYPH_3X5(5, 5, 5, 5, 2);
-    case 'W': return GLYPH_3X5(5, 5, 5, 7, 5);
-    case 'X': return GLYPH_3X5(5, 5, 2, 5, 5);
-    case 'Y': return GLYPH_3X5(5, 5, 2, 2, 2);
-    case 'Z': return GLYPH_3X5(7, 1, 2, 4, 7);
-    case '/': return GLYPH_3X5(1, 1, 2, 4, 4);
-    case '-': return GLYPH_3X5(0, 0, 7, 0, 0);
-    case '.': return GLYPH_3X5(0, 0, 0, 0, 2);
-    case ':': return GLYPH_3X5(0, 2, 0, 2, 0);
-    case '%': return GLYPH_3X5(5, 1, 2, 4, 5);
-    case '0': return GLYPH_3X5(2, 5, 5, 5, 2);
-    case '1': return GLYPH_3X5(2, 2, 2, 2, 2);
-    case '2': return GLYPH_3X5(7, 1, 7, 4, 7);
-    case '3': return GLYPH_3X5(7, 1, 3, 1, 7);
-    case '4': return GLYPH_3X5(5, 5, 7, 1, 1);
-    case '5': return GLYPH_3X5(7, 4, 7, 1, 6);
-    case '6': return GLYPH_3X5(7, 4, 7, 5, 7);
-    case '7': return GLYPH_3X5(7, 1, 2, 2, 2);
-    case '8': return GLYPH_3X5(7, 5, 7, 5, 7);
-    case '9': return GLYPH_3X5(7, 5, 7, 1, 7);
-    default: return 0;
-  }
-}
-
-static void draw_micro_text(GContext *ctx, const char *text, int center_y, GColor color, int bounds_w, int scale, int letter_spacing, int word_spacing) {
-  int len = strlen(text);
-  if (len == 0) return;
-
-  int glyph_w = 3 * scale;
-  int glyph_h = 5 * scale;
-  int total_w = 0;
-
-  for (int i = 0; i < len; i++) {
-    if (text[i] == ' ') {
-      total_w += word_spacing;
-    } else {
-      total_w += glyph_w;
-      if (i < len - 1 && text[i+1] != ' ') {
-        total_w += letter_spacing;
-      }
-    }
-  }
-
-  int cur_x = (bounds_w - total_w) / 2;
-  int top_y = center_y - (glyph_h / 2);
-
-  graphics_context_set_fill_color(ctx, color);
-
-  for (int i = 0; i < len; i++) {
-    char c = text[i];
-    if (c == ' ') {
-      cur_x += word_spacing;
-      continue;
-    }
-    uint16_t glyph = get_glyph_3x5(c);
-    for (int r = 0; r < 5; r++) {
-      for (int col = 0; col < 3; col++) {
-        int bit = 14 - (r * 3 + col);
-        if ((glyph >> bit) & 1) {
-          graphics_fill_rect(ctx, GRect(cur_x + (col * scale), top_y + (r * scale), scale, scale), 0, GCornerNone);
-        }
-      }
-    }
-    cur_x += glyph_w;
-    if (i < len - 1 && text[i+1] != ' ') {
-      cur_x += letter_spacing;
-    }
-  }
-}
-
 static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette, int steps) {
   if (!s_show_step_beads) return;
   
@@ -526,25 +429,26 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_stroke_width(ctx, 1);
   graphics_draw_round_rect(ctx, outer_cushion, outer_radius);
 
-  // 3. Dynamic Space-Age Header at Top of Cushion Window (Hairline 1px stroke weight)
-  const char *header_text = "PULSAR";
+  // 3. Dynamic Space-Age Header at Top of Cushion Window
+  const char *header_text = "P U L S A R";
   if (is_active) {
     if (s_display_mode == DISPLAY_MODE_SECONDS) {
-      header_text = "SECONDS";
+      header_text = "S E C O N D S";
     } else if (s_display_mode == DISPLAY_MODE_DATE) {
-      header_text = "DATE";
+      header_text = "D A T E";
     } else if (s_display_mode == DISPLAY_MODE_STEPS) {
-      header_text = "STEPS";
+      header_text = "S T E P S";
     } else if (s_display_mode == DISPLAY_MODE_BATTERY) {
-      header_text = "BATTERY";
+      header_text = "B A T T E R Y";
     }
   }
 
-  int header_center_y = bounds.size.w > 180 ? 22 : 16;
-  int header_letter_spacing = bounds.size.w > 180 ? 5 : 3;
-  int header_word_spacing = bounds.size.w > 180 ? 8 : 5;
-  draw_micro_text(ctx, header_text, header_center_y, palette->text_outer, bounds.size.w,
-                  1, header_letter_spacing, header_word_spacing);
+  GFont font_gothic14 = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+  int header_y = bounds.size.w > 180 ? 11 : 6;
+  graphics_context_set_text_color(ctx, palette->text_outer);
+  graphics_draw_text(ctx, header_text, font_gothic14,
+                     GRect(0, header_y, bounds.size.w, 20),
+                     GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
   // 4. Central Inner Obsidian Display Aperture (Rounded Corners)
   GRect frame_rect = bounds.size.w > 180 ? GRect(12, 38, 176, 152) : GRect(8, 28, 128, 112);
@@ -559,6 +463,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   
   int digit_span_x = (DIGIT_WIDTH - 1) * DOT_SPACING_X;
   int start_y = TOP_MARGIN;
+  int slant_scale = (bounds.size.w > 180) ? 3 : 2;
+  int max_slant = s_italic_slant ? slant_scale : 0;
 
   if (s_display_mode == DISPLAY_MODE_STEPS && is_active) {
     // 5-Digit Step Count Layout with clear digit separation (e.g., 0 8 4 2 0)
@@ -575,8 +481,6 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     int step_gap = bounds.size.w > 180 ? 9 : 5;
     int step_digit_span = (DIGIT_WIDTH - 1) * step_spacing_x;
 
-    int slant_scale = (bounds.size.w > 180) ? 3 : 2;
-    int max_slant = s_italic_slant ? slant_scale : 0;
     int total_5_width = (5 * step_digit_span) + (4 * step_gap) + max_slant;
     int start_5_x = (bounds.size.w - total_5_width) / 2;
     int step_start_y = bounds.size.w > 180 ? (TOP_MARGIN + 3) : TOP_MARGIN;
@@ -588,106 +492,131 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
                                step_spacing_x, step_spacing_y, step_dot_radius);
     }
   } else {
-    // 4-Digit Layout (Time, Seconds, Date, Battery)
-    int d1 = 10, d2 = 10, d3 = 10, d4 = 10;
-    bool show_colon = false;
-    bool colon_blinking = false;
-
-    if (is_active) {
-      if (s_display_mode == DISPLAY_MODE_DATE) {
-        // Date Mode: MM DD
-        int month = tick_time->tm_mon + 1;
-        int day = tick_time->tm_mday;
-        d1 = month / 10;
-        d2 = month % 10;
-        d3 = day / 10;
-        d4 = day % 10;
-        show_colon = false;
-      } else if (s_display_mode == DISPLAY_MODE_SECONDS) {
-        // Live Seconds Mode: :SS with d3 & d4
-        d1 = 10; // Blank
-        d2 = 10; // Blank
-        d3 = tick_time->tm_sec / 10;
-        d4 = tick_time->tm_sec % 10;
-        show_colon = true;
-        colon_blinking = false; // Solid colon in seconds mode
-      } else if (s_display_mode == DISPLAY_MODE_BATTERY) {
-        // Battery Percentage Mode: e.g. " 85%" or "100%"
-        int bat = s_battery_level > 100 ? 100 : (s_battery_level < 0 ? 0 : s_battery_level);
-        if (bat == 100) {
-          d1 = 1;
-          d2 = 0;
-          d3 = 0;
-          d4 = 14; // '%'
-        } else {
-          d1 = 10; // Blank
-          d2 = (bat >= 10) ? (bat / 10) : 10;
-          d3 = bat % 10;
-          d4 = 14; // '%'
-        }
-        show_colon = false;
-      } else {
-        // Time Mode: HH:MM
-        int hours = tick_time->tm_hour;
-        if (!clock_is_24h_style()) {
-          hours = hours % 12;
-          if (hours == 0) hours = 12;
-          d1 = (hours >= 10) ? (hours / 10) : 10;
-        } else {
-          d1 = hours / 10;
-        }
-        d2 = hours % 10;
-        int mins = tick_time->tm_min;
-        d3 = mins / 10;
-        d4 = mins % 10;
-        show_colon = true;
-        colon_blinking = true;
-      }
-    }
-
-    int slant_scale = (bounds.size.w > 180) ? 3 : 2;
-    int max_slant = s_italic_slant ? slant_scale : 0;
-    int total_width = (digit_span_x * 4) + (DIGIT_GAP * 2) + COLON_GAP + max_slant;
-    int start_x = (bounds.size.w - total_width) / 2;
-
-    int d1_x = start_x;
-    int d2_x = d1_x + digit_span_x + DIGIT_GAP;
-    int d3_x = d2_x + digit_span_x + COLON_GAP;
-    int d4_x = d3_x + digit_span_x + DIGIT_GAP;
-    
-    draw_matrix_digit(ctx, d1_x, start_y, d1, palette, is_active, bounds.size.w);
-    draw_matrix_digit(ctx, d2_x, start_y, d2, palette, is_active, bounds.size.w);
-    draw_matrix_digit(ctx, d3_x, start_y, d3, palette, is_active, bounds.size.w);
-    draw_matrix_digit(ctx, d4_x, start_y, d4, palette, is_active, bounds.size.w);
-    
-    // Colon Dots with matching slant angle
-    int d2_right = d2_x + digit_span_x;
-    int colon_base_x = d2_right + (COLON_GAP / 2);
-    int colon_slant1 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 2) * slant_scale) / 6) : 0;
-    int colon_slant2 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 4) * slant_scale) / 6) : 0;
-    int colon_x1 = colon_base_x + colon_slant1;
-    int colon_x2 = colon_base_x + colon_slant2;
-    int colon_y1 = start_y + (DOT_SPACING_Y * 2);
-    int colon_y2 = start_y + (DOT_SPACING_Y * 4);
-    
-    bool colon_lit = show_colon && is_active && (!colon_blinking || (tick_time->tm_sec % 2 == 0));
-    GColor colon_color = colon_lit ? palette->lit : palette->ghost;
-    graphics_context_set_fill_color(ctx, colon_color);
-    graphics_fill_circle(ctx, GPoint(colon_x1, colon_y1), colon_lit ? DOT_RADIUS : 1);
-    graphics_fill_circle(ctx, GPoint(colon_x2, colon_y2), colon_lit ? DOT_RADIUS : 1);
-    
-    // Middle separator dot for Date Mode
-    if (s_display_mode == DISPLAY_MODE_DATE) {
+    if (s_display_mode == DISPLAY_MODE_SECONDS) {
+      // Centered Live Seconds Layout (:SS)
+      int secs = tick_time->tm_sec;
+      int sec_tens = is_active ? (secs / 10) : 10;
+      int sec_ones = is_active ? (secs % 10) : 10;
+      
+      int sec_digit_gap = bounds.size.w > 180 ? 14 : 9;
+      int sec_colon_gap = bounds.size.w > 180 ? 22 : 14;
+      int sec_total_width = (digit_span_x * 2) + sec_digit_gap + sec_colon_gap + max_slant;
+      int sec_start_x = (bounds.size.w - sec_total_width) / 2;
+      
+      int sec_d3_x = sec_start_x + sec_colon_gap;
+      int sec_d4_x = sec_d3_x + digit_span_x + sec_digit_gap;
+      
+      draw_matrix_digit(ctx, sec_d3_x, start_y, sec_tens, palette, is_active, bounds.size.w);
+      draw_matrix_digit(ctx, sec_d4_x, start_y, sec_ones, palette, is_active, bounds.size.w);
+      
+      // Centered Colon before seconds digits
+      int sec_colon_base_x = sec_start_x + (sec_colon_gap / 2);
+      int colon_slant1 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 2) * slant_scale) / 6) : 0;
+      int colon_slant2 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 4) * slant_scale) / 6) : 0;
+      int sec_colon_x1 = sec_colon_base_x + colon_slant1;
+      int sec_colon_x2 = sec_colon_base_x + colon_slant2;
+      int colon_y1 = start_y + (DOT_SPACING_Y * 2);
+      int colon_y2 = start_y + (DOT_SPACING_Y * 4);
+      
       graphics_context_set_fill_color(ctx, is_active ? palette->lit : palette->ghost);
-      graphics_fill_circle(ctx, GPoint(colon_x2, colon_y2), is_active ? DOT_RADIUS : 1);
-    }
-    
-    // AM/PM Indicator Dot
-    if (is_active && !clock_is_24h_style() && s_display_mode == DISPLAY_MODE_TIME) {
-      bool is_pm = tick_time->tm_hour >= 12;
-      GColor pm_dot_color = is_pm ? palette->lit : palette->ghost;
-      graphics_context_set_fill_color(ctx, pm_dot_color);
-      graphics_fill_circle(ctx, GPoint(start_x, start_y + (DIGIT_HEIGHT * DOT_SPACING_Y) + 6), INDICATOR_RADIUS);
+      graphics_fill_circle(ctx, GPoint(sec_colon_x1, colon_y1), is_active ? DOT_RADIUS : 1);
+      graphics_fill_circle(ctx, GPoint(sec_colon_x2, colon_y2), is_active ? DOT_RADIUS : 1);
+    } else {
+      // 4-Digit Layout for Time, Date, Battery
+      int d1 = 10, d2 = 10, d3 = 10, d4 = 10;
+      bool show_colon = false;
+      bool colon_blinking = false;
+
+      if (s_display_mode == DISPLAY_MODE_DATE) {
+        if (is_active) {
+          int month = tick_time->tm_mon + 1;
+          int day = tick_time->tm_mday;
+          d1 = month / 10;
+          d2 = month % 10;
+          d3 = day / 10;
+          d4 = day % 10;
+          show_colon = false;
+        }
+      } else if (s_display_mode == DISPLAY_MODE_BATTERY) {
+        if (is_active) {
+          int bat = s_battery_level;
+          if (bat >= 100) {
+            d1 = 1;
+            d2 = 0;
+            d3 = 0;
+            d4 = 14; // %
+          } else {
+            d2 = bat / 10;
+            d3 = bat % 10;
+            d4 = 14; // %
+          }
+        }
+      } else {
+        // DISPLAY_MODE_TIME
+        if (is_active) {
+          int hours = tick_time->tm_hour;
+          if (!clock_is_24h_style()) {
+            hours = hours % 12;
+            if (hours == 0) hours = 12;
+          }
+          if (hours < 10) {
+            d1 = 10; // blank
+          } else {
+            d1 = hours / 10;
+          }
+          d2 = hours % 10;
+          int mins = tick_time->tm_min;
+          d3 = mins / 10;
+          d4 = mins % 10;
+          show_colon = true;
+          colon_blinking = true;
+        }
+      }
+
+      int slant_scale = (bounds.size.w > 180) ? 3 : 2;
+      int max_slant = s_italic_slant ? slant_scale : 0;
+      int total_width = (digit_span_x * 4) + (DIGIT_GAP * 2) + COLON_GAP + max_slant;
+      int start_x = (bounds.size.w - total_width) / 2;
+
+      int d1_x = start_x;
+      int d2_x = d1_x + digit_span_x + DIGIT_GAP;
+      int d3_x = d2_x + digit_span_x + COLON_GAP;
+      int d4_x = d3_x + digit_span_x + DIGIT_GAP;
+      
+      draw_matrix_digit(ctx, d1_x, start_y, d1, palette, is_active, bounds.size.w);
+      draw_matrix_digit(ctx, d2_x, start_y, d2, palette, is_active, bounds.size.w);
+      draw_matrix_digit(ctx, d3_x, start_y, d3, palette, is_active, bounds.size.w);
+      draw_matrix_digit(ctx, d4_x, start_y, d4, palette, is_active, bounds.size.w);
+      
+      // Colon Dots with matching slant angle
+      int d2_right = d2_x + digit_span_x;
+      int colon_base_x = d2_right + (COLON_GAP / 2);
+      int colon_slant1 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 2) * slant_scale) / 6) : 0;
+      int colon_slant2 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 4) * slant_scale) / 6) : 0;
+      int colon_x1 = colon_base_x + colon_slant1;
+      int colon_x2 = colon_base_x + colon_slant2;
+      int colon_y1 = start_y + (DOT_SPACING_Y * 2);
+      int colon_y2 = start_y + (DOT_SPACING_Y * 4);
+      
+      bool colon_lit = show_colon && is_active && (!colon_blinking || (tick_time->tm_sec % 2 == 0));
+      GColor colon_color = colon_lit ? palette->lit : palette->ghost;
+      graphics_context_set_fill_color(ctx, colon_color);
+      graphics_fill_circle(ctx, GPoint(colon_x1, colon_y1), colon_lit ? DOT_RADIUS : 1);
+      graphics_fill_circle(ctx, GPoint(colon_x2, colon_y2), colon_lit ? DOT_RADIUS : 1);
+      
+      // Middle separator dot for Date Mode
+      if (s_display_mode == DISPLAY_MODE_DATE) {
+        graphics_context_set_fill_color(ctx, is_active ? palette->lit : palette->ghost);
+        graphics_fill_circle(ctx, GPoint(colon_x2, colon_y2), is_active ? DOT_RADIUS : 1);
+      }
+      
+      // AM/PM Indicator Dot
+      if (is_active && !clock_is_24h_style() && s_display_mode == DISPLAY_MODE_TIME) {
+        bool is_pm = tick_time->tm_hour >= 12;
+        GColor pm_dot_color = is_pm ? palette->lit : palette->ghost;
+        graphics_context_set_fill_color(ctx, pm_dot_color);
+        graphics_fill_circle(ctx, GPoint(start_x, start_y + (DIGIT_HEIGHT * DOT_SPACING_Y) + 6), INDICATOR_RADIUS);
+      }
     }
   }
 
@@ -706,30 +635,30 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     graphics_fill_circle(ctx, GPoint((bounds.size.w * 3) / 4, indicator_y), INDICATOR_RADIUS);
   }
 
-  // 7. Vintage Footer OUTSIDE the border at Bottom (Symmetrical 10px padding)
+  // 7. Vintage Footer OUTSIDE the border at Bottom
   if (s_footer_style != FOOTER_STYLE_NONE) {
-    const char *footer_text = "TIME COMPUTER";
+    const char *footer_text = "T I M E   C O M P U T E R";
     if (s_display_mode == DISPLAY_MODE_STEPS && is_active) {
-      footer_text = "DAILY STEPS";
+      footer_text = "D A I L Y   S T E P S";
     } else if (s_display_mode == DISPLAY_MODE_BATTERY && is_active) {
-      footer_text = "POWER LEVEL";
+      footer_text = "P O W E R   L E V E L";
     } else if (s_display_mode == DISPLAY_MODE_DATE && is_active) {
-      footer_text = "MONTH / DAY";
+      footer_text = "M O N T H  /  D A Y";
     } else if (s_display_mode == DISPLAY_MODE_SECONDS && is_active) {
-      footer_text = "LIVE SECONDS";
+      footer_text = "L I V E   S E C O N D S";
     } else {
       if (s_footer_style == FOOTER_STYLE_HAMILTON) {
-        footer_text = "HAMILTON";
+        footer_text = "H A M I L T O N";
       } else if (s_footer_style == FOOTER_STYLE_PULSAR) {
-        footer_text = "PULSAR";
+        footer_text = "P U L S A R";
       }
     }
     
-    int footer_center_y = bounds.size.w > 180 ? 207 : 152;
-    int footer_letter_spacing = bounds.size.w > 180 ? 2 : 1;
-    int footer_word_spacing = bounds.size.w > 180 ? 6 : 4;
-    draw_micro_text(ctx, footer_text, footer_center_y, palette->text_outer, bounds.size.w,
-                    1, footer_letter_spacing, footer_word_spacing);
+    int footer_y = bounds.size.w > 180 ? 196 : 142;
+    graphics_context_set_text_color(ctx, palette->text_outer);
+    graphics_draw_text(ctx, footer_text, font_gothic14,
+                       GRect(0, footer_y, bounds.size.w, 20),
+                       GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   }
 }
 
