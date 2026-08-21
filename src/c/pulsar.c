@@ -443,11 +443,13 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     }
   }
 
-  GFont font_gothic14 = fonts_get_system_font(FONT_KEY_GOTHIC_14);
-  int header_y = bounds.size.w > 180 ? 11 : 6;
+  GFont font_header = bounds.size.w > 180 ? 
+                      fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD) : 
+                      fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD);
+  int header_y = bounds.size.w > 180 ? 13 : 7;
   graphics_context_set_text_color(ctx, palette->text_outer);
-  graphics_draw_text(ctx, header_text, font_gothic14,
-                     GRect(0, header_y, bounds.size.w, 20),
+  graphics_draw_text(ctx, header_text, font_header,
+                     GRect(0, header_y, bounds.size.w, bounds.size.w > 180 ? 24 : 18),
                      GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
   // 4. Central Inner Obsidian Display Aperture (Rounded Corners)
@@ -654,9 +656,10 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
       }
     }
     
-    int footer_y = bounds.size.w > 180 ? 196 : 142;
+    int footer_y = bounds.size.w > 180 ? 197 : 143;
+    GFont font_footer = fonts_get_system_font(FONT_KEY_GOTHIC_14);
     graphics_context_set_text_color(ctx, palette->text_outer);
-    graphics_draw_text(ctx, footer_text, font_gothic14,
+    graphics_draw_text(ctx, footer_text, font_footer,
                        GRect(0, footer_y, bounds.size.w, 20),
                        GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   }
