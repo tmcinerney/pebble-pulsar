@@ -18,6 +18,14 @@
     "watchapp": {
       "watchface": true
     },
+    "enableMultiJS": true,
+    "messageKeys": {
+      "AppKeyOperatingMode": 10000,
+      "AppKeyColorway": 10001,
+      "AppKeyFlickAction": 10002,
+      "AppKeyHourlyVibe": 10003,
+      "AppKeyShowStepBeads": 10004
+    },
     "targetPlatforms": [
       "emery",
       "basalt",
@@ -27,5 +35,7 @@
     ],
     "sdkVersion": "3"
   },
-  "dependencies": {}
+  "dependencies": {
+    "pebble-clay": "^1.0.0"
+  }
 }

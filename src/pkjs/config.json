@@ -1,0 +1,136 @@
+[
+  {
+    "type": "heading",
+    "defaultValue": "Pulsar 1970 Configuration"
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Operating Mode"
+      },
+      {
+        "type": "radiogroup",
+        "messageKey": "AppKeyOperatingMode",
+        "label": "Operating Mode",
+        "defaultValue": 0,
+        "options": [
+          {
+            "label": "Always-On",
+            "value": 0
+          },
+          {
+            "label": "Stealth (Push-to-Wake 4s)",
+            "value": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Display & Color"
+      },
+      {
+        "type": "select",
+        "messageKey": "AppKeyColorway",
+        "label": "LED Colorway",
+        "defaultValue": 0,
+        "options": [
+          {
+            "label": "Ruby Red (GaAsP 1972)",
+            "value": 0
+          },
+          {
+            "label": "Prototype Green (GaP 1975)",
+            "value": 1
+          },
+          {
+            "label": "Amber Gold (HP-01 Style)",
+            "value": 2
+          },
+          {
+            "label": "Cobalt Blue",
+            "value": 3
+          }
+        ]
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyShowStepBeads",
+        "label": "Show 10-Dot Step Progress",
+        "defaultValue": true
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Interaction & Motion"
+      },
+      {
+        "type": "select",
+        "messageKey": "AppKeyFlickAction",
+        "label": "Wrist Flick / Tap Action",
+        "defaultValue": 0,
+        "options": [
+          {
+            "label": "Cycle All (Time -> Sec -> Date -> Steps)",
+            "value": 0
+          },
+          {
+            "label": "Live Seconds Counter",
+            "value": 1
+          },
+          {
+            "label": "Date (Month / Day)",
+            "value": 2
+          },
+          {
+            "label": "Daily Step Count",
+            "value": 3
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Vibration Alerts"
+      },
+      {
+        "type": "select",
+        "messageKey": "AppKeyHourlyVibe",
+        "label": "Hourly Chime",
+        "defaultValue": 0,
+        "options": [
+          {
+            "label": "Off",
+            "value": 0
+          },
+          {
+            "label": "Single Pulse",
+            "value": 1
+          },
+          {
+            "label": "Double Pulse",
+            "value": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "submit",
+    "defaultValue": "Save Settings"
+  }
+]
