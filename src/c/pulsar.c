@@ -17,12 +17,12 @@
  */
 
 #if defined(PBL_PLATFORM_EMERY)
-  #define DOT_RADIUS        3
+  #define DOT_RADIUS        2
   #define DOT_SPACING_X     7
   #define DOT_SPACING_Y     8
-  #define DIGIT_GAP         6
-  #define COLON_GAP         12
-  #define TOP_MARGIN        70
+  #define DIGIT_GAP         10
+  #define COLON_GAP         16
+  #define TOP_MARGIN        66
   #define HEADER_FONT       FONT_KEY_GOTHIC_18_BOLD
   #define FOOTER_FONT       FONT_KEY_GOTHIC_14_BOLD
   #define INDICATOR_RADIUS  2
@@ -30,9 +30,9 @@
   #define DOT_RADIUS        2
   #define DOT_SPACING_X     5
   #define DOT_SPACING_Y     7
-  #define DIGIT_GAP         5
-  #define COLON_GAP         10
-  #define TOP_MARGIN        48
+  #define DIGIT_GAP         7
+  #define COLON_GAP         12
+  #define TOP_MARGIN        44
   #define HEADER_FONT       FONT_KEY_GOTHIC_14_BOLD
   #define FOOTER_FONT       FONT_KEY_GOTHIC_14
   #define INDICATOR_RADIUS  1
@@ -117,6 +117,9 @@ typedef struct {
   GColor lit;
   GColor ghost;
   GColor accent;
+  GColor outer_bg;
+  GColor inner_bg;
+  GColor text_outer;
 } Colorway;
 
 static const Colorway PALETTES[NUM_COLORWAYS] = {
@@ -124,66 +127,102 @@ static const Colorway PALETTES[NUM_COLORWAYS] = {
 #if defined(PBL_COLOR)
     .lit = GColorSunsetOrange,
     .ghost = GColorBulgarianRose,
-    .accent = GColorSunsetOrange
+    .accent = GColorSunsetOrange,
+    .outer_bg = GColorBulgarianRose,
+    .inner_bg = GColorBlack,
+    .text_outer = GColorSunsetOrange
 #else
     .lit = GColorWhite,
     .ghost = GColorBlack,
-    .accent = GColorWhite
+    .accent = GColorWhite,
+    .outer_bg = GColorBlack,
+    .inner_bg = GColorBlack,
+    .text_outer = GColorWhite
 #endif
   },
   [COLORWAY_DEEP_RED] = {
 #if defined(PBL_COLOR)
     .lit = GColorRed,
     .ghost = GColorBulgarianRose,
-    .accent = GColorDarkCandyAppleRed
+    .accent = GColorDarkCandyAppleRed,
+    .outer_bg = GColorBulgarianRose,
+    .inner_bg = GColorBlack,
+    .text_outer = GColorDarkCandyAppleRed
 #else
     .lit = GColorWhite,
     .ghost = GColorBlack,
-    .accent = GColorWhite
+    .accent = GColorWhite,
+    .outer_bg = GColorBlack,
+    .inner_bg = GColorBlack,
+    .text_outer = GColorWhite
 #endif
   },
   [COLORWAY_PROTOTYPE_GREEN] = {
 #if defined(PBL_COLOR)
     .lit = GColorMintGreen,
     .ghost = GColorDarkGreen,
-    .accent = GColorIslamicGreen
+    .accent = GColorIslamicGreen,
+    .outer_bg = GColorDarkGreen,
+    .inner_bg = GColorBlack,
+    .text_outer = GColorMintGreen
 #else
     .lit = GColorWhite,
     .ghost = GColorBlack,
-    .accent = GColorWhite
+    .accent = GColorWhite,
+    .outer_bg = GColorBlack,
+    .inner_bg = GColorBlack,
+    .text_outer = GColorWhite
 #endif
   },
   [COLORWAY_AMBER_GOLD] = {
 #if defined(PBL_COLOR)
     .lit = GColorChromeYellow,
-    .ghost = GColorBulgarianRose,
-    .accent = GColorWindsorTan
+    .ghost = GColorWindsorTan,
+    .accent = GColorWindsorTan,
+    .outer_bg = GColorWindsorTan,
+    .inner_bg = GColorBlack,
+    .text_outer = GColorChromeYellow
 #else
     .lit = GColorWhite,
     .ghost = GColorBlack,
-    .accent = GColorWhite
+    .accent = GColorWhite,
+    .outer_bg = GColorBlack,
+    .inner_bg = GColorBlack,
+    .text_outer = GColorWhite
 #endif
   },
   [COLORWAY_COBALT_BLUE] = {
 #if defined(PBL_COLOR)
     .lit = GColorElectricUltramarine,
     .ghost = GColorOxfordBlue,
-    .accent = GColorVividCerulean
+    .accent = GColorVividCerulean,
+    .outer_bg = GColorOxfordBlue,
+    .inner_bg = GColorBlack,
+    .text_outer = GColorElectricUltramarine
 #else
     .lit = GColorWhite,
     .ghost = GColorBlack,
-    .accent = GColorWhite
+    .accent = GColorWhite,
+    .outer_bg = GColorBlack,
+    .inner_bg = GColorBlack,
+    .text_outer = GColorWhite
 #endif
   },
   [COLORWAY_LUNAR_WHITE] = {
 #if defined(PBL_COLOR)
     .lit = GColorWhite,
     .ghost = GColorDarkGray,
-    .accent = GColorLightGray
+    .accent = GColorLightGray,
+    .outer_bg = GColorBlack,
+    .inner_bg = GColorBlack,
+    .text_outer = GColorLightGray
 #else
     .lit = GColorWhite,
     .ghost = GColorBlack,
-    .accent = GColorWhite
+    .accent = GColorWhite,
+    .outer_bg = GColorBlack,
+    .inner_bg = GColorBlack,
+    .text_outer = GColorWhite
 #endif
   }
 };
@@ -324,7 +363,7 @@ static void health_handler(HealthEventType event, void *context) {
 static void draw_matrix_digit(GContext *ctx, int x_offset, int y_offset, int digit_index, const Colorway *palette, bool is_active, int bounds_w) {
   if (digit_index < 0 || digit_index > 14) digit_index = 10;
   
-  int slant_scale = (bounds_w > 180) ? 4 : 3;
+  int slant_scale = (bounds_w > 180) ? 3 : 2;
   
   for (int r = 0; r < DIGIT_HEIGHT; r++) {
     uint8_t row_bits = FONT_5X7[digit_index][r];
@@ -375,8 +414,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   const Colorway *palette = &PALETTES[s_colorway % NUM_COLORWAYS];
   bool is_active = (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake;
   
-  // 1. Black Dial / Bezel Background
-  graphics_context_set_fill_color(ctx, GColorBlack);
+  // 1. Outer Bezel / Dial Background (Themed Ruby Mask)
+  graphics_context_set_fill_color(ctx, palette->outer_bg);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
   
   // 2. Dynamic Space-Age Header OUTSIDE the border at Top
@@ -393,9 +432,9 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     }
   }
 
-  int header_y = bounds.size.w > 180 ? 12 : 4;
+  int header_y = bounds.size.w > 180 ? 10 : 4;
   int header_h = bounds.size.w > 180 ? 24 : 20;
-  graphics_context_set_text_color(ctx, palette->accent);
+  graphics_context_set_text_color(ctx, palette->text_outer);
   graphics_draw_text(ctx, header_text,
                      fonts_get_system_font(HEADER_FONT),
                      GRect(0, header_y, bounds.size.w, header_h),
@@ -403,10 +442,13 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
                      GTextAlignmentCenter,
                      NULL);
 
-  // 3. Central Cushion Bezel / Ruby Window Border (Frames only LED Time & Beads)
-  GRect frame_rect = bounds.size.w > 180 ? GRect(10, 42, 180, 142) : GRect(8, 26, 128, 110);
+  // 3. Central Cushion Bezel / Ruby Window (Pure Black Glass with Luminous Outline)
+  GRect frame_rect = bounds.size.w > 180 ? GRect(10, 38, 180, 150) : GRect(8, 26, 128, 114);
   int frame_radius = bounds.size.w > 180 ? 12 : 8;
-  graphics_context_set_stroke_color(ctx, palette->ghost);
+  graphics_context_set_fill_color(ctx, palette->inner_bg);
+  graphics_fill_rect(ctx, frame_rect, frame_radius, GCornersAll);
+
+  graphics_context_set_stroke_color(ctx, palette->accent);
   graphics_context_set_stroke_width(ctx, 1);
   graphics_draw_round_rect(ctx, frame_rect, frame_radius);
 
@@ -427,7 +469,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     int s4 = (clamped_steps / 10) % 10;
     int s5 = clamped_steps % 10;
 
-    int slant_scale = (bounds.size.w > 180) ? 4 : 3;
+    int slant_scale = (bounds.size.w > 180) ? 3 : 2;
     int max_slant = s_italic_slant ? slant_scale : 0;
     int step_gap = bounds.size.w > 180 ? 4 : 3;
     int total_5_width = (5 * digit_span_x) + (4 * step_gap) + max_slant;
@@ -496,7 +538,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
       }
     }
 
-    int slant_scale = (bounds.size.w > 180) ? 4 : 3;
+    int slant_scale = (bounds.size.w > 180) ? 3 : 2;
     int max_slant = s_italic_slant ? slant_scale : 0;
     int total_width = (digit_span_x * 4) + (DIGIT_GAP * 2) + COLON_GAP + max_slant;
     int start_x = (bounds.size.w - total_width) / 2;
@@ -546,7 +588,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   draw_step_beads(ctx, bounds, palette, steps);
   
   // 6. Status Indicators (Left: BT, Right: Battery - inside bottom of window)
-  int indicator_y = bounds.size.w > 180 ? 166 : 124;
+  int indicator_y = bounds.size.w > 180 ? 170 : 126;
   if (!s_bluetooth_connected) {
     graphics_context_set_fill_color(ctx, palette->lit);
     graphics_fill_circle(ctx, GPoint(bounds.size.w / 4, indicator_y), INDICATOR_RADIUS);
@@ -578,7 +620,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     
     int footer_y = bounds.size.w > 180 ? 194 : 144;
     int footer_h = bounds.size.w > 180 ? 22 : 18;
-    graphics_context_set_text_color(ctx, palette->ghost);
+    graphics_context_set_text_color(ctx, palette->text_outer);
     graphics_draw_text(ctx, footer_text,
                        fonts_get_system_font(FOOTER_FONT),
                        GRect(0, footer_y, bounds.size.w, footer_h),
