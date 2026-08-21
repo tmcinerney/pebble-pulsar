@@ -1,6 +1,7 @@
 {
   "name": "pebble-pulsar",
   "author": "Travers McInerney",
+  "version": "1.0.0",
   "versionLabel": "1.0.0",
   "keywords": [
     "watchface",

@@ -1,9 +1,14 @@
-# Pebble Build Artifacts
+# Pebble & WAF Build Artifacts
 build/
 .waf*
+.lock-waf*
 *.pbw
 *.elf
 *.bin
+
+# Nix / Devenv
+.devenv/
+.devenv.flake.nix
 
 # OS & Editor Files
 .DS_Store

@@ -269,7 +269,7 @@ static void init(void) {
 static void deinit(void) {
     battery_state_service_unsubscribe();
     connection_service_unsubscribe();
-    accel_tap_service_unregister();
+    accel_tap_service_unsubscribe();
     tick_timer_service_unsubscribe();
     if (s_wake_timer) {
         app_timer_cancel(s_wake_timer);
