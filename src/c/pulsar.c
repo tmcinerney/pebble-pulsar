@@ -14,20 +14,20 @@
  */
 
 #if defined(PBL_PLATFORM_EMERY)
-  #define DOT_RADIUS        3
-  #define DOT_SPACING       8
-  #define DIGIT_GAP         6
-  #define COLON_GAP         16
-  #define TOP_MARGIN        78
+  #define DOT_RADIUS        2
+  #define DOT_SPACING       6
+  #define DIGIT_GAP         8
+  #define COLON_GAP         28
+  #define TOP_MARGIN        92
   #define HEADER_FONT       FONT_KEY_GOTHIC_18_BOLD
   #define FOOTER_FONT       FONT_KEY_GOTHIC_14
   #define INDICATOR_RADIUS  2
 #else // Basalt, Diorite, Aplite (144x168)
   #define DOT_RADIUS        2
-  #define DOT_SPACING       6
-  #define DIGIT_GAP         4
-  #define COLON_GAP         12
-  #define TOP_MARGIN        58
+  #define DOT_SPACING       5
+  #define DIGIT_GAP         5
+  #define COLON_GAP         20
+  #define TOP_MARGIN        66
   #define HEADER_FONT       FONT_KEY_GOTHIC_14_BOLD
   #define FOOTER_FONT       FONT_KEY_GOTHIC_14
   #define INDICATOR_RADIUS  1
@@ -40,22 +40,22 @@
 static Window *s_main_window;
 static Layer *s_canvas_layer;
 static AppTimer *s_date_timer = NULL;
-static bool s_show_date = false;  // False = Time Mode (always on), True = Pulsar P3 Date Mode
+static bool s_show_date = false;  // False = Time Mode (HH:MM), True = Date Mode (MM:DD)
 static bool s_bluetooth_connected = true;
 static int s_battery_level = 100;
 
-// Authentic 1970s GaAsP 5x7 LED Dot Matrix Font (0-9, Blank)
+// Authentic 1970s Hamilton Pulsar Rigid 5x7 GaAsP LED Matrix Font (0-9, Blank)
 static const uint8_t FONT_5X7[11][7] = {
-    {0x0E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E}, // 0
-    {0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E}, // 1
-    {0x0E, 0x11, 0x01, 0x06, 0x08, 0x10, 0x1F}, // 2
-    {0x1E, 0x01, 0x01, 0x0E, 0x01, 0x01, 0x1E}, // 3
-    {0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02}, // 4
-    {0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E}, // 5
-    {0x06, 0x08, 0x10, 0x1E, 0x11, 0x11, 0x0E}, // 6
-    {0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08}, // 7
-    {0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E}, // 8
-    {0x0E, 0x11, 0x11, 0x0F, 0x01, 0x02, 0x0C}, // 9
+    {0x1F, 0x11, 0x11, 0x11, 0x11, 0x11, 0x1F}, // 0 - Classic rigid rectangular frame
+    {0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E}, // 1 - Clean centered digital 1
+    {0x1F, 0x01, 0x01, 0x1F, 0x10, 0x10, 0x1F}, // 2 - Space-age block 2
+    {0x1F, 0x01, 0x01, 0x1F, 0x01, 0x01, 0x1F}, // 3 - Space-age block 3
+    {0x11, 0x11, 0x11, 0x1F, 0x01, 0x01, 0x01}, // 4 - Classic digital 4
+    {0x1F, 0x10, 0x10, 0x1F, 0x01, 0x01, 0x1F}, // 5 - Space-age block 5
+    {0x1F, 0x10, 0x10, 0x1F, 0x11, 0x11, 0x1F}, // 6 - Space-age block 6
+    {0x1F, 0x01, 0x01, 0x02, 0x04, 0x04, 0x04}, // 7 - Clean digital 7 with centered stem
+    {0x1F, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x1F}, // 8 - Space-age block 8
+    {0x1F, 0x11, 0x11, 0x1F, 0x01, 0x01, 0x1F}, // 9 - Space-age block 9
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}  // 10 = Blank
 };
 
@@ -108,7 +108,7 @@ static void draw_matrix_digit(GContext *ctx, int x_offset, int y_offset, int dig
             } else {
                 // Subtle unlit ghost LED die visible under the ruby crystal
                 graphics_context_set_fill_color(ctx, unlit_color);
-                graphics_fill_circle(ctx, GPoint(dot_x, dot_y), (DOT_RADIUS > 2) ? (DOT_RADIUS - 1) : 1);
+                graphics_fill_circle(ctx, GPoint(dot_x, dot_y), 1);
             }
         }
     }
@@ -125,14 +125,14 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
 #if defined(PBL_PLATFORM_EMERY)
     graphics_context_set_stroke_color(ctx, GColorBulgarianRose);
     graphics_context_set_stroke_width(ctx, 2);
-    graphics_draw_round_rect(ctx, grect_inset(bounds, GEdgeInsets(4)), 8);
+    graphics_draw_round_rect(ctx, grect_inset(bounds, GEdgeInsets(6)), 12);
 #endif
 
     // 3. Vintage "P U L S A R" Space-Age Header
     graphics_context_set_text_color(ctx, GColorDarkCandyAppleRed);
     graphics_draw_text(ctx, "P U L S A R",
                        fonts_get_system_font(HEADER_FONT),
-                       GRect(0, bounds.size.h / 14, bounds.size.w, 24),
+                       GRect(0, bounds.size.h / 9, bounds.size.w, 24),
                        GTextOverflowModeWordWrap,
                        GTextAlignmentCenter,
                        NULL);
@@ -183,7 +183,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     draw_matrix_digit(ctx, d3_x, start_y, d3);
     draw_matrix_digit(ctx, d4_x, start_y, d4);
     
-    // Colon Dots (Equidistant between Digit 2 and Digit 3)
+    // Colon Dots (Centered with generous margin between Digit 2 and Digit 3)
     int d2_right = d2_x + digit_span;
     int colon_x = d2_right + (COLON_GAP / 2);
     int colon_y1 = start_y + (DOT_SPACING * 2);
