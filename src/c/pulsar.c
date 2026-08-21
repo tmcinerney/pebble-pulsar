@@ -22,9 +22,7 @@
   #define DOT_SPACING_Y     8
   #define DIGIT_GAP         10
   #define COLON_GAP         16
-  #define TOP_MARGIN        68
-  #define HEADER_FONT       FONT_KEY_GOTHIC_14_BOLD
-  #define FOOTER_FONT       FONT_KEY_GOTHIC_14
+  #define TOP_MARGIN        76
   #define INDICATOR_RADIUS  2
 #else // Basalt, Diorite, Aplite, Chalk (144x168)
   #define DOT_RADIUS        2
@@ -32,9 +30,7 @@
   #define DOT_SPACING_Y     7
   #define DIGIT_GAP         7
   #define COLON_GAP         12
-  #define TOP_MARGIN        48
-  #define HEADER_FONT       FONT_KEY_GOTHIC_14_BOLD
-  #define FOOTER_FONT       FONT_KEY_GOTHIC_14
+  #define TOP_MARGIN        54
   #define INDICATOR_RADIUS  1
 #endif
 
@@ -386,6 +382,103 @@ static void draw_matrix_digit(GContext *ctx, int x_offset, int y_offset, int dig
   }
 }
 
+#define GLYPH_3X5(r0, r1, r2, r3, r4) \
+  (((r0) << 12) | ((r1) << 9) | ((r2) << 6) | ((r3) << 3) | (r4))
+
+static uint16_t get_glyph_3x5(char c) {
+  if (c >= 'a' && c <= 'z') c = c - 'a' + 'A';
+  switch (c) {
+    case 'A': return GLYPH_3X5(2, 5, 7, 5, 5);
+    case 'B': return GLYPH_3X5(6, 5, 6, 5, 6);
+    case 'C': return GLYPH_3X5(3, 4, 4, 4, 3);
+    case 'D': return GLYPH_3X5(6, 5, 5, 5, 6);
+    case 'E': return GLYPH_3X5(7, 4, 6, 4, 7);
+    case 'F': return GLYPH_3X5(7, 4, 6, 4, 4);
+    case 'G': return GLYPH_3X5(3, 4, 5, 5, 3);
+    case 'H': return GLYPH_3X5(5, 5, 7, 5, 5);
+    case 'I': return GLYPH_3X5(7, 2, 2, 2, 7);
+    case 'J': return GLYPH_3X5(1, 1, 1, 5, 2);
+    case 'K': return GLYPH_3X5(5, 6, 4, 6, 5);
+    case 'L': return GLYPH_3X5(4, 4, 4, 4, 7);
+    case 'M': return GLYPH_3X5(5, 7, 5, 5, 5);
+    case 'N': return GLYPH_3X5(5, 6, 5, 3, 5);
+    case 'O': return GLYPH_3X5(7, 5, 5, 5, 7);
+    case 'P': return GLYPH_3X5(6, 5, 6, 4, 4);
+    case 'Q': return GLYPH_3X5(7, 5, 5, 6, 3);
+    case 'R': return GLYPH_3X5(6, 5, 6, 5, 5);
+    case 'S': return GLYPH_3X5(7, 4, 7, 1, 7);
+    case 'T': return GLYPH_3X5(7, 2, 2, 2, 2);
+    case 'U': return GLYPH_3X5(5, 5, 5, 5, 7);
+    case 'V': return GLYPH_3X5(5, 5, 5, 5, 2);
+    case 'W': return GLYPH_3X5(5, 5, 5, 7, 5);
+    case 'X': return GLYPH_3X5(5, 5, 2, 5, 5);
+    case 'Y': return GLYPH_3X5(5, 5, 2, 2, 2);
+    case 'Z': return GLYPH_3X5(7, 1, 2, 4, 7);
+    case '/': return GLYPH_3X5(1, 1, 2, 4, 4);
+    case '-': return GLYPH_3X5(0, 0, 7, 0, 0);
+    case '.': return GLYPH_3X5(0, 0, 0, 0, 2);
+    case ':': return GLYPH_3X5(0, 2, 0, 2, 0);
+    case '%': return GLYPH_3X5(5, 1, 2, 4, 5);
+    case '0': return GLYPH_3X5(2, 5, 5, 5, 2);
+    case '1': return GLYPH_3X5(2, 2, 2, 2, 2);
+    case '2': return GLYPH_3X5(7, 1, 7, 4, 7);
+    case '3': return GLYPH_3X5(7, 1, 3, 1, 7);
+    case '4': return GLYPH_3X5(5, 5, 7, 1, 1);
+    case '5': return GLYPH_3X5(7, 4, 7, 1, 6);
+    case '6': return GLYPH_3X5(7, 4, 7, 5, 7);
+    case '7': return GLYPH_3X5(7, 1, 2, 2, 2);
+    case '8': return GLYPH_3X5(7, 5, 7, 5, 7);
+    case '9': return GLYPH_3X5(7, 5, 7, 1, 7);
+    default: return 0;
+  }
+}
+
+static void draw_micro_text(GContext *ctx, const char *text, int center_y, GColor color, int bounds_w, int scale, int letter_spacing, int word_spacing) {
+  int len = strlen(text);
+  if (len == 0) return;
+
+  int glyph_w = 3 * scale;
+  int glyph_h = 5 * scale;
+  int total_w = 0;
+
+  for (int i = 0; i < len; i++) {
+    if (text[i] == ' ') {
+      total_w += word_spacing;
+    } else {
+      total_w += glyph_w;
+      if (i < len - 1 && text[i+1] != ' ') {
+        total_w += letter_spacing;
+      }
+    }
+  }
+
+  int cur_x = (bounds_w - total_w) / 2;
+  int top_y = center_y - (glyph_h / 2);
+
+  graphics_context_set_fill_color(ctx, color);
+
+  for (int i = 0; i < len; i++) {
+    char c = text[i];
+    if (c == ' ') {
+      cur_x += word_spacing;
+      continue;
+    }
+    uint16_t glyph = get_glyph_3x5(c);
+    for (int r = 0; r < 5; r++) {
+      for (int col = 0; col < 3; col++) {
+        int bit = 14 - (r * 3 + col);
+        if ((glyph >> bit) & 1) {
+          graphics_fill_rect(ctx, GRect(cur_x + (col * scale), top_y + (r * scale), scale, scale), 0, GCornerNone);
+        }
+      }
+    }
+    cur_x += glyph_w;
+    if (i < len - 1 && text[i+1] != ' ') {
+      cur_x += letter_spacing;
+    }
+  }
+}
+
 static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette, int steps) {
   if (!s_show_step_beads) return;
   
@@ -394,7 +487,7 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
   int bead_radius = bounds.size.w > 180 ? 2 : 1;
   int total_bead_width = (num_beads - 1) * bead_spacing;
   int start_x = (bounds.size.w - total_bead_width) / 2;
-  int bead_y = bounds.size.w > 180 ? 168 : 124;
+  int bead_y = bounds.size.w > 180 ? 158 : 118;
   
   bool is_active = (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake;
   int goal = s_step_goal > 0 ? s_step_goal : 10000;
@@ -410,26 +503,6 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
   }
 }
 
-static void draw_ghost_matrix_row(GContext *ctx, int start_x, int y_offset, const Colorway *palette, int digit_span_x, int digit_gap, int colon_gap, int bounds_w) {
-  int d1_x = start_x;
-  int d2_x = d1_x + digit_span_x + digit_gap;
-  int d3_x = d2_x + digit_span_x + colon_gap;
-  int d4_x = d3_x + digit_span_x + digit_gap;
-
-  draw_matrix_digit(ctx, d1_x, y_offset, 0, palette, false, bounds_w);
-  draw_matrix_digit(ctx, d2_x, y_offset, 0, palette, false, bounds_w);
-  draw_matrix_digit(ctx, d3_x, y_offset, 0, palette, false, bounds_w);
-  draw_matrix_digit(ctx, d4_x, y_offset, 0, palette, false, bounds_w);
-
-  int d2_right = d2_x + digit_span_x;
-  int colon_base_x = d2_right + (colon_gap / 2);
-  int colon_y1 = y_offset + (DOT_SPACING_Y * 2);
-  int colon_y2 = y_offset + (DOT_SPACING_Y * 4);
-  graphics_context_set_fill_color(ctx, palette->ghost);
-  graphics_fill_circle(ctx, GPoint(colon_base_x, colon_y1), 1);
-  graphics_fill_circle(ctx, GPoint(colon_base_x, colon_y2), 1);
-}
-
 static void canvas_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   const Colorway *palette = &PALETTES[s_colorway % NUM_COLORWAYS];
@@ -441,7 +514,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   
   // 2. Vintage Ruby Cushion Mask (Surrounds Text and LED Display)
   GRect outer_cushion = bounds.size.w > 180 ? GRect(6, 6, 188, 216) : GRect(4, 4, 136, 160);
-  int outer_radius = bounds.size.w > 180 ? 12 : 8;
+  int outer_radius = bounds.size.w > 180 ? 14 : 10;
   graphics_context_set_fill_color(ctx, palette->outer_bg);
   graphics_fill_rect(ctx, outer_cushion, outer_radius, GCornersAll);
   
@@ -449,32 +522,29 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_stroke_width(ctx, 1);
   graphics_draw_round_rect(ctx, outer_cushion, outer_radius);
 
-  // 3. Dynamic Space-Age Header at Top of Cushion Window
-  const char *header_text = "P U L S A R";
+  // 3. Dynamic Space-Age Header at Top of Cushion Window (Symmetrical 11px padding)
+  const char *header_text = "PULSAR";
   if (is_active) {
     if (s_display_mode == DISPLAY_MODE_SECONDS) {
-      header_text = "S E C O N D S";
+      header_text = "SECONDS";
     } else if (s_display_mode == DISPLAY_MODE_DATE) {
-      header_text = "D A T E";
+      header_text = "DATE";
     } else if (s_display_mode == DISPLAY_MODE_STEPS) {
-      header_text = "S T E P S";
+      header_text = "STEPS";
     } else if (s_display_mode == DISPLAY_MODE_BATTERY) {
-      header_text = "B A T T E R Y";
+      header_text = "BATTERY";
     }
   }
 
-  int header_y = bounds.size.w > 180 ? 10 : 6;
-  int header_h = bounds.size.w > 180 ? 16 : 14;
-  graphics_context_set_text_color(ctx, palette->text_outer);
-  graphics_draw_text(ctx, header_text,
-                     fonts_get_system_font(HEADER_FONT),
-                     GRect(0, header_y, bounds.size.w, header_h),
-                     GTextOverflowModeWordWrap,
-                     GTextAlignmentCenter,
-                     NULL);
+  int header_center_y = bounds.size.w > 180 ? 22 : 16;
+  int header_scale = bounds.size.w > 180 ? 2 : 1;
+  int header_letter_spacing = bounds.size.w > 180 ? 6 : 4;
+  int header_word_spacing = bounds.size.w > 180 ? 10 : 6;
+  draw_micro_text(ctx, header_text, header_center_y, palette->text_outer, bounds.size.w,
+                  header_scale, header_letter_spacing, header_word_spacing);
 
-  // 4. Central Inner Obsidian Display Aperture (Square-Cornered Rectangle)
-  GRect frame_rect = bounds.size.w > 180 ? GRect(12, 28, 176, 154) : GRect(8, 20, 128, 114);
+  // 4. Central Inner Obsidian Display Aperture (Square-Cornered Rectangle with Symmetrical 32px Margins)
+  GRect frame_rect = bounds.size.w > 180 ? GRect(12, 38, 176, 152) : GRect(8, 28, 128, 112);
   graphics_context_set_fill_color(ctx, palette->inner_bg);
   graphics_fill_rect(ctx, frame_rect, 0, GCornerNone);
 
@@ -568,11 +638,6 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     int max_slant = s_italic_slant ? slant_scale : 0;
     int total_width = (digit_span_x * 4) + (DIGIT_GAP * 2) + COLON_GAP + max_slant;
     int start_x = (bounds.size.w - total_width) / 2;
-    
-    // Multi-tier Ghost Matrix Rows (Above and Below Active Line)
-    int ghost_spacing = bounds.size.w > 180 ? 36 : 26;
-    draw_ghost_matrix_row(ctx, start_x, start_y - ghost_spacing, palette, digit_span_x, DIGIT_GAP, COLON_GAP, bounds.size.w);
-    draw_ghost_matrix_row(ctx, start_x, start_y + ghost_spacing, palette, digit_span_x, DIGIT_GAP, COLON_GAP, bounds.size.w);
 
     int d1_x = start_x;
     int d2_x = d1_x + digit_span_x + DIGIT_GAP;
@@ -619,7 +684,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   draw_step_beads(ctx, bounds, palette, steps);
   
   // 6. Status Indicators (Left: BT, Right: Battery - inside bottom of window)
-  int indicator_y = bounds.size.w > 180 ? 168 : 124;
+  int indicator_y = bounds.size.w > 180 ? 174 : 128;
   if (!s_bluetooth_connected) {
     graphics_context_set_fill_color(ctx, palette->lit);
     graphics_fill_circle(ctx, GPoint(bounds.size.w / 4, indicator_y), INDICATOR_RADIUS);
@@ -630,7 +695,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     graphics_fill_circle(ctx, GPoint((bounds.size.w * 3) / 4, indicator_y), INDICATOR_RADIUS);
   }
 
-  // 7. Vintage Footer OUTSIDE the border at Bottom
+  // 7. Vintage Footer OUTSIDE the border at Bottom (Symmetrical 10px padding)
   if (s_footer_style != FOOTER_STYLE_NONE) {
     const char *footer_text = "TIME COMPUTER";
     if (s_display_mode == DISPLAY_MODE_STEPS && is_active) {
@@ -649,15 +714,12 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
       }
     }
     
-    int footer_y = bounds.size.w > 180 ? 192 : 142;
-    int footer_h = bounds.size.w > 180 ? 16 : 14;
-    graphics_context_set_text_color(ctx, palette->text_outer);
-    graphics_draw_text(ctx, footer_text,
-                       fonts_get_system_font(FOOTER_FONT),
-                       GRect(0, footer_y, bounds.size.w, footer_h),
-                       GTextOverflowModeWordWrap,
-                       GTextAlignmentCenter,
-                       NULL);
+    int footer_center_y = bounds.size.w > 180 ? 207 : 152;
+    int footer_scale = bounds.size.w > 180 ? 2 : 1;
+    int footer_letter_spacing = bounds.size.w > 180 ? 2 : 1;
+    int footer_word_spacing = bounds.size.w > 180 ? 8 : 4;
+    draw_micro_text(ctx, footer_text, footer_center_y, palette->text_outer, bounds.size.w,
+                    footer_scale, footer_letter_spacing, footer_word_spacing);
   }
 }
 
