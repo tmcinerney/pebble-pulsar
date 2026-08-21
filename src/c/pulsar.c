@@ -414,11 +414,21 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   const Colorway *palette = &PALETTES[s_colorway % NUM_COLORWAYS];
   bool is_active = (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake;
   
-  // 1. Outer Bezel / Dial Background (Themed Ruby Mask)
-  graphics_context_set_fill_color(ctx, palette->outer_bg);
+  // 1. Outermost Watch Dial Bezel (Pure Black Edge)
+  graphics_context_set_fill_color(ctx, GColorBlack);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
   
-  // 2. Dynamic Space-Age Header OUTSIDE the border at Top
+  // 2. Vintage Ruby Cushion Mask (Surrounds Text and LED Display)
+  GRect outer_cushion = bounds.size.w > 180 ? GRect(6, 6, 188, 216) : GRect(4, 4, 136, 160);
+  int outer_radius = bounds.size.w > 180 ? 14 : 10;
+  graphics_context_set_fill_color(ctx, palette->outer_bg);
+  graphics_fill_rect(ctx, outer_cushion, outer_radius, GCornersAll);
+  
+  graphics_context_set_stroke_color(ctx, palette->accent);
+  graphics_context_set_stroke_width(ctx, 1);
+  graphics_draw_round_rect(ctx, outer_cushion, outer_radius);
+
+  // 3. Dynamic Space-Age Header at Top of Cushion Window
   const char *header_text = "P U L S A R";
   if (is_active) {
     if (s_display_mode == DISPLAY_MODE_SECONDS) {
@@ -432,8 +442,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     }
   }
 
-  int header_y = bounds.size.w > 180 ? 10 : 4;
-  int header_h = bounds.size.w > 180 ? 24 : 20;
+  int header_y = bounds.size.w > 180 ? 14 : 8;
+  int header_h = bounds.size.w > 180 ? 24 : 18;
   graphics_context_set_text_color(ctx, palette->text_outer);
   graphics_draw_text(ctx, header_text,
                      fonts_get_system_font(HEADER_FONT),
@@ -442,17 +452,17 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
                      GTextAlignmentCenter,
                      NULL);
 
-  // 3. Central Cushion Bezel / Ruby Window (Pure Black Glass with Luminous Outline)
-  GRect frame_rect = bounds.size.w > 180 ? GRect(10, 38, 180, 150) : GRect(8, 26, 128, 114);
-  int frame_radius = bounds.size.w > 180 ? 12 : 8;
+  // 4. Central Inner Obsidian Display Aperture (Frames LED Digits & Progress Beads)
+  GRect frame_rect = bounds.size.w > 180 ? GRect(14, 44, 172, 132) : GRect(10, 30, 124, 100);
+  int frame_radius = bounds.size.w > 180 ? 10 : 6;
   graphics_context_set_fill_color(ctx, palette->inner_bg);
   graphics_fill_rect(ctx, frame_rect, frame_radius, GCornersAll);
 
-  graphics_context_set_stroke_color(ctx, palette->accent);
+  graphics_context_set_stroke_color(ctx, palette->ghost);
   graphics_context_set_stroke_width(ctx, 1);
   graphics_draw_round_rect(ctx, frame_rect, frame_radius);
 
-  // 4. Data Extraction
+  // 5. Data Extraction
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
   int steps = get_step_count();
@@ -618,7 +628,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
       }
     }
     
-    int footer_y = bounds.size.w > 180 ? 194 : 144;
+    int footer_y = bounds.size.w > 180 ? 186 : 138;
     int footer_h = bounds.size.w > 180 ? 22 : 18;
     graphics_context_set_text_color(ctx, palette->text_outer);
     graphics_draw_text(ctx, footer_text,
