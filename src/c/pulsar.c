@@ -240,19 +240,25 @@ static void trigger_display_change(int mode) {
 
 static void tap_handler(AccelAxisType axis, int32_t direction) {
   if (s_operating_mode == MODE_STEALTH) {
-    s_stealth_awake = true;
-    if (s_flick_action == FLICK_ACTION_CYCLE) {
-      s_display_mode = (s_display_mode + 1) % 5;
-    } else if (s_flick_action == FLICK_ACTION_SECONDS) {
-      s_display_mode = DISPLAY_MODE_SECONDS;
-    } else if (s_flick_action == FLICK_ACTION_DATE) {
-      s_display_mode = DISPLAY_MODE_DATE;
-    } else if (s_flick_action == FLICK_ACTION_STEPS) {
-      s_display_mode = DISPLAY_MODE_STEPS;
-    } else if (s_flick_action == FLICK_ACTION_BATTERY) {
-      s_display_mode = DISPLAY_MODE_BATTERY;
+    if (!s_stealth_awake) {
+      // First tap/flick: Wake up and illuminate TIME (or dedicated action)
+      s_stealth_awake = true;
+      if (s_flick_action == FLICK_ACTION_SECONDS) {
+        s_display_mode = DISPLAY_MODE_SECONDS;
+      } else if (s_flick_action == FLICK_ACTION_DATE) {
+        s_display_mode = DISPLAY_MODE_DATE;
+      } else if (s_flick_action == FLICK_ACTION_STEPS) {
+        s_display_mode = DISPLAY_MODE_STEPS;
+      } else if (s_flick_action == FLICK_ACTION_BATTERY) {
+        s_display_mode = DISPLAY_MODE_BATTERY;
+      } else {
+        s_display_mode = DISPLAY_MODE_TIME;
+      }
     } else {
-      s_display_mode = DISPLAY_MODE_TIME;
+      // Already awake: subsequent taps cycle through the modes
+      if (s_flick_action == FLICK_ACTION_CYCLE) {
+        s_display_mode = (s_display_mode + 1) % 5;
+      }
     }
     
     if (s_mode_timer) {
