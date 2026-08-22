@@ -33,12 +33,12 @@
     "items": [
       {
         "type": "heading",
-        "defaultValue": "Display & Color"
+        "defaultValue": "Display & Themes"
       },
       {
         "type": "select",
         "messageKey": "AppKeyColorway",
-        "label": "LED Colorway",
+        "label": "LED Colorway / Theme",
         "defaultValue": "0",
         "options": [
           {
@@ -64,6 +64,10 @@
           {
             "label": "Lunar White (High-Contrast)",
             "value": "5"
+          },
+          {
+            "label": "Inverted Paper (Black on White)",
+            "value": "6"
           }
         ]
       },
@@ -71,17 +75,17 @@
         "type": "toggle",
         "messageKey": "AppKeyItalicSlant",
         "label": "Vintage Italic Slant (1970s)",
-        "description": "Applies authentic 6-degree rightward italic slant to LED matrix digits.",
+        "description": "Applies authentic 12-degree rightward italic slant to LED matrix digits. Disable for upright rectangular blocks.",
         "defaultValue": true
       },
       {
         "type": "select",
-        "messageKey": "AppKeyFooterStyle",
-        "label": "Bezel Footer Text",
+        "messageKey": "AppKeyHeaderStyle",
+        "label": "Top Header Brand Text",
         "defaultValue": "0",
         "options": [
           {
-            "label": "TIME COMPUTER (1972 Hamilton Homage)",
+            "label": "PULSAR",
             "value": "0"
           },
           {
@@ -89,20 +93,75 @@
             "value": "1"
           },
           {
-            "label": "PULSAR",
+            "label": "SOLID STATE",
             "value": "2"
           },
           {
-            "label": "None (Minimal / Clean)",
+            "label": "None (Clean)",
             "value": "3"
           }
         ]
       },
       {
-        "type": "toggle",
-        "messageKey": "AppKeyShowStepBeads",
-        "label": "Show 10-Dot Step Progress",
-        "defaultValue": true
+        "type": "select",
+        "messageKey": "AppKeyFooterStyle",
+        "label": "Bottom Bezel Footer Text",
+        "defaultValue": "0",
+        "options": [
+          {
+            "label": "TIME COMPUTER (1972 Hamilton Homage)",
+            "value": "0"
+          },
+          {
+            "label": "SOLID STATE",
+            "value": "1"
+          },
+          {
+            "label": "HAMILTON",
+            "value": "2"
+          },
+          {
+            "label": "PULSAR",
+            "value": "3"
+          },
+          {
+            "label": "SWISS MADE",
+            "value": "4"
+          },
+          {
+            "label": "None (Clean)",
+            "value": "5"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "10-Dot Micro-LED Progress Bar"
+      },
+      {
+        "type": "select",
+        "messageKey": "AppKeyBeadMode",
+        "label": "Dot Meter Mode",
+        "defaultValue": "0",
+        "options": [
+          {
+            "label": "Daily Step Progress (0 to Goal)",
+            "value": "0"
+          },
+          {
+            "label": "Battery Level Meter (0% to 100%)",
+            "value": "1"
+          },
+          {
+            "label": "Disabled / Off",
+            "value": "2"
+          }
+        ]
       },
       {
         "type": "select",
@@ -139,6 +198,38 @@
     "items": [
       {
         "type": "heading",
+        "defaultValue": "Time & Date Format"
+      },
+      {
+        "type": "select",
+        "messageKey": "AppKeyDateFormat",
+        "label": "Date Display Format",
+        "defaultValue": "0",
+        "options": [
+          {
+            "label": "Month Day (MM DD)",
+            "value": "0"
+          },
+          {
+            "label": "Day Month (DD MM)",
+            "value": "1"
+          }
+        ]
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyLeadingZero",
+        "label": "Show Leading Zero on Hours (09:41 vs  9:41)",
+        "description": "Disable for authentic 1970s blank first digit during single-digit hours.",
+        "defaultValue": false
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
         "defaultValue": "Interaction & Motion"
       },
       {
@@ -156,7 +247,7 @@
             "value": "1"
           },
           {
-            "label": "Date (Month / Day)",
+            "label": "Date Display",
             "value": "2"
           },
           {
@@ -197,6 +288,13 @@
             "value": "2"
           }
         ]
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyBtVibe",
+        "label": "Bluetooth Disconnect Alert",
+        "description": "Vibrates with a double pulse when Bluetooth connection to phone is lost.",
+        "defaultValue": false
       }
     ]
   },

@@ -27,9 +27,14 @@
       "AppKeyColorway",
       "AppKeyFlickAction",
       "AppKeyHourlyVibe",
+      "AppKeyBtVibe",
+      "AppKeyBeadMode",
       "AppKeyShowStepBeads",
       "AppKeyItalicSlant",
+      "AppKeyHeaderStyle",
       "AppKeyFooterStyle",
+      "AppKeyDateFormat",
+      "AppKeyLeadingZero",
       "AppKeyStepGoal"
     ],
     "targetPlatforms": [

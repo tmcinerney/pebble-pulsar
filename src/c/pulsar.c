@@ -5,14 +5,13 @@
  * 
  * Inspired by the Pulsar P1 / P2 / P3 "Time Computer".
  * Features:
- * - Procedural GaAsP 5x7 Red Dot-Matrix LED digits.
+ * - Procedural GaAsP 5x7 Dot-Matrix LED digits.
  * - Unlit "ghost" LED dies rendered beneath the synthetic ruby crystal.
- * - Dynamic geometry scaling for Pebble Time 2 (Emery: 200x228) and Pebble Time (Basalt: 144x168).
- * - Multi-Mode Display Engine: Time, Live Seconds (:SS), Date (MM DD), Steps (08420).
- * - Clay Settings: Operating Mode (Always-On vs Stealth Push-to-Wake), Colorways, Flick Actions, Hourly Vibes, Step Beads.
- * - Dynamic Colorways: Ruby Red (1972), Prototype Green (1975), Amber Gold (HP-01), Cobalt Blue.
- * - 10-Dot Micro-LED Step Progress Bar.
- * - Hourly vibration chime.
+ * - Dynamic geometry scaling for Pebble Time 2 (Emery: 200x228) and Pebble Time / Pebble 2 (144x168).
+ * - Multi-Mode Display Engine: Time, Live Seconds (:SS), Date (MM DD / DD MM), Steps (08420), Battery (100%).
+ * - Clay Settings: Operating Mode, Themes (including Inverted Paper), Slant, Header/Footer, Bead Mode, Date Format, Vibrations.
+ * - 10-Dot Micro-LED Progress Bar (Steps vs Battery Meter vs Off).
+ * - Hourly chime & Bluetooth disconnect alert.
  * - Persistent storage & AppMessage settings listener.
  */
 
@@ -36,7 +35,7 @@
 
 #define DIGIT_WIDTH 5
 #define DIGIT_HEIGHT 7
-#define WAKE_DURATION_MS 6000
+#define WAKE_DURATION_MS 4000
 
 // Storage & Message Keys
 #define STORAGE_KEY_OPERATING_MODE   10000
@@ -47,6 +46,11 @@
 #define STORAGE_KEY_ITALIC_SLANT     10005
 #define STORAGE_KEY_FOOTER_STYLE     10006
 #define STORAGE_KEY_STEP_GOAL        10007
+#define STORAGE_KEY_HEADER_STYLE     10008
+#define STORAGE_KEY_DATE_FORMAT      10009
+#define STORAGE_KEY_LEADING_ZERO     10010
+#define STORAGE_KEY_BT_VIBE          10011
+#define STORAGE_KEY_BEAD_MODE        10012
 
 #ifndef MESSAGE_KEY_AppKeyOperatingMode
 #define MESSAGE_KEY_AppKeyOperatingMode   10000
@@ -57,6 +61,11 @@
 #define MESSAGE_KEY_AppKeyItalicSlant    10005
 #define MESSAGE_KEY_AppKeyFooterStyle    10006
 #define MESSAGE_KEY_AppKeyStepGoal       10007
+#define MESSAGE_KEY_AppKeyHeaderStyle    10008
+#define MESSAGE_KEY_AppKeyDateFormat     10009
+#define MESSAGE_KEY_AppKeyLeadingZero    10010
+#define MESSAGE_KEY_AppKeyBtVibe         10011
+#define MESSAGE_KEY_AppKeyBeadMode       10012
 #endif
 
 // Operating Modes
@@ -65,12 +74,35 @@ enum OperatingMode {
   MODE_STEALTH = 1
 };
 
+// Header Styles
+enum HeaderStyle {
+  HEADER_STYLE_PULSAR = 0,
+  HEADER_STYLE_HAMILTON = 1,
+  HEADER_STYLE_SOLID_STATE = 2,
+  HEADER_STYLE_NONE = 3
+};
+
 // Footer Styles
 enum FooterStyle {
   FOOTER_STYLE_TIME_COMPUTER = 0,
-  FOOTER_STYLE_HAMILTON = 1,
-  FOOTER_STYLE_PULSAR = 2,
-  FOOTER_STYLE_NONE = 3
+  FOOTER_STYLE_SOLID_STATE = 1,
+  FOOTER_STYLE_HAMILTON = 2,
+  FOOTER_STYLE_PULSAR = 3,
+  FOOTER_STYLE_SWISS = 4,
+  FOOTER_STYLE_NONE = 5
+};
+
+// Bead Modes
+enum BeadMode {
+  BEAD_MODE_STEPS = 0,
+  BEAD_MODE_BATTERY = 1,
+  BEAD_MODE_OFF = 2
+};
+
+// Date Formats
+enum DateFormat {
+  DATE_FORMAT_MD = 0, // Month Day
+  DATE_FORMAT_DM = 1  // Day Month
 };
 
 // Colorways
@@ -80,9 +112,10 @@ enum ColorwayId {
   COLORWAY_PROTOTYPE_GREEN = 2,
   COLORWAY_AMBER_GOLD = 3,
   COLORWAY_COBALT_BLUE = 4,
-  COLORWAY_LUNAR_WHITE = 5
+  COLORWAY_LUNAR_WHITE = 5,
+  COLORWAY_INVERTED_PAPER = 6
 };
-#define NUM_COLORWAYS 6
+#define NUM_COLORWAYS 7
 
 // Display Modes
 enum DisplayMode {
@@ -151,6 +184,14 @@ static Colorway get_current_palette(int colorway_index) {
       p.ghost = GColorDarkGray;
       p.accent = GColorLightGray;
       break;
+    case COLORWAY_INVERTED_PAPER:
+      p.outer_bg = GColorWhite;
+      p.inner_bg = GColorWhite;
+      p.text_outer = GColorBlack;
+      p.lit = GColorBlack;
+      p.ghost = GColorLightGray;
+      p.accent = GColorDarkGray;
+      break;
     case COLORWAY_VIBRANT_RUBY:
     default:
       p.lit = GColorRed;
@@ -159,12 +200,21 @@ static Colorway get_current_palette(int colorway_index) {
       break;
   }
 #else
-  p.lit = GColorWhite;
-  p.ghost = GColorBlack;
-  p.accent = GColorWhite;
-  p.outer_bg = GColorBlack;
-  p.inner_bg = GColorBlack;
-  p.text_outer = GColorWhite;
+  if (colorway_index == COLORWAY_INVERTED_PAPER) {
+    p.outer_bg = GColorWhite;
+    p.inner_bg = GColorWhite;
+    p.text_outer = GColorBlack;
+    p.lit = GColorBlack;
+    p.ghost = GColorWhite;
+    p.accent = GColorBlack;
+  } else {
+    p.lit = GColorWhite;
+    p.ghost = GColorBlack;
+    p.accent = GColorWhite;
+    p.outer_bg = GColorBlack;
+    p.inner_bg = GColorBlack;
+    p.text_outer = GColorWhite;
+  }
 #endif
   return p;
 }
@@ -180,9 +230,13 @@ static int s_operating_mode = MODE_ALWAYS_ON;
 static int s_colorway = COLORWAY_VIBRANT_RUBY;
 static int s_flick_action = FLICK_ACTION_CYCLE;
 static int s_hourly_vibe = HOURLY_VIBE_OFF;
-static bool s_show_step_beads = true;
+static bool s_bt_vibe = false;
+static int s_bead_mode = BEAD_MODE_STEPS;
 static bool s_italic_slant = true;
+static int s_header_style = HEADER_STYLE_PULSAR;
 static int s_footer_style = FOOTER_STYLE_TIME_COMPUTER;
+static int s_date_format = DATE_FORMAT_MD;
+static bool s_leading_zero = false;
 static int s_step_goal = 10000;
 
 static bool s_bluetooth_connected = true;
@@ -291,6 +345,9 @@ static void tap_handler(AccelAxisType axis, int32_t direction) {
 }
 
 static void bluetooth_callback(bool connected) {
+  if (s_bt_vibe && !connected && s_bluetooth_connected) {
+    vibes_double_pulse();
+  }
   s_bluetooth_connected = connected;
   layer_mark_dirty(s_canvas_layer);
 }
@@ -313,11 +370,11 @@ static void draw_matrix_digit_custom(GContext *ctx, int x_offset, int y_offset, 
                                      int spacing_x, int spacing_y, int dot_radius) {
   if (digit_index < 0 || digit_index > 14) digit_index = 10;
   
-  int slant_scale = (bounds_w > 180) ? 3 : 2;
+  int slant_scale = (bounds_w > 180) ? 7 : 5;
   
   for (int r = 0; r < DIGIT_HEIGHT; r++) {
     uint8_t row_bits = FONT_5X7[digit_index][r];
-    int slant_x = s_italic_slant ? (((DIGIT_HEIGHT - 1 - r) * slant_scale) / 6) : 0;
+    int slant_x = s_italic_slant ? (((DIGIT_HEIGHT - 1 - r) * slant_scale) / (DIGIT_HEIGHT - 1)) : 0;
     
     for (int c = 0; c < DIGIT_WIDTH; c++) {
       bool is_lit = is_active && ((row_bits >> (4 - c)) & 0x01);
@@ -329,11 +386,13 @@ static void draw_matrix_digit_custom(GContext *ctx, int x_offset, int y_offset, 
         graphics_fill_circle(ctx, GPoint(dot_x, dot_y), dot_radius);
       } else {
 #if defined(PBL_COLOR)
-        // Subtle ghost die beneath dark crystal on 64-color displays
-        graphics_context_set_fill_color(ctx, palette->ghost);
-        graphics_fill_circle(ctx, GPoint(dot_x, dot_y), 1);
+        if (s_colorway != COLORWAY_INVERTED_PAPER) {
+          // Subtle ghost die beneath dark crystal on 64-color displays
+          graphics_context_set_fill_color(ctx, palette->ghost);
+          graphics_fill_circle(ctx, GPoint(dot_x, dot_y), 1);
+        }
 #else
-        // Pure black on 1-bit monochrome (no dither noise)
+        // Pure black / white on 1-bit monochrome (no dither noise)
 #endif
       }
     }
@@ -345,7 +404,7 @@ static void draw_matrix_digit(GContext *ctx, int x_offset, int y_offset, int dig
 }
 
 static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette, int steps) {
-  if (!s_show_step_beads) return;
+  if (s_bead_mode == BEAD_MODE_OFF) return;
   
   int num_beads = 10;
   int bead_spacing = bounds.size.w > 180 ? 10 : 7;
@@ -358,17 +417,30 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
   int goal = s_step_goal > 0 ? s_step_goal : 10000;
   
   for (int i = 0; i < num_beads; i++) {
-    int threshold = ((i + 1) * goal) / num_beads;
-    bool lit = is_active && (steps >= threshold);
+    bool lit = false;
+    if (s_bead_mode == BEAD_MODE_STEPS) {
+      int threshold = ((i + 1) * goal) / num_beads;
+      lit = is_active && (steps >= threshold);
+    } else if (s_bead_mode == BEAD_MODE_BATTERY) {
+      int threshold = (i + 1) * 10;
+      lit = is_active && (s_battery_level >= threshold);
+    }
     int bx = start_x + (i * bead_spacing);
     
 #if defined(PBL_COLOR)
-    GColor bead_color = lit ? GColorWhite : palette->ghost;
-    graphics_context_set_fill_color(ctx, bead_color);
-    graphics_fill_circle(ctx, GPoint(bx, bead_y), lit ? bead_radius : 1);
+    if (s_colorway == COLORWAY_INVERTED_PAPER) {
+      if (lit) {
+        graphics_context_set_fill_color(ctx, GColorBlack);
+        graphics_fill_circle(ctx, GPoint(bx, bead_y), bead_radius);
+      }
+    } else {
+      GColor bead_color = lit ? GColorWhite : palette->ghost;
+      graphics_context_set_fill_color(ctx, bead_color);
+      graphics_fill_circle(ctx, GPoint(bx, bead_y), lit ? bead_radius : 1);
+    }
 #else
     if (lit) {
-      graphics_context_set_fill_color(ctx, GColorWhite);
+      graphics_context_set_fill_color(ctx, palette->lit);
       graphics_fill_circle(ctx, GPoint(bx, bead_y), bead_radius);
     }
 #endif
@@ -381,20 +453,27 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   const Colorway *palette = &active_palette;
   bool is_active = (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake;
   
-  // 1. Pure Pitch Black Background across entire screen (Zero border clutter)
+  // 1. Background Fill across entire screen (Zero border clutter)
   graphics_context_set_fill_color(ctx, palette->outer_bg);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
   // 2. Vintage Space-Age Brand Header at Top
-  const char *header_text = "P U L S A R";
-  GFont font_header = bounds.size.w > 180 ? 
-                      fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD) : 
-                      fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD);
-  int header_y = bounds.size.w > 180 ? 14 : 8;
-  graphics_context_set_text_color(ctx, palette->text_outer);
-  graphics_draw_text(ctx, header_text, font_header,
-                     GRect(0, header_y, bounds.size.w, bounds.size.w > 180 ? 24 : 18),
-                     GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  if (s_header_style != HEADER_STYLE_NONE) {
+    const char *header_text = "P U L S A R";
+    if (s_header_style == HEADER_STYLE_HAMILTON) {
+      header_text = "H A M I L T O N";
+    } else if (s_header_style == HEADER_STYLE_SOLID_STATE) {
+      header_text = "S O L I D   S T A T E";
+    }
+    GFont font_header = bounds.size.w > 180 ? 
+                        fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD) : 
+                        fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD);
+    int header_y = bounds.size.w > 180 ? 14 : 8;
+    graphics_context_set_text_color(ctx, palette->text_outer);
+    graphics_draw_text(ctx, header_text, font_header,
+                       GRect(0, header_y, bounds.size.w, bounds.size.w > 180 ? 24 : 18),
+                       GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  }
 
   // 3. Status Annunciator Dots (Top Left: BT Disconnect, Top Right: Battery Low)
   int ind_y = bounds.size.w > 180 ? 20 : 12;
@@ -415,7 +494,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   
   int digit_span_x = (DIGIT_WIDTH - 1) * DOT_SPACING_X;
   int start_y = bounds.size.w > 180 ? 70 : 48;
-  int slant_scale = (bounds.size.w > 180) ? 3 : 2;
+  int slant_scale = (bounds.size.w > 180) ? 7 : 5;
   int max_slant = s_italic_slant ? slant_scale : 0;
 
   if (s_display_mode == DISPLAY_MODE_STEPS && is_active) {
@@ -462,8 +541,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     
     // Centered Colon before seconds digits
     int sec_colon_base_x = sec_start_x + (sec_colon_gap / 2);
-    int colon_slant1 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 2) * slant_scale) / 6) : 0;
-    int colon_slant2 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 4) * slant_scale) / 6) : 0;
+    int colon_slant1 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 2) * slant_scale) / (DIGIT_HEIGHT - 1)) : 0;
+    int colon_slant2 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 4) * slant_scale) / (DIGIT_HEIGHT - 1)) : 0;
     int sec_colon_x1 = sec_colon_base_x + colon_slant1;
     int sec_colon_x2 = sec_colon_base_x + colon_slant2;
     int colon_y1 = start_y + (DOT_SPACING_Y * 2);
@@ -475,7 +554,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     graphics_fill_circle(ctx, GPoint(sec_colon_x2, colon_y2), is_active ? DOT_RADIUS : 1);
 #else
     if (is_active) {
-      graphics_context_set_fill_color(ctx, GColorWhite);
+      graphics_context_set_fill_color(ctx, palette->lit);
       graphics_fill_circle(ctx, GPoint(sec_colon_x1, colon_y1), DOT_RADIUS);
       graphics_fill_circle(ctx, GPoint(sec_colon_x2, colon_y2), DOT_RADIUS);
     }
@@ -490,10 +569,17 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
       if (is_active) {
         int month = tick_time->tm_mon + 1;
         int day = tick_time->tm_mday;
-        d1 = month / 10;
-        d2 = month % 10;
-        d3 = day / 10;
-        d4 = day % 10;
+        if (s_date_format == DATE_FORMAT_DM) {
+          d1 = day / 10;
+          d2 = day % 10;
+          d3 = month / 10;
+          d4 = month % 10;
+        } else {
+          d1 = month / 10;
+          d2 = month % 10;
+          d3 = day / 10;
+          d4 = day % 10;
+        }
         show_colon = false;
       }
     } else if (s_display_mode == DISPLAY_MODE_BATTERY) {
@@ -519,7 +605,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
           if (hours == 0) hours = 12;
         }
         if (hours < 10) {
-          d1 = 10; // blank
+          d1 = s_leading_zero ? 0 : 10; // blank or 0
         } else {
           d1 = hours / 10;
         }
@@ -548,8 +634,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     // Colon Dots with matching slant angle
     int d2_right = d2_x + digit_span_x;
     int colon_base_x = d2_right + (COLON_GAP / 2);
-    int colon_slant1 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 2) * slant_scale) / 6) : 0;
-    int colon_slant2 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 4) * slant_scale) / 6) : 0;
+    int colon_slant1 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 2) * slant_scale) / (DIGIT_HEIGHT - 1)) : 0;
+    int colon_slant2 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 4) * slant_scale) / (DIGIT_HEIGHT - 1)) : 0;
     int colon_x1 = colon_base_x + colon_slant1;
     int colon_x2 = colon_base_x + colon_slant2;
     int colon_y1 = start_y + (DOT_SPACING_Y * 2);
@@ -563,7 +649,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     graphics_fill_circle(ctx, GPoint(colon_x2, colon_y2), colon_lit ? DOT_RADIUS : 1);
 #else
     if (colon_lit) {
-      graphics_context_set_fill_color(ctx, GColorWhite);
+      graphics_context_set_fill_color(ctx, palette->lit);
       graphics_fill_circle(ctx, GPoint(colon_x1, colon_y1), DOT_RADIUS);
       graphics_fill_circle(ctx, GPoint(colon_x2, colon_y2), DOT_RADIUS);
     }
@@ -585,7 +671,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     }
   }
 
-  // 5. 10-Dot Micro-LED Step Progress Bar
+  // 5. 10-Dot Micro-LED Progress Bar
   draw_step_beads(ctx, bounds, palette, steps);
 
   // 6. Vintage Space-Age Footer
@@ -600,35 +686,47 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     } else if (s_display_mode == DISPLAY_MODE_SECONDS && is_active) {
       footer_text = "S E C O N D S";
     } else {
-      if (s_footer_style == FOOTER_STYLE_HAMILTON) {
+      if (s_footer_style == FOOTER_STYLE_SOLID_STATE) {
+        footer_text = "S O L I D   S T A T E";
+      } else if (s_footer_style == FOOTER_STYLE_HAMILTON) {
         footer_text = "H A M I L T O N";
       } else if (s_footer_style == FOOTER_STYLE_PULSAR) {
         footer_text = "P U L S A R";
+      } else if (s_footer_style == FOOTER_STYLE_SWISS) {
+        footer_text = "S W I S S   M A D E";
       }
     }
     
-    int footer_y = bounds.size.w > 180 ? 186 : 136;
     GFont font_footer = bounds.size.w > 180 ? 
                         fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD) : 
-                        fonts_get_system_font(FONT_KEY_GOTHIC_14);
+                        fonts_get_system_font(FONT_KEY_GOTHIC_09);
+    int footer_y = bounds.size.w > 180 ? 192 : 142;
     graphics_context_set_text_color(ctx, palette->text_outer);
     graphics_draw_text(ctx, footer_text, font_footer,
-                       GRect(0, footer_y, bounds.size.w, 20),
+                       GRect(0, footer_y, bounds.size.w, bounds.size.w > 180 ? 20 : 14),
                        GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   }
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-  // Hourly chime
-  if (tick_time->tm_min == 0 && tick_time->tm_sec == 0 && tick_time->tm_hour != s_last_vibe_hour) {
-    s_last_vibe_hour = tick_time->tm_hour;
-    if (s_hourly_vibe == HOURLY_VIBE_SINGLE) {
-      vibes_short_pulse();
-    } else if (s_hourly_vibe == HOURLY_VIBE_DOUBLE) {
-      vibes_double_pulse();
+  // Check hourly vibration
+  if (units_changed & HOUR_UNIT) {
+    if (s_hourly_vibe != HOURLY_VIBE_OFF && tick_time->tm_hour != s_last_vibe_hour) {
+      s_last_vibe_hour = tick_time->tm_hour;
+      if (s_hourly_vibe == HOURLY_VIBE_SINGLE) {
+        vibes_short_pulse();
+      } else if (s_hourly_vibe == HOURLY_VIBE_DOUBLE) {
+        vibes_double_pulse();
+      }
     }
   }
-  layer_mark_dirty(s_canvas_layer);
+
+  // Redraw every second if Live Seconds is active, otherwise every minute
+  if (s_display_mode == DISPLAY_MODE_SECONDS || (s_operating_mode == MODE_ALWAYS_ON && (units_changed & SECOND_UNIT))) {
+    layer_mark_dirty(s_canvas_layer);
+  } else if (units_changed & MINUTE_UNIT) {
+    layer_mark_dirty(s_canvas_layer);
+  }
 }
 
 static int tuple_to_int(Tuple *tuple, int default_val) {
@@ -679,20 +777,47 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     s_hourly_vibe = tuple_to_int(t_vibe, s_hourly_vibe);
     persist_write_int(STORAGE_KEY_HOURLY_VIBE, s_hourly_vibe);
   }
-  Tuple *t_beads = dict_find(iterator, MESSAGE_KEY_AppKeyShowStepBeads);
-  if (t_beads) {
-    s_show_step_beads = tuple_to_bool(t_beads, s_show_step_beads);
-    persist_write_bool(STORAGE_KEY_SHOW_STEP_BEADS, s_show_step_beads);
+  Tuple *t_bt_vibe = dict_find(iterator, MESSAGE_KEY_AppKeyBtVibe);
+  if (t_bt_vibe) {
+    s_bt_vibe = tuple_to_bool(t_bt_vibe, s_bt_vibe);
+    persist_write_bool(STORAGE_KEY_BT_VIBE, s_bt_vibe);
+  }
+  Tuple *t_bead_mode = dict_find(iterator, MESSAGE_KEY_AppKeyBeadMode);
+  if (t_bead_mode) {
+    s_bead_mode = tuple_to_int(t_bead_mode, s_bead_mode);
+    persist_write_int(STORAGE_KEY_BEAD_MODE, s_bead_mode);
+  } else {
+    Tuple *t_beads = dict_find(iterator, MESSAGE_KEY_AppKeyShowStepBeads);
+    if (t_beads) {
+      bool show = tuple_to_bool(t_beads, true);
+      s_bead_mode = show ? BEAD_MODE_STEPS : BEAD_MODE_OFF;
+      persist_write_int(STORAGE_KEY_BEAD_MODE, s_bead_mode);
+    }
   }
   Tuple *t_slant = dict_find(iterator, MESSAGE_KEY_AppKeyItalicSlant);
   if (t_slant) {
     s_italic_slant = tuple_to_bool(t_slant, s_italic_slant);
     persist_write_bool(STORAGE_KEY_ITALIC_SLANT, s_italic_slant);
   }
+  Tuple *t_header = dict_find(iterator, MESSAGE_KEY_AppKeyHeaderStyle);
+  if (t_header) {
+    s_header_style = tuple_to_int(t_header, s_header_style);
+    persist_write_int(STORAGE_KEY_HEADER_STYLE, s_header_style);
+  }
   Tuple *t_footer = dict_find(iterator, MESSAGE_KEY_AppKeyFooterStyle);
   if (t_footer) {
     s_footer_style = tuple_to_int(t_footer, s_footer_style);
     persist_write_int(STORAGE_KEY_FOOTER_STYLE, s_footer_style);
+  }
+  Tuple *t_date_fmt = dict_find(iterator, MESSAGE_KEY_AppKeyDateFormat);
+  if (t_date_fmt) {
+    s_date_format = tuple_to_int(t_date_fmt, s_date_format);
+    persist_write_int(STORAGE_KEY_DATE_FORMAT, s_date_format);
+  }
+  Tuple *t_leading_zero = dict_find(iterator, MESSAGE_KEY_AppKeyLeadingZero);
+  if (t_leading_zero) {
+    s_leading_zero = tuple_to_bool(t_leading_zero, s_leading_zero);
+    persist_write_bool(STORAGE_KEY_LEADING_ZERO, s_leading_zero);
   }
   Tuple *t_goal = dict_find(iterator, MESSAGE_KEY_AppKeyStepGoal);
   if (t_goal) {
@@ -717,14 +842,29 @@ static void load_settings(void) {
   if (persist_exists(STORAGE_KEY_HOURLY_VIBE)) {
     s_hourly_vibe = persist_read_int(STORAGE_KEY_HOURLY_VIBE);
   }
-  if (persist_exists(STORAGE_KEY_SHOW_STEP_BEADS)) {
-    s_show_step_beads = persist_read_bool(STORAGE_KEY_SHOW_STEP_BEADS);
+  if (persist_exists(STORAGE_KEY_BT_VIBE)) {
+    s_bt_vibe = persist_read_bool(STORAGE_KEY_BT_VIBE);
+  }
+  if (persist_exists(STORAGE_KEY_BEAD_MODE)) {
+    s_bead_mode = persist_read_int(STORAGE_KEY_BEAD_MODE);
+  } else if (persist_exists(STORAGE_KEY_SHOW_STEP_BEADS)) {
+    bool show = persist_read_bool(STORAGE_KEY_SHOW_STEP_BEADS);
+    s_bead_mode = show ? BEAD_MODE_STEPS : BEAD_MODE_OFF;
   }
   if (persist_exists(STORAGE_KEY_ITALIC_SLANT)) {
     s_italic_slant = persist_read_bool(STORAGE_KEY_ITALIC_SLANT);
   }
+  if (persist_exists(STORAGE_KEY_HEADER_STYLE)) {
+    s_header_style = persist_read_int(STORAGE_KEY_HEADER_STYLE);
+  }
   if (persist_exists(STORAGE_KEY_FOOTER_STYLE)) {
     s_footer_style = persist_read_int(STORAGE_KEY_FOOTER_STYLE);
+  }
+  if (persist_exists(STORAGE_KEY_DATE_FORMAT)) {
+    s_date_format = persist_read_int(STORAGE_KEY_DATE_FORMAT);
+  }
+  if (persist_exists(STORAGE_KEY_LEADING_ZERO)) {
+    s_leading_zero = persist_read_bool(STORAGE_KEY_LEADING_ZERO);
   }
   if (persist_exists(STORAGE_KEY_STEP_GOAL)) {
     s_step_goal = persist_read_int(STORAGE_KEY_STEP_GOAL);
@@ -789,6 +929,7 @@ static void deinit(void) {
   if (s_mode_timer) {
     app_timer_cancel(s_mode_timer);
   }
+  layer_destroy(s_canvas_layer);
   window_destroy(s_main_window);
 }
 
