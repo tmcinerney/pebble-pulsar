@@ -291,6 +291,7 @@ static void mode_timer_callback(void *data) {
 }
 
 static void trigger_display_change(int mode) {
+  light_enable_interaction();
   s_display_mode = mode;
   if (s_mode_timer) {
     app_timer_cancel(s_mode_timer);
@@ -300,6 +301,7 @@ static void trigger_display_change(int mode) {
 }
 
 static void tap_handler(AccelAxisType axis, int32_t direction) {
+  light_enable_interaction();
   if (s_operating_mode == MODE_STEALTH) {
     if (!s_stealth_awake) {
       // First tap/flick: Wake up and illuminate TIME (or dedicated action)
@@ -362,6 +364,9 @@ static void touch_handler(const TouchEvent *event, void *context) {
 static void bluetooth_callback(bool connected) {
   if (s_bt_vibe && !connected && s_bluetooth_connected) {
     vibes_double_pulse();
+#if PBL_API_EXISTS(speaker_play_tone)
+    speaker_play_tone(880, 120, 70, SpeakerWaveformSawtooth);
+#endif
   }
   s_bluetooth_connected = connected;
   layer_mark_dirty(s_canvas_layer);
@@ -730,8 +735,14 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
       s_last_vibe_hour = tick_time->tm_hour;
       if (s_hourly_vibe == HOURLY_VIBE_SINGLE) {
         vibes_short_pulse();
+#if PBL_API_EXISTS(speaker_play_tone)
+        speaker_play_tone(1760, 80, 50, SpeakerWaveformSquare);
+#endif
       } else if (s_hourly_vibe == HOURLY_VIBE_DOUBLE) {
         vibes_double_pulse();
+#if PBL_API_EXISTS(speaker_play_tone)
+        speaker_play_tone(2093, 100, 50, SpeakerWaveformSquare);
+#endif
       }
     }
   }
