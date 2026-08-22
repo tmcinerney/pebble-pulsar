@@ -38,7 +38,10 @@
       "diorite",
       "aplite"
     ],
-    "sdkVersion": "3"
+    "sdkVersion": "3",
+    "resources": {
+      "media": []
+    }
   },
   "dependencies": {
     "pebble-clay": "file:packages/pebble-clay"
