@@ -918,9 +918,7 @@ static void init(void) {
   app_message_register_inbox_received(inbox_received_callback);
   app_message_register_inbox_dropped(inbox_dropped_callback);
   app_message_register_outbox_failed(outbox_failed_callback);
-  const uint32_t inbox_size = app_message_inbox_size_maximum();
-  const uint32_t outbox_size = app_message_outbox_size_maximum();
-  app_message_open(inbox_size > 0 ? inbox_size : 1024, outbox_size > 0 ? outbox_size : 256);
+  app_message_open(1024, 128);
 
   // Subscribe to services
   tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
