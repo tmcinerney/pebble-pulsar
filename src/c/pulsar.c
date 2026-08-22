@@ -164,9 +164,9 @@ static Colorway get_current_palette(int colorway_index) {
       break;
     case COLORWAY_VIBRANT_RUBY:
     default:
-      p.lit = GColorSunsetOrange;
+      p.lit = GColorRed;
       p.ghost = GColorBulgarianRose;
-      p.accent = GColorSunsetOrange;
+      p.accent = GColorDarkCandyAppleRed;
       p.outer_bg = GColorBulgarianRose;
       p.inner_bg = GColorBlack;
       p.text_outer = GColorLightGray;
@@ -354,7 +354,7 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
   int bead_radius = bounds.size.w > 180 ? 2 : 1;
   int total_bead_width = (num_beads - 1) * bead_spacing;
   int start_x = (bounds.size.w - total_bead_width) / 2;
-  int bead_y = bounds.size.w > 180 ? 158 : 118;
+  int bead_y = bounds.size.w > 180 ? 162 : 122;
   
   bool is_active = (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake;
   int goal = s_step_goal > 0 ? s_step_goal : 10000;
@@ -376,37 +376,31 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   const Colorway *palette = &active_palette;
   bool is_active = (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake;
   
-  // 1. Outermost Watch Dial Bezel (Pure Black Edge)
-  graphics_context_set_fill_color(ctx, GColorBlack);
-  graphics_fill_rect(ctx, bounds, 0, GCornerNone);
-  
-  // 2. Vintage Ruby Cushion Mask (Surrounds Text and LED Display)
-  GRect outer_cushion = bounds.size.w > 180 ? GRect(6, 6, 188, 216) : GRect(4, 4, 136, 160);
-  int outer_radius = bounds.size.w > 180 ? 14 : 10;
+  // 1. Ruby Cushion Background across entire display (no wasted outer black borders)
   graphics_context_set_fill_color(ctx, palette->outer_bg);
-  graphics_fill_rect(ctx, outer_cushion, outer_radius, GCornersAll);
-  
-  graphics_context_set_stroke_color(ctx, palette->accent);
-  graphics_context_set_stroke_width(ctx, 1);
-  graphics_draw_round_rect(ctx, outer_cushion, outer_radius);
+  graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
-  // 3. Vintage Space-Age Brand Header at Top of Cushion Window
+  // 2. Vintage Space-Age Brand Header at Top of Cushion Window
   const char *header_text = "P U L S A R";
 
   GFont font_header = bounds.size.w > 180 ? 
                       fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD) : 
                       fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD);
-  int header_y = bounds.size.w > 180 ? 13 : 7;
+  int header_y = bounds.size.w > 180 ? 6 : 3;
   graphics_context_set_text_color(ctx, palette->text_outer);
   graphics_draw_text(ctx, header_text, font_header,
                      GRect(0, header_y, bounds.size.w, bounds.size.w > 180 ? 24 : 18),
                      GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-  // 4. Central Inner Obsidian Display Aperture (Rounded Corners)
-  GRect frame_rect = bounds.size.w > 180 ? GRect(12, 38, 176, 152) : GRect(8, 28, 128, 112);
+  // 3. Central Inner Obsidian Display Aperture (Maximized Display Area)
+  GRect frame_rect = bounds.size.w > 180 ? GRect(6, 32, 188, 164) : GRect(4, 24, 136, 120);
   int inner_radius = bounds.size.w > 180 ? 8 : 5;
   graphics_context_set_fill_color(ctx, palette->inner_bg);
   graphics_fill_rect(ctx, frame_rect, inner_radius, GCornersAll);
+  
+  graphics_context_set_stroke_color(ctx, palette->accent);
+  graphics_context_set_stroke_width(ctx, 1);
+  graphics_draw_round_rect(ctx, frame_rect, inner_radius);
 
   // 5. Data Extraction
   time_t temp = time(NULL);
@@ -576,7 +570,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   draw_step_beads(ctx, bounds, palette, steps);
   
   // 6. Status Indicators (Left: BT, Right: Battery - inside bottom of window)
-  int indicator_y = bounds.size.w > 180 ? 174 : 128;
+  int indicator_y = bounds.size.w > 180 ? 180 : 132;
   if (!s_bluetooth_connected) {
     graphics_context_set_fill_color(ctx, palette->lit);
     graphics_fill_circle(ctx, GPoint(bounds.size.w / 4, indicator_y), INDICATOR_RADIUS);
@@ -606,7 +600,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
       }
     }
     
-    int footer_y = bounds.size.w > 180 ? 197 : 143;
+    int footer_y = bounds.size.w > 180 ? 202 : 148;
     GFont font_footer = fonts_get_system_font(FONT_KEY_GOTHIC_14);
     graphics_context_set_text_color(ctx, palette->text_outer);
     graphics_draw_text(ctx, footer_text, font_footer,
