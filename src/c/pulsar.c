@@ -166,10 +166,10 @@ static Colorway get_current_palette(int colorway_index) {
     default:
       p.lit = GColorRed;
       p.ghost = GColorBulgarianRose;
-      p.accent = GColorDarkCandyAppleRed;
-      p.outer_bg = GColorBulgarianRose;
+      p.accent = GColorRed;
+      p.outer_bg = GColorBlack;
       p.inner_bg = GColorBlack;
-      p.text_outer = GColorLightGray;
+      p.text_outer = GColorWhite;
       break;
   }
 #else
