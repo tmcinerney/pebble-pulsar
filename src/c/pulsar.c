@@ -706,7 +706,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     
     GFont font_footer = bounds.size.w > 180 ? 
                         fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD) : 
-                        fonts_get_system_font(FONT_KEY_GOTHIC_09);
+                        fonts_get_system_font(FONT_KEY_GOTHIC_14);
     int footer_y = bounds.size.w > 180 ? 192 : 142;
     graphics_context_set_text_color(ctx, palette->text_outer);
     graphics_draw_text(ctx, footer_text, font_footer,
