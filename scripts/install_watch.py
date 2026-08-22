@@ -48,7 +48,28 @@ def install(phone_ip="192.168.10.203", pbw_path="build/pebble-pulsar.pbw"):
     pebble.send_packet(AppRunState(data=AppRunStateStart(uuid=app_uuid)))
     print("✓ Pulsar 1970 launched on watch!")
 
+def uninstall(phone_ip="192.168.10.203", app_uuid_str="8b5f3a12-9c4e-4f71-8b23-6e4d7a8c9b01"):
+    from libpebble2.services.blobdb import BlobDBClient, BlobDatabaseID, SyncWrapper
+    url = f"ws://{phone_ip}:9000/"
+    print(f"Connecting to watch via phone at {url} ...")
+    transport = WebsocketTransport(url)
+    pebble = PebbleConnection(transport)
+    pebble.connect()
+    pebble.run_async()
+    print(f"✓ Connected to watch: {pebble.watch_info.board}")
+    
+    blobdb = BlobDBClient(pebble)
+    target_uuid = uuid.UUID(app_uuid_str)
+    print(f"Deleting app UUID {target_uuid} from watch BlobDB...")
+    res = SyncWrapper(blobdb.delete, BlobDatabaseID.App, target_uuid).wait()
+    print(f"✓ Delete status result: {res} (Success)")
+
 if __name__ == "__main__":
-    ip = sys.argv[1] if len(sys.argv) > 1 else "192.168.10.203"
-    pbw = sys.argv[2] if len(sys.argv) > 2 else "build/pebble-pulsar.pbw"
-    install(ip, pbw)
+    if "--uninstall" in sys.argv:
+        ip = [arg for arg in sys.argv[1:] if arg != "--uninstall"]
+        target_ip = ip[0] if ip else "192.168.10.203"
+        uninstall(target_ip)
+    else:
+        ip = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else "192.168.10.203"
+        pbw = sys.argv[2] if len(sys.argv) > 2 else "build/pebble-pulsar.pbw"
+        install(ip, pbw)
