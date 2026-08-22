@@ -948,8 +948,8 @@ static void deinit(void) {
   tick_timer_service_unsubscribe();
   if (s_mode_timer) {
     app_timer_cancel(s_mode_timer);
+    s_mode_timer = NULL;
   }
-  layer_destroy(s_canvas_layer);
   window_destroy(s_main_window);
 }
 
