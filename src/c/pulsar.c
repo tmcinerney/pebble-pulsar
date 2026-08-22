@@ -351,6 +351,14 @@ static void tap_handler(AccelAxisType axis, int32_t direction) {
   }
 }
 
+#if PBL_API_EXISTS(touch_service_subscribe)
+static void touch_handler(const TouchEvent *event, void *context) {
+  if (event->type == TouchEvent_Touchdown) {
+    tap_handler(ACCEL_AXIS_Z, 1);
+  }
+}
+#endif
+
 static void bluetooth_callback(bool connected) {
   if (s_bt_vibe && !connected && s_bluetooth_connected) {
     vibes_double_pulse();
@@ -923,6 +931,11 @@ static void init(void) {
   // Subscribe to services
   tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
   accel_tap_service_subscribe(tap_handler);
+#if PBL_API_EXISTS(touch_service_subscribe)
+  if (touch_service_is_enabled()) {
+    touch_service_subscribe(touch_handler, NULL);
+  }
+#endif
   connection_service_subscribe((ConnectionHandlers) {
     .pebble_app_connection_handler = bluetooth_callback
   });
@@ -941,6 +954,11 @@ static void init(void) {
 static void deinit(void) {
 #if defined(PBL_HEALTH)
   health_service_events_unsubscribe();
+#endif
+#if PBL_API_EXISTS(touch_service_subscribe)
+  if (touch_service_is_enabled()) {
+    touch_service_unsubscribe();
+  }
 #endif
   battery_state_service_unsubscribe();
   connection_service_unsubscribe();
