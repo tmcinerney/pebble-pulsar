@@ -118,110 +118,70 @@ typedef struct {
   GColor text_outer;
 } Colorway;
 
-static const Colorway PALETTES[NUM_COLORWAYS] = {
-  [COLORWAY_VIBRANT_RUBY] = {
+static Colorway get_current_palette(int colorway_index) {
+  Colorway p;
 #if defined(PBL_COLOR)
-    .lit = GColorSunsetOrange,
-    .ghost = GColorBulgarianRose,
-    .accent = GColorSunsetOrange,
-    .outer_bg = GColorBulgarianRose,
-    .inner_bg = GColorBlack,
-    .text_outer = GColorLightGray
-#else
-    .lit = GColorWhite,
-    .ghost = GColorBlack,
-    .accent = GColorWhite,
-    .outer_bg = GColorBlack,
-    .inner_bg = GColorBlack,
-    .text_outer = GColorWhite
-#endif
-  },
-  [COLORWAY_DEEP_RED] = {
-#if defined(PBL_COLOR)
-    .lit = GColorRed,
-    .ghost = GColorBulgarianRose,
-    .accent = GColorDarkCandyAppleRed,
-    .outer_bg = GColorBulgarianRose,
-    .inner_bg = GColorBlack,
-    .text_outer = GColorLightGray
-#else
-    .lit = GColorWhite,
-    .ghost = GColorBlack,
-    .accent = GColorWhite,
-    .outer_bg = GColorBlack,
-    .inner_bg = GColorBlack,
-    .text_outer = GColorWhite
-#endif
-  },
-  [COLORWAY_PROTOTYPE_GREEN] = {
-#if defined(PBL_COLOR)
-    .lit = GColorMintGreen,
-    .ghost = GColorDarkGreen,
-    .accent = GColorIslamicGreen,
-    .outer_bg = GColorDarkGreen,
-    .inner_bg = GColorBlack,
-    .text_outer = GColorLightGray
-#else
-    .lit = GColorWhite,
-    .ghost = GColorBlack,
-    .accent = GColorWhite,
-    .outer_bg = GColorBlack,
-    .inner_bg = GColorBlack,
-    .text_outer = GColorWhite
-#endif
-  },
-  [COLORWAY_AMBER_GOLD] = {
-#if defined(PBL_COLOR)
-    .lit = GColorChromeYellow,
-    .ghost = GColorWindsorTan,
-    .accent = GColorWindsorTan,
-    .outer_bg = GColorWindsorTan,
-    .inner_bg = GColorBlack,
-    .text_outer = GColorLightGray
-#else
-    .lit = GColorWhite,
-    .ghost = GColorBlack,
-    .accent = GColorWhite,
-    .outer_bg = GColorBlack,
-    .inner_bg = GColorBlack,
-    .text_outer = GColorWhite
-#endif
-  },
-  [COLORWAY_COBALT_BLUE] = {
-#if defined(PBL_COLOR)
-    .lit = GColorElectricUltramarine,
-    .ghost = GColorOxfordBlue,
-    .accent = GColorVividCerulean,
-    .outer_bg = GColorOxfordBlue,
-    .inner_bg = GColorBlack,
-    .text_outer = GColorLightGray
-#else
-    .lit = GColorWhite,
-    .ghost = GColorBlack,
-    .accent = GColorWhite,
-    .outer_bg = GColorBlack,
-    .inner_bg = GColorBlack,
-    .text_outer = GColorWhite
-#endif
-  },
-  [COLORWAY_LUNAR_WHITE] = {
-#if defined(PBL_COLOR)
-    .lit = GColorWhite,
-    .ghost = GColorDarkGray,
-    .accent = GColorLightGray,
-    .outer_bg = GColorBlack,
-    .inner_bg = GColorBlack,
-    .text_outer = GColorLightGray
-#else
-    .lit = GColorWhite,
-    .ghost = GColorBlack,
-    .accent = GColorWhite,
-    .outer_bg = GColorBlack,
-    .inner_bg = GColorBlack,
-    .text_outer = GColorWhite
-#endif
+  switch (colorway_index) {
+    case COLORWAY_DEEP_RED:
+      p.lit = GColorRed;
+      p.ghost = GColorBulgarianRose;
+      p.accent = GColorDarkCandyAppleRed;
+      p.outer_bg = GColorBulgarianRose;
+      p.inner_bg = GColorBlack;
+      p.text_outer = GColorLightGray;
+      break;
+    case COLORWAY_PROTOTYPE_GREEN:
+      p.lit = GColorMintGreen;
+      p.ghost = GColorDarkGreen;
+      p.accent = GColorIslamicGreen;
+      p.outer_bg = GColorDarkGreen;
+      p.inner_bg = GColorBlack;
+      p.text_outer = GColorLightGray;
+      break;
+    case COLORWAY_AMBER_GOLD:
+      p.lit = GColorChromeYellow;
+      p.ghost = GColorWindsorTan;
+      p.accent = GColorWindsorTan;
+      p.outer_bg = GColorWindsorTan;
+      p.inner_bg = GColorBlack;
+      p.text_outer = GColorLightGray;
+      break;
+    case COLORWAY_COBALT_BLUE:
+      p.lit = GColorElectricUltramarine;
+      p.ghost = GColorOxfordBlue;
+      p.accent = GColorVividCerulean;
+      p.outer_bg = GColorOxfordBlue;
+      p.inner_bg = GColorBlack;
+      p.text_outer = GColorLightGray;
+      break;
+    case COLORWAY_LUNAR_WHITE:
+      p.lit = GColorWhite;
+      p.ghost = GColorDarkGray;
+      p.accent = GColorLightGray;
+      p.outer_bg = GColorBlack;
+      p.inner_bg = GColorBlack;
+      p.text_outer = GColorLightGray;
+      break;
+    case COLORWAY_VIBRANT_RUBY:
+    default:
+      p.lit = GColorSunsetOrange;
+      p.ghost = GColorBulgarianRose;
+      p.accent = GColorSunsetOrange;
+      p.outer_bg = GColorBulgarianRose;
+      p.inner_bg = GColorBlack;
+      p.text_outer = GColorLightGray;
+      break;
   }
-};
+#else
+  p.lit = GColorWhite;
+  p.ghost = GColorBlack;
+  p.accent = GColorWhite;
+  p.outer_bg = GColorBlack;
+  p.inner_bg = GColorBlack;
+  p.text_outer = GColorWhite;
+#endif
+  return p;
+}
 
 // State Variables
 static Window *s_main_window;
@@ -412,7 +372,8 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
 
 static void canvas_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
-  const Colorway *palette = &PALETTES[s_colorway % NUM_COLORWAYS];
+  Colorway active_palette = get_current_palette(s_colorway % NUM_COLORWAYS);
+  const Colorway *palette = &active_palette;
   bool is_active = (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake;
   
   // 1. Outermost Watch Dial Bezel (Pure Black Edge)
