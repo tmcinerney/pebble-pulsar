@@ -22,21 +22,21 @@
       "watchface": true
     },
     "enableMultiJS": true,
-    "messageKeys": [
-      "AppKeyOperatingMode",
-      "AppKeyColorway",
-      "AppKeyFlickAction",
-      "AppKeyHourlyVibe",
-      "AppKeyBtVibe",
-      "AppKeyBeadMode",
-      "AppKeyShowStepBeads",
-      "AppKeyItalicSlant",
-      "AppKeyHeaderStyle",
-      "AppKeyFooterStyle",
-      "AppKeyDateFormat",
-      "AppKeyLeadingZero",
-      "AppKeyStepGoal"
-    ],
+    "messageKeys": {
+      "AppKeyOperatingMode": 10000,
+      "AppKeyColorway": 10001,
+      "AppKeyFlickAction": 10002,
+      "AppKeyHourlyVibe": 10003,
+      "AppKeyShowStepBeads": 10004,
+      "AppKeyItalicSlant": 10005,
+      "AppKeyFooterStyle": 10006,
+      "AppKeyStepGoal": 10007,
+      "AppKeyHeaderStyle": 10008,
+      "AppKeyDateFormat": 10009,
+      "AppKeyLeadingZero": 10010,
+      "AppKeyBtVibe": 10011,
+      "AppKeyBeadMode": 10012
+    },
     "targetPlatforms": [
       "emery",
       "basalt",
