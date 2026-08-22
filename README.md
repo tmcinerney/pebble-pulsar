@@ -4,7 +4,7 @@
 
 A high-fidelity retro digital watchface inspired by the iconic **1970s Hamilton Pulsar** ("Time Computer" P1, P2, and P3 models)—the world's first commercial digital LED wristwatch.
 
-Built for the **Rebble / RePebble** ecosystem with native support for the **Pebble Time 2 (`emery`)**, **Pebble Time (`basalt`)**, **Pebble 2 (`diorite`)**, **Pebble Time Round (`chalk`)**, and classic **Pebble (`aplite`)**.
+Built for the **Rebble / RePebble** ecosystem with native support for the **Pebble Time 2 (`emery`)**, **Pebble Time / Time Steel (`basalt`)**, **Pebble 2 (`diorite`)**, and classic **Pebble (`aplite`)**.
 
 ---
 
@@ -14,8 +14,9 @@ Built for the **Rebble / RePebble** ecosystem with native support for the **Pebb
 - **5×7 GaAsP Dot-Matrix LEDs:** Mathematically rendered circular LED dies that scale crisply across all display resolutions.
 - **Authentic ~6° Vintage Italic Slant:** Replicates the physical rightward die tilt characteristic of 1970s Litronix/Bowmar LED modules (toggleable in settings).
 - **GaAsP Ghost Matrix:** Unlit LED dies are rendered in deep maroon (`GColorBulgarianRose`) on a pitch-black background (`GColorBlack`), mimicking unlit semiconductor dies beneath synthetic ruby mineral crystal.
-- **Vintage Cushion Bezel Chamfer:** Double-bezel inner highlight tailored to the Pebble Time 2 screen geometry.
-- **Customizable Bezel Footer:** Choose between `TIME COMPUTER` (1972 Hamilton homage), `HAMILTON`, `PULSAR`, or `None (Clean / Minimal)`. Vertically centered with generous breathing room above the lower bezel border.
+- **Pure Seamless Black Background:** Borderless design that integrates seamlessly with the physical watch bezel and glass.
+- **Noise-Free 1-Bit Monochrome Rendering:** Clean, pure black background on Pebble 2 (`diorite`) and Classic (`aplite`) with zero dither noise and solid high-contrast white LED dies.
+- **Customizable Bezel Footer:** Choose between `TIME COMPUTER` (1972 Hamilton homage), `HAMILTON`, `PULSAR`, or `None (Clean / Minimal)`.
 
 ### 2. Multi-Mode Display Engine (Wrist Flick / Tap)
 Cycle through 5 interactive display modes via wrist flick or tap:
@@ -41,14 +42,13 @@ Cycle through 5 interactive display modes via wrist flick or tap:
 
 ## Multi-Platform Hardware Support
 
-**Pulsar 1970** includes custom geometry, scaling, and color rendering for every generation of Pebble smartwatch:
+**Pulsar 1970** includes custom geometry, scaling, and color rendering for rectangular Pebble smartwatches:
 
 ![All Pebble Platforms Supported](screenshots/pulsar-all-platforms-mockup.png)
 
-- **Pebble Time 2 (`emery`):** 200×228 64-color resolution with large 5×7 GaAsP dies and generous cushion border.
+- **Pebble Time 2 (`emery`):** 200×228 64-color resolution with large 5×7 GaAsP dies and full breathing room.
 - **Pebble Time / Time Steel (`basalt`):** 144×168 64-color screen with full vintage colorway options.
-- **Pebble Time Round (`chalk`):** 180×180 circular screen with centered cushion frame and tailored circular typography.
-- **Pebble 2 HR / SE (`diorite`):** High-contrast 1-bit black & white display with ultra-crisp white LED dies.
+- **Pebble 2 HR / SE (`diorite`):** High-contrast 1-bit black & white display with noise-free white LED dies.
 - **Pebble Classic / Steel (`aplite`):** 1-bit monochrome memory LCD support.
 
 ---
@@ -77,7 +77,7 @@ This repository uses [`devenv.nix`](devenv.nix) providing the official ARM GCC t
 ```bash
 devenv shell -- pebble build
 ```
-This produces `build/pebble-pulsar.pbw` containing binaries and Clay configuration for all platforms (`emery`, `basalt`, `diorite`, `chalk`, `aplite`).
+This produces `build/pebble-pulsar.pbw` containing binaries and Clay configuration for all supported platforms (`emery`, `basalt`, `diorite`, `aplite`).
 
 ### 2. Test in Emulator
 ```bash

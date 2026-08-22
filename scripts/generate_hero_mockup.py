@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
 generate_hero_mockup.py
-Generates the flagship Pulsar 1970 Hero Mockup and All-Platforms lineup.
+Generates the flagship Pulsar 1970 Hero Mockup.
 """
 
 import os
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
 
 def create_hero_mockup():
     os.makedirs('screenshots', exist_ok=True)
@@ -16,7 +16,7 @@ def create_hero_mockup():
     # 1. Atmospheric Ruby & Charcoal Glow Backdrop
     for r in range(450, 0, -6):
         alpha = int(22 * (1 - r / 450))
-        draw.ellipse([780 - r, 337 - r, 780 + r, 337 + r], fill=(alpha * 2, 0, 0))
+        draw.ellipse([800 - r, 337 - r, 800 + r, 337 + r], fill=(alpha * 2, 0, 0))
 
     # Space-age vintage grid pattern
     for x in range(0, width, 40):
@@ -57,55 +57,50 @@ def create_hero_mockup():
     # Compatible Devices footer pill
     draw.rounded_rectangle([60, 525, 520, 595], radius=8, fill=(18, 18, 22), outline=(40, 40, 50), width=1)
     draw.text((76, 538), "COMPATIBLE PEBBLE PLATFORMS:", fill=(200, 50, 50), font=font_badge)
-    draw.text((76, 562), "Pebble Time 2 (Emery) • Time / Steel • Round • P2 • Classic", fill=(170, 170, 180), font=font_desc)
+    draw.text((76, 562), "Pebble Time 2 (Emery) • Time / Steel • Pebble 2 • Classic", fill=(170, 170, 180), font=font_desc)
 
     # 3. Right Watches Display Section
-    # Centerpiece: Pebble Time 2 (Emery)
-    emery_path = 'screenshots/emery-time.png'
-    if not os.path.exists(emery_path):
-        emery_path = 'screenshots/emery-time-italic.png'
-    
-    # Background Secondary Watches:
-    # 1. Round (Chalk)
-    chalk_path = 'screenshots/chalk-time.png'
-    if os.path.exists(chalk_path):
-        c_img = Image.open(chalk_path).convert('RGBA')
-        c_scale = 1.3
-        cw, ch = int(c_img.width * c_scale), int(c_img.height * c_scale)
-        c_resized = c_img.resize((cw, ch), Image.Resampling.LANCZOS)
-        cx, cy = 600, 90
-        draw.ellipse([cx - 8, cy - 8, cx + cw + 8, cy + ch + 8], fill=(30, 30, 35), outline=(100, 20, 20), width=2)
-        hero.paste(c_resized, (cx, cy), c_resized)
+    emery_path = 'screenshots/emery_time.png'
+    basalt_path = 'screenshots/basalt_time.png'
+    diorite_path = 'screenshots/diorite_time.png'
 
-    # 2. Pebble 2 B&W (Diorite Steps)
-    diorite_path = 'screenshots/diorite-steps.png'
+    # 1. Pebble Time (Basalt) - Left Secondary
+    if os.path.exists(basalt_path):
+        b_img = Image.open(basalt_path).convert('RGBA')
+        b_scale = 1.32
+        bw, bh = int(b_img.width * b_scale), int(b_img.height * b_scale)
+        b_resized = b_img.resize((bw, bh), Image.Resampling.LANCZOS)
+        bx, by_pos = 580, 175
+        draw.rounded_rectangle([bx - 8, by_pos - 8, bx + bw + 8, by_pos + bh + 8], radius=14, fill=(26, 26, 30), outline=(100, 25, 25), width=2)
+        hero.paste(b_resized, (bx, by_pos), b_resized)
+
+    # 2. Pebble 2 B&W (Diorite) - Right Secondary
     if os.path.exists(diorite_path):
         d_img = Image.open(diorite_path).convert('RGBA')
-        d_scale = 1.35
+        d_scale = 1.32
         dw, dh = int(d_img.width * d_scale), int(d_img.height * d_scale)
         d_resized = d_img.resize((dw, dh), Image.Resampling.LANCZOS)
-        dx, dy = 960, 260
-        draw.rounded_rectangle([dx - 8, dy - 8, dx + dw + 8, dy + dh + 8], radius=16, fill=(28, 28, 32), outline=(80, 80, 90), width=2)
-        hero.paste(d_resized, (dx, dy), d_resized)
+        dx, dy_pos = 965, 220
+        draw.rounded_rectangle([dx - 8, dy_pos - 8, dx + dw + 8, dy_pos + dh + 8], radius=14, fill=(28, 28, 32), outline=(80, 80, 90), width=2)
+        hero.paste(d_resized, (dx, dy_pos), d_resized)
 
     # 3. Main Centerpiece: Pebble Time 2 (Emery)
     if os.path.exists(emery_path):
         e_img = Image.open(emery_path).convert('RGBA')
-        e_scale = 1.95
+        e_scale = 1.85
         ew, eh = int(e_img.width * e_scale), int(e_img.height * e_scale)
         e_resized = e_img.resize((ew, eh), Image.Resampling.LANCZOS)
-        ex, ey = 730, 110
+        ex, ey_pos = 730, 110
         
         # Outer steel case frame & red bevel highlight
-        draw.rounded_rectangle([ex - 12, ey - 12, ex + ew + 12, ey + eh + 12], radius=24, fill=(35, 35, 42), outline=(220, 35, 35), width=3)
-        hero.paste(e_resized, (ex, ey), e_resized)
+        draw.rounded_rectangle([ex - 10, ey_pos - 10, ex + ew + 10, ey_pos + eh + 10], radius=22, fill=(35, 35, 42), outline=(220, 35, 35), width=3)
+        hero.paste(e_resized, (ex, ey_pos), e_resized)
 
-    # Border around canvas
     draw.rectangle([0, 0, width - 1, height - 1], outline=(40, 40, 50), width=1)
-
-    hero_path = 'screenshots/pulsar-time2-hero.png'
-    hero.save(hero_path, 'PNG')
-    print(f"✓ Created 1200x675 Hero Mockup: {hero_path}")
+    
+    out_path = 'screenshots/pulsar-time2-hero.png'
+    hero.save(out_path, 'PNG')
+    print(f"✓ Created Hero Mockup: {out_path}")
 
 if __name__ == '__main__':
     create_hero_mockup()
