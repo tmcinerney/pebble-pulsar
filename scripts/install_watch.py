@@ -32,15 +32,31 @@ def install(phone_ip="192.168.10.203", pbw_path="build/pebble-pulsar.pbw"):
                 print("3. Keep the Pebble app open on your screen.", flush=True)
                 sys.exit(1)
     
-    print(f"\n✓ Connected to watch: {pebble.watch_info.board} (Platform {pebble.watch_info.running.hardware_platform}, FW {pebble.watch_info.running.version_tag})")
+    print("Connected to WebSocket. Fetching watch hardware info...", flush=True)
+    try:
+        pebble.fetch_watch_info()
+        print(f"\n✓ Connected to watch: {pebble.watch_info.board} (Platform {pebble.watch_info.running.hardware_platform}, FW {pebble.watch_info.running.version_tag})", flush=True)
+    except Exception as e:
+        print(f"Note: Could not read watch_info immediately ({e}), proceeding with installation...", flush=True)
     
-    installer = AppInstaller(pebble, pbw_path)
-    def progress(sent, total_sent, total_size):
-        pct = int(total_sent * 100 / total_size) if total_size else 0
-        print(f"\rInstalling: [{pct}%] {total_sent}/{total_size} bytes", end="")
-    installer.register_handler("progress", progress)
-    installer.install(force_install=True)
-    print("\n✓ App installation complete!")
+    from libpebble2.communication.transports.websocket import MessageTargetPhone
+    from libpebble2.communication.transports.websocket.protocol import WebSocketInstallBundle, WebSocketInstallStatus
+
+    with open(pbw_path, 'rb') as f:
+        bundle_data = f.read()
+
+    print(f"Sending PBW bundle ({len(bundle_data)} bytes) to phone...", flush=True)
+    transport.send_packet(WebSocketInstallBundle(pbw=bundle_data), target=MessageTargetPhone())
+    
+    print("Waiting for install confirmation...", flush=True)
+    try:
+        result = pebble.read_transport_message(MessageTargetPhone, WebSocketInstallStatus, timeout=30)
+        if result.status == WebSocketInstallStatus.StatusCode.Success:
+            print("✓ App installation succeeded on phone and watch!", flush=True)
+        else:
+            print(f"⚠️ Install status code: {result.status}", flush=True)
+    except Exception as e:
+        print(f"Note on status: {e}", flush=True)
     
     # Launch watchface
     app_uuid = uuid.UUID("8b5f3a12-9c4e-4f71-8b23-6e4d7a8c9b01")
