@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """
 generate_store_assets.py
-Generates the Rebble Appstore Banner (720x320), Store Icon (260x260), and Hero Mockups.
+Generates the Rebble Appstore Banner (720x320) and Store Icon (260x260)
+with authentic Pebble Time 2 hardware mockups.
 """
 
 import os
 from PIL import Image, ImageDraw, ImageFont
+from generate_hardware_mockups import draw_pebble_time2, draw_pebble_diorite
 
 def create_store_assets():
     os.makedirs('screenshots', exist_ok=True)
@@ -18,8 +20,8 @@ def create_store_assets():
     draw = ImageDraw.Draw(banner)
 
     # Ambient ruby glow
-    for r in range(220, 0, -4):
-        alpha = int(14 * (1 - r / 220))
+    for r in range(240, 0, -4):
+        alpha = int(16 * (1 - r / 240))
         draw.ellipse([540 - r, height//2 - r, 540 + r, height//2 + r], fill=(alpha * 3, 0, 0))
 
     # Grid lines
@@ -28,33 +30,16 @@ def create_store_assets():
     for y in range(0, height, 36):
         draw.line([(0, y), (width, y)], fill=(18, 18, 22), width=1)
 
-    # Add Watch Screenshots on the Right
-    emery_path = 'screenshots/emery-time.png'
-    steps_path = 'screenshots/emery-steps.png'
-    
-    # Left watch (Steps or Diorite)
-    if os.path.exists(steps_path):
-        steps_img = Image.open(steps_path).convert('RGBA')
-        scale = 0.85
-        sw, sh = int(steps_img.width * scale), int(steps_img.height * scale)
-        steps_resized = steps_img.resize((sw, steps_img.height * sw // steps_img.width), Image.Resampling.LANCZOS)
-        case_x, case_y = 370, 62
-        draw.rounded_rectangle([case_x - 5, case_y - 5, case_x + sw + 5, case_y + sh + 5], radius=10, fill=(24, 24, 28), outline=(130, 25, 25), width=1)
-        banner.paste(steps_resized, (case_x, case_y), steps_resized)
+    # Hardware Watch Renders on Right
+    p2_mock = draw_pebble_diorite(scale=0.48, screen_image_path="screenshots/diorite-time.png")
+    t2_mock = draw_pebble_time2(scale=0.56, screen_image_path="screenshots/emery-time.png")
 
-    # Right primary watch (Emery Time)
-    if os.path.exists(emery_path):
-        emery_img = Image.open(emery_path).convert('RGBA')
-        scale = 1.08
-        ew, eh = int(emery_img.width * scale), int(emery_img.height * scale)
-        emery_resized = emery_img.resize((ew, eh), Image.Resampling.LANCZOS)
-        case_x, case_y = 495, 34
-        draw.rounded_rectangle([case_x - 6, case_y - 6, case_x + ew + 6, case_y + eh + 6], radius=12, fill=(32, 32, 36), outline=(220, 30, 30), width=2)
-        banner.paste(emery_resized, (case_x, case_y), emery_resized)
+    banner.paste(p2_mock, (360, 20), p2_mock)
+    banner.paste(t2_mock, (460, -5), t2_mock)
 
-    # Typography & Branding on Left (constrained to x=36 to x=355)
+    # Typography & Branding on Left (x=36 to x=350)
     try:
-        font_logo = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 40)
+        font_logo = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 38)
         font_sub = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 13)
         font_desc = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 13)
         font_badge = ImageFont.truetype("/System/Library/Fonts/Supplemental/Courier New Bold.ttf", 12)
@@ -66,8 +51,8 @@ def create_store_assets():
 
     # Main Brand Text
     draw.text((48, 40), "P U L S A R", fill=(255, 255, 255), font=font_logo)
-    draw.text((50, 90), "1 9 7 0   T I M E   C O M P U T E R", fill=(220, 50, 50), font=font_sub)
-    draw.text((50, 118), "The 1972 Hamilton Digital LED Icon.", fill=(170, 170, 180), font=font_desc)
+    draw.text((50, 88), "1 9 7 0   T I M E   C O M P U T E R", fill=(220, 50, 50), font=font_sub)
+    draw.text((50, 116), "The 1972 Hamilton Digital LED Icon.", fill=(170, 170, 180), font=font_desc)
 
     # Bullet Highlights
     bullets = [
@@ -95,15 +80,11 @@ def create_store_assets():
     icon = Image.new('RGB', (icon_w, icon_h), (12, 12, 14))
     icon_draw = ImageDraw.Draw(icon)
     
-    if os.path.exists(emery_path):
-        emery_img = Image.open(emery_path).convert('RGBA')
-        iw, ih = 196, int(196 * emery_img.height / emery_img.width)
-        emery_resized = emery_img.resize((iw, ih), Image.Resampling.LANCZOS)
-        cx = (icon_w - iw) // 2
-        cy = (icon_h - ih) // 2
-        
-        icon_draw.rounded_rectangle([cx - 4, cy - 4, cx + iw + 4, cy + ih + 4], radius=10, fill=(25, 25, 30), outline=(200, 25, 25), width=2)
-        icon.paste(emery_resized, (cx, cy), emery_resized)
+    t2_icon = draw_pebble_time2(scale=0.45, screen_image_path="screenshots/emery-time.png")
+    cx = (icon_w - t2_icon.width) // 2
+    cy = (icon_h - t2_icon.height) // 2
+    icon.paste(t2_icon, (cx, cy), t2_icon)
+    icon_draw.rectangle([0, 0, icon_w - 1, icon_h - 1], outline=(45, 45, 55), width=1)
     
     icon_path = 'screenshots/store-icon-260x260.png'
     icon.save(icon_path, 'PNG')

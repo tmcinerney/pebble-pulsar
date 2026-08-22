@@ -5,28 +5,17 @@
 </p>
 
 <p align="center">
-  <img src="screenshots/renders/pebble-time2-3d-angle.png" width="48%" alt="3D Pebble Time 2 Studio Render" />
-  <img src="screenshots/renders/pebble-pulsar-flick-actions-optimized.gif" width="48%" alt="Pulsar 1970 Wrist Flick Gesture Animation" />
+  <img src="screenshots/mockups/pebble-time2-device.png" width="44%" alt="Pebble Time 2 Hardware Mockup" />
+  <img src="screenshots/renders/pebble-pulsar-flick-actions-optimized.gif" width="44%" alt="Pulsar 1970 Wrist Flick Gesture Animation" />
 </p>
 
 <p align="center">
-  <em>Left: 3D studio product render of the Pebble Time 2 hardware with procedural GaAsP LED matrix. Right: Real-time wrist-flick gesture demonstration cycling through all 5 display modes.</em>
+  <em>Left: Authentic Pebble Time 2 hardware in 316L brushed stainless steel with procedural GaAsP LED matrix. Right: Live wrist-flick gesture animation cycling through all 5 display modes.</em>
 </p>
 
 A high-fidelity retro digital watchface inspired by the iconic **1970s Hamilton Pulsar** ("Time Computer" P1, P2, and P3 models)—the world's first commercial digital LED wristwatch.
 
 Built for the **Rebble / RePebble** ecosystem with native support for the **Pebble Time 2 (`emery`)**, **Pebble Time / Time Steel (`basalt`)**, **Pebble 2 (`diorite`)**, and classic **Pebble (`aplite`)**.
-
----
-
-## 3D Hardware Studio Render
-
-<p align="center">
-  <img src="screenshots/renders/pebble-time2-3d-front.png" width="520" alt="Pebble Time 2 Frontal Studio Product Render" />
-</p>
-<p align="center">
-  <em>Pebble Time 2 (Emery, 200×228 Color Memory LCD) in brushed stainless steel with chamfered bezel, mineral glass reflection, and authentic unlit maroon ghost matrix.</em>
-</p>
 
 ---
 
@@ -64,42 +53,61 @@ Cycle through 5 interactive display modes via wrist flick or tap:
 
 ---
 
-## Multi-Platform Hardware Support
-
-**Pulsar 1970** includes custom geometry, scaling, and color rendering for rectangular Pebble smartwatches:
+## Hardware Gallery & Platform Showcase
 
 <p align="center">
   <img src="screenshots/pulsar-all-platforms-mockup.png" width="100%" alt="All Supported Pebble Platforms" />
 </p>
 
-- **Pebble Time 2 (`emery`):** 200×228 64-color resolution with large 5×7 GaAsP dies and full breathing room.
-- **Pebble Time / Time Steel (`basalt`):** 144×168 64-color screen with full vintage colorway options.
-- **Pebble 2 HR / SE (`diorite`):** High-contrast 1-bit black & white display with noise-free white LED dies.
-- **Pebble Classic / Steel (`aplite`):** 1-bit monochrome memory LCD support.
+### 1. Pebble Time 2 (`emery`)
+* **Hardware:** 316L Brushed Stainless Steel, slim bezel, 1.5" Color Memory LCD (200×228 pixels @ 228 PPI, 64 colors)
+* **Highlights:** 53% larger display area, expanded 5×7 LED die spacing, high-definition step bar and status readouts.
 
----
-
-## Platform Screenshot Gallery
-
-### Pebble Time 2 (`emery` — 200×228 Color)
+<p align="center">
+  <img src="screenshots/mockups/pebble-time2-device.png" width="320" alt="Pebble Time 2 Hardware Mockup" />
+</p>
 
 | Time (`18:14`) | Live Seconds (`:52`) | Date (`08.21`) | Daily Steps (`08420`) | Battery (`85%`) |
 | :---: | :---: | :---: | :---: | :---: |
 | ![Emery Time](screenshots/emery-time.png) | ![Emery Seconds](screenshots/emery-seconds.png) | ![Emery Date](screenshots/emery-date.png) | ![Emery Steps](screenshots/emery-steps.png) | ![Emery Battery](screenshots/emery-battery.png) |
 
-### Pebble Time / Time Steel (`basalt` — 144×168 Color)
+---
+
+### 2. Pebble Time & Time Steel (`basalt`)
+* **Hardware:** Marine-grade Stainless Steel / Polycarbonate, 1.26" Color Memory LCD (144×168 pixels @ 182 PPI, 64 colors)
+* **Highlights:** Deep black glass border integration, rich 64-color palette, full 6-colorway vintage selection.
+
+<p align="center">
+  <img src="screenshots/mockups/pebble-basalt-device.png" width="320" alt="Pebble Time Steel Hardware Mockup" />
+</p>
 
 | Time (`18:15`) | Live Seconds (`:52`) | Date (`08.21`) | Daily Steps (`08420`) | Battery (`85%`) |
 | :---: | :---: | :---: | :---: | :---: |
 | ![Basalt Time](screenshots/basalt-time.png) | ![Basalt Seconds](screenshots/basalt-seconds.png) | ![Basalt Date](screenshots/basalt-date.png) | ![Basalt Steps](screenshots/basalt-steps.png) | ![Basalt Battery](screenshots/basalt-battery.png) |
 
-### Pebble 2 HR (`diorite` — 144×168 1-Bit Monochrome)
+---
+
+### 3. Pebble 2 HR (`diorite`)
+* **Hardware:** Matte Sport Polycarbonate with silicone grips, 1.26" Transflective Monochrome Memory LCD (144×168 pixels @ 182 PPI, 1-bit)
+* **Highlights:** Glare-free sunlight visibility, pure high-contrast white LED dies, zero dither artifacts.
+
+<p align="center">
+  <img src="screenshots/mockups/pebble-diorite-device.png" width="320" alt="Pebble 2 HR Hardware Mockup" />
+</p>
 
 | Time (`18:11`) | Live Seconds (`:52`) | Date (`08.21`) | Daily Steps (`08420`) | Battery (`85%`) |
 | :---: | :---: | :---: | :---: | :---: |
 | ![Diorite Time](screenshots/diorite-time.png) | ![Diorite Seconds](screenshots/diorite-seconds.png) | ![Diorite Date](screenshots/diorite-date.png) | ![Diorite Steps](screenshots/diorite-steps.png) | ![Diorite Battery](screenshots/diorite-battery.png) |
 
-### Pebble Classic (`aplite` — 144×168 1-Bit Monochrome)
+---
+
+### 4. Pebble Classic & Steel (`aplite`)
+* **Hardware:** Iconic curved rectangular casing, 1.26" Transflective Monochrome Memory LCD (144×168 pixels @ 182 PPI, 1-bit)
+* **Highlights:** Original Pebble architecture support, pixel-aligned dot matrices, ultra-low power consumption.
+
+<p align="center">
+  <img src="screenshots/mockups/pebble-aplite-device.png" width="320" alt="Pebble Classic Hardware Mockup" />
+</p>
 
 | Time (`18:12`) | Live Seconds (`:52`) | Date (`08.21`) | Daily Steps (`08420`) | Battery (`85%`) |
 | :---: | :---: | :---: | :---: | :---: |

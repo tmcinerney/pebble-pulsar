@@ -18,3 +18,5 @@ Thumbs.db
 .worktreeinclude
 *.swp
 *~
+__pycache__/
+*.pyc
