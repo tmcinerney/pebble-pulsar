@@ -46,27 +46,27 @@
         "defaultValue": "0",
         "options": [
           {
-            "label": "Neon Ruby (GaAsP High-Luminance)",
+            "label": "Classic GaAsP Ruby Red (1972)",
             "value": "0"
           },
           {
-            "label": "Deep Red (Classic 1972)",
+            "label": "Hot Lava Orange (Vintage LED)",
             "value": "1"
           },
           {
-            "label": "Prototype Green (GaP 1975)",
+            "label": "Phosphor Green (1975 GaP LED)",
             "value": "2"
           },
           {
-            "label": "Amber Gold (HP-01 Style)",
+            "label": "Amber Gold (HP-01 Calculator LED)",
             "value": "3"
           },
           {
-            "label": "Cobalt Blue",
+            "label": "Electric Cyan / Blue (High-Contrast)",
             "value": "4"
           },
           {
-            "label": "Lunar White (High-Contrast)",
+            "label": "Lunar White (Silver LED Matrix)",
             "value": "5"
           },
           {

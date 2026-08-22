@@ -160,31 +160,37 @@ static Colorway get_current_palette(int colorway_index) {
   
   switch (colorway_index) {
     case COLORWAY_DEEP_RED:
-      p.lit = GColorRed;
+      // Hot Lava Orange (Vintage LED)
+      p.lit = GColorOrange;
       p.ghost = GColorBulgarianRose;
-      p.accent = GColorDarkCandyAppleRed;
+      p.accent = GColorSunsetOrange;
       break;
     case COLORWAY_PROTOTYPE_GREEN:
-      p.lit = GColorMintGreen;
+      // Authentic 1975 GaP Phosphor Green
+      p.lit = GColorBrightGreen;
       p.ghost = GColorDarkGreen;
-      p.accent = GColorIslamicGreen;
+      p.accent = GColorSpringBud;
       break;
     case COLORWAY_AMBER_GOLD:
-      p.lit = GColorChromeYellow;
-      p.ghost = GColorWindsorTan;
-      p.accent = GColorWindsorTan;
+      // Amber Gold (HP-01 Space-Age LED)
+      p.lit = GColorYellow;
+      p.ghost = GColorArmyGreen;
+      p.accent = GColorChromeYellow;
       break;
     case COLORWAY_COBALT_BLUE:
-      p.lit = GColorElectricUltramarine;
-      p.ghost = GColorOxfordBlue;
+      // Electric Cyan / Blue (Radiant on Reflective LCD)
+      p.lit = GColorCyan;
+      p.ghost = GColorMidnightGreen;
       p.accent = GColorVividCerulean;
       break;
     case COLORWAY_LUNAR_WHITE:
+      // Lunar White / Silver
       p.lit = GColorWhite;
       p.ghost = GColorDarkGray;
       p.accent = GColorLightGray;
       break;
     case COLORWAY_INVERTED_PAPER:
+      // Inverted E-Paper
       p.outer_bg = GColorWhite;
       p.inner_bg = GColorWhite;
       p.text_outer = GColorBlack;
@@ -194,6 +200,7 @@ static Colorway get_current_palette(int colorway_index) {
       break;
     case COLORWAY_VIBRANT_RUBY:
     default:
+      // Classic 1972 GaAsP Ruby Red
       p.lit = GColorRed;
       p.ghost = GColorBulgarianRose;
       p.accent = GColorRed;
