@@ -39,11 +39,33 @@ Cycle through 5 interactive display modes via wrist flick or tap:
 
 ---
 
-## Modes Preview
+## Multi-Platform Hardware Support
 
-| Time (`10:10`) | Live Seconds (`:26`) | Date (`08.21`) | Daily Steps (`08420`) | Battery (`85%`) |
+**Pulsar 1970** includes custom geometry, scaling, and color rendering for every generation of Pebble smartwatch:
+
+![All Pebble Platforms Supported](screenshots/pulsar-all-platforms-mockup.png)
+
+- **Pebble Time 2 (`emery`):** 200×228 64-color resolution with large 5×7 GaAsP dies and generous cushion border.
+- **Pebble Time / Time Steel (`basalt`):** 144×168 64-color screen with full vintage colorway options.
+- **Pebble Time Round (`chalk`):** 180×180 circular screen with centered cushion frame and tailored circular typography.
+- **Pebble 2 HR / SE (`diorite`):** High-contrast 1-bit black & white display with ultra-crisp white LED dies.
+- **Pebble Classic / Steel (`aplite`):** 1-bit monochrome memory LCD support.
+
+---
+
+## Modes Preview (Pebble Time 2)
+
+| Time (`17:46`) | Live Seconds (`:52`) | Date (`08.21`) | Daily Steps (`08420`) | Battery (`85%`) |
 | :---: | :---: | :---: | :---: | :---: |
-| ![Time](screenshots/emery-time-italic.png) | ![Seconds](screenshots/emery-mode-seconds.png) | ![Date](screenshots/emery-mode-date.png) | ![Steps](screenshots/emery-mode-steps.png) | ![Battery](screenshots/emery-mode-battery.png) |
+| ![Time](screenshots/emery-time.png) | ![Seconds](screenshots/emery-seconds.png) | ![Date](screenshots/emery-date.png) | ![Steps](screenshots/emery-steps.png) | ![Battery](screenshots/emery-battery.png) |
+
+---
+
+## App Store Assets
+
+| Rebble Appstore Banner (720×320) | Store Icon (260×260) |
+| :---: | :---: |
+| ![Banner](screenshots/appstore-banner-720x320.png) | ![Icon](screenshots/store-icon-260x260.png) |
 
 ---
 

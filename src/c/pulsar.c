@@ -354,7 +354,11 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
   int bead_radius = bounds.size.w > 180 ? 2 : 1;
   int total_bead_width = (num_beads - 1) * bead_spacing;
   int start_x = (bounds.size.w - total_bead_width) / 2;
+#if defined(PBL_ROUND)
+  int bead_y = 126;
+#else
   int bead_y = bounds.size.w > 180 ? 162 : 122;
+#endif
   
   bool is_active = (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake;
   int goal = s_step_goal > 0 ? s_step_goal : 10000;
@@ -386,15 +390,27 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   GFont font_header = bounds.size.w > 180 ? 
                       fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD) : 
                       fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD);
+#if defined(PBL_ROUND)
+  int header_y = 12;
+#else
   int header_y = bounds.size.w > 180 ? 6 : 3;
+#endif
   graphics_context_set_text_color(ctx, palette->text_outer);
   graphics_draw_text(ctx, header_text, font_header,
                      GRect(0, header_y, bounds.size.w, bounds.size.w > 180 ? 24 : 18),
                      GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
   // 3. Central Inner Obsidian Display Aperture (Maximized Display Area)
-  GRect frame_rect = bounds.size.w > 180 ? GRect(6, 32, 188, 164) : GRect(4, 24, 136, 120);
-  int inner_radius = bounds.size.w > 180 ? 8 : 5;
+#if defined(PBL_ROUND)
+  GRect frame_rect = GRect(18, 30, 144, 120);
+  int inner_radius = 8;
+#elif defined(PBL_PLATFORM_EMERY)
+  GRect frame_rect = GRect(6, 32, 188, 164);
+  int inner_radius = 8;
+#else
+  GRect frame_rect = GRect(4, 24, 136, 120);
+  int inner_radius = 5;
+#endif
   graphics_context_set_fill_color(ctx, palette->inner_bg);
   graphics_fill_rect(ctx, frame_rect, inner_radius, GCornersAll);
   
@@ -408,7 +424,11 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   int steps = get_step_count();
   
   int digit_span_x = (DIGIT_WIDTH - 1) * DOT_SPACING_X;
+#if defined(PBL_ROUND)
+  int start_y = 58;
+#else
   int start_y = TOP_MARGIN;
+#endif
   int slant_scale = (bounds.size.w > 180) ? 3 : 2;
   int max_slant = s_italic_slant ? slant_scale : 0;
 
@@ -429,7 +449,11 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
 
     int total_5_width = (5 * step_digit_span) + (4 * step_gap) + max_slant;
     int start_5_x = (bounds.size.w - total_5_width) / 2;
+#if defined(PBL_ROUND)
+    int step_start_y = 58;
+#else
     int step_start_y = bounds.size.w > 180 ? (TOP_MARGIN + 3) : TOP_MARGIN;
+#endif
 
     int s_digits[5] = {s1, s2, s3, s4, s5};
     for (int i = 0; i < 5; i++) {
@@ -570,7 +594,13 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   draw_step_beads(ctx, bounds, palette, steps);
   
   // 6. Status Indicators (Left: BT, Right: Battery - inside bottom of window)
-  int indicator_y = bounds.size.w > 180 ? 180 : 132;
+#if defined(PBL_ROUND)
+  int indicator_y = 138;
+#elif defined(PBL_PLATFORM_EMERY)
+  int indicator_y = 180;
+#else
+  int indicator_y = 132;
+#endif
   if (!s_bluetooth_connected) {
     graphics_context_set_fill_color(ctx, palette->lit);
     graphics_fill_circle(ctx, GPoint(bounds.size.w / 4, indicator_y), INDICATOR_RADIUS);
@@ -583,7 +613,11 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
 
   // 7. Vintage Footer OUTSIDE the border at Bottom
   if (s_footer_style != FOOTER_STYLE_NONE) {
+#if defined(PBL_ROUND)
+    const char *footer_text = "TIME COMPUTER";
+#else
     const char *footer_text = "T I M E   C O M P U T E R";
+#endif
     if (s_display_mode == DISPLAY_MODE_STEPS && is_active) {
       footer_text = "S T E P S";
     } else if (s_display_mode == DISPLAY_MODE_BATTERY && is_active) {
@@ -600,7 +634,13 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
       }
     }
     
-    int footer_y = bounds.size.w > 180 ? 202 : 148;
+#if defined(PBL_ROUND)
+    int footer_y = 151;
+#elif defined(PBL_PLATFORM_EMERY)
+    int footer_y = 202;
+#else
+    int footer_y = 148;
+#endif
     GFont font_footer = fonts_get_system_font(FONT_KEY_GOTHIC_14);
     graphics_context_set_text_color(ctx, palette->text_outer);
     graphics_draw_text(ctx, footer_text, font_footer,
