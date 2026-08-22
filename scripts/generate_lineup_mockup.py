@@ -31,10 +31,10 @@ def create_lineup():
     draw.text((width//2, 58), "AUTHENTIC PROCEDURAL GaAsP MATRIX RENDERING ON RECTANGULAR DISPLAYS", fill=(220, 50, 50), font=font_sub, anchor="mm")
 
     platforms = [
-        ("APLITE", "Pebble Classic", "screenshots/aplite_time.png"),
-        ("BASALT", "Pebble Time / Steel", "screenshots/basalt_time.png"),
-        ("DIORITE", "Pebble 2 HR", "screenshots/diorite_time.png"),
-        ("EMERY", "Pebble Time 2", "screenshots/emery_time.png"),
+        ("APLITE", "Pebble Classic", "screenshots/aplite-time.png"),
+        ("BASALT", "Pebble Time / Steel", "screenshots/basalt-time.png"),
+        ("DIORITE", "Pebble 2 HR", "screenshots/diorite-time.png"),
+        ("EMERY", "Pebble Time 2", "screenshots/emery-time.png"),
     ]
 
     centers = [165, 435, 705, 995]

@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <em>Left: 3D studio product render of the Pebble Time 2. Right: Real-time wrist-flick gesture cycling across all 5 display modes.</em>
+  <em>Left: 3D studio product render of the Pebble Time 2 hardware with procedural GaAsP LED matrix. Right: Real-time wrist-flick gesture demonstration cycling through all 5 display modes.</em>
 </p>
 
 A high-fidelity retro digital watchface inspired by the iconic **1970s Hamilton Pulsar** ("Time Computer" P1, P2, and P3 models)—the world's first commercial digital LED wristwatch.
@@ -19,11 +19,22 @@ Built for the **Rebble / RePebble** ecosystem with native support for the **Pebb
 
 ---
 
-## Features & Configurable Capabilities
+## 3D Hardware Studio Render
+
+<p align="center">
+  <img src="screenshots/renders/pebble-time2-3d-front.png" width="520" alt="Pebble Time 2 Frontal Studio Product Render" />
+</p>
+<p align="center">
+  <em>Pebble Time 2 (Emery, 200×228 Color Memory LCD) in brushed stainless steel with chamfered bezel, mineral glass reflection, and authentic unlit maroon ghost matrix.</em>
+</p>
+
+---
+
+## Features & Capabilities
 
 ### 1. Authentic 1970s LED Matrix & Visuals
 - **5×7 GaAsP Dot-Matrix LEDs:** Mathematically rendered circular LED dies that scale crisply across all display resolutions.
-- **Authentic ~6° Vintage Italic Slant:** Replicates the physical rightward die tilt characteristic of 1970s Litronix/Bowmar LED modules (toggleable in settings).
+- **Authentic ~6° Vintage Italic Slant:** Replicates the physical rightward die tilt characteristic of 1970s Litronix/Bowmar LED modules (toggleable in Clay settings).
 - **GaAsP Ghost Matrix:** Unlit LED dies are rendered in deep maroon (`GColorBulgarianRose`) on a pitch-black background (`GColorBlack`), mimicking unlit semiconductor dies beneath synthetic ruby mineral crystal.
 - **Pure Seamless Black Background:** Borderless design that integrates seamlessly with the physical watch bezel and glass.
 - **Noise-Free 1-Bit Monochrome Rendering:** Clean, pure black background on Pebble 2 (`diorite`) and Classic (`aplite`) with zero dither noise and solid high-contrast white LED dies.
@@ -38,10 +49,12 @@ Cycle through 5 interactive display modes via wrist flick or tap:
 5. **Battery Level Mode (` 85 %` / `100 %`):** Digital battery percentage monitor.
 
 ### 3. LED Colorways
-- **Ruby Red (GaAsP 1972):** Default deep red semiconductor LED with maroon ghost dies.
+- **Neon Ruby (GaAsP High-Luminance):** Vivid red semiconductor LED with maroon ghost dies.
+- **Deep Red (Classic 1972):** Traditional deep ruby crystal homage.
 - **Prototype Green (GaP 1975):** Vintage green LED homage.
 - **Amber Gold (HP-01 Style):** Warm golden-yellow space-age calculation watch homage.
 - **Cobalt Blue:** Modern electric blue styling.
+- **Lunar White:** High-contrast crisp white LED dies.
 
 ### 4. Health & Alerts
 - **10-Dot Micro-LED Step Progress Bar:** 10 discrete micro-dots showing daily progress towards a configurable step goal (5,000 to 15,000 steps).
@@ -55,7 +68,9 @@ Cycle through 5 interactive display modes via wrist flick or tap:
 
 **Pulsar 1970** includes custom geometry, scaling, and color rendering for rectangular Pebble smartwatches:
 
-![All Pebble Platforms Supported](screenshots/pulsar-all-platforms-mockup.png)
+<p align="center">
+  <img src="screenshots/pulsar-all-platforms-mockup.png" width="100%" alt="All Supported Pebble Platforms" />
+</p>
 
 - **Pebble Time 2 (`emery`):** 200×228 64-color resolution with large 5×7 GaAsP dies and full breathing room.
 - **Pebble Time / Time Steel (`basalt`):** 144×168 64-color screen with full vintage colorway options.
@@ -64,15 +79,35 @@ Cycle through 5 interactive display modes via wrist flick or tap:
 
 ---
 
-## Modes Preview (Pebble Time 2)
+## Platform Screenshot Gallery
 
-| Time (`17:46`) | Live Seconds (`:52`) | Date (`08.21`) | Daily Steps (`08420`) | Battery (`85%`) |
+### Pebble Time 2 (`emery` — 200×228 Color)
+
+| Time (`18:14`) | Live Seconds (`:52`) | Date (`08.21`) | Daily Steps (`08420`) | Battery (`85%`) |
 | :---: | :---: | :---: | :---: | :---: |
-| ![Time](screenshots/emery-time.png) | ![Seconds](screenshots/emery-seconds.png) | ![Date](screenshots/emery-date.png) | ![Steps](screenshots/emery-steps.png) | ![Battery](screenshots/emery-battery.png) |
+| ![Emery Time](screenshots/emery-time.png) | ![Emery Seconds](screenshots/emery-seconds.png) | ![Emery Date](screenshots/emery-date.png) | ![Emery Steps](screenshots/emery-steps.png) | ![Emery Battery](screenshots/emery-battery.png) |
+
+### Pebble Time / Time Steel (`basalt` — 144×168 Color)
+
+| Time (`18:15`) | Live Seconds (`:52`) | Date (`08.21`) | Daily Steps (`08420`) | Battery (`85%`) |
+| :---: | :---: | :---: | :---: | :---: |
+| ![Basalt Time](screenshots/basalt-time.png) | ![Basalt Seconds](screenshots/basalt-seconds.png) | ![Basalt Date](screenshots/basalt-date.png) | ![Basalt Steps](screenshots/basalt-steps.png) | ![Basalt Battery](screenshots/basalt-battery.png) |
+
+### Pebble 2 HR (`diorite` — 144×168 1-Bit Monochrome)
+
+| Time (`18:11`) | Live Seconds (`:52`) | Date (`08.21`) | Daily Steps (`08420`) | Battery (`85%`) |
+| :---: | :---: | :---: | :---: | :---: |
+| ![Diorite Time](screenshots/diorite-time.png) | ![Diorite Seconds](screenshots/diorite-seconds.png) | ![Diorite Date](screenshots/diorite-date.png) | ![Diorite Steps](screenshots/diorite-steps.png) | ![Diorite Battery](screenshots/diorite-battery.png) |
+
+### Pebble Classic (`aplite` — 144×168 1-Bit Monochrome)
+
+| Time (`18:12`) | Live Seconds (`:52`) | Date (`08.21`) | Daily Steps (`08420`) | Battery (`85%`) |
+| :---: | :---: | :---: | :---: | :---: |
+| ![Aplite Time](screenshots/aplite-time.png) | ![Aplite Seconds](screenshots/aplite-seconds.png) | ![Aplite Date](screenshots/aplite-date.png) | ![Aplite Steps](screenshots/aplite-steps.png) | ![Aplite Battery](screenshots/aplite-battery.png) |
 
 ---
 
-## App Store Assets
+## App Store & Marketing Suite
 
 | Rebble Appstore Banner (720×320) | Store Icon (260×260) |
 | :---: | :---: |
@@ -95,13 +130,13 @@ This produces `build/pebble-pulsar.pbw` containing binaries and Clay configurati
 # Pebble Time 2 (200x228 Color)
 devenv shell -- pebble install --emulator emery
 
-# Simulate wrist flick / tap
+# Simulate wrist flick / tap gesture
 devenv shell -- pebble emu-tap --emulator emery --direction x+
 ```
 
 ### 3. Direct Watch Installation (Standard WiFi Developer Bridge)
-To flash the watch directly without manual web downloads:
-1. Ensure the Pebble mobile app is open with **Developer Connection** enabled (Settings → Developer Connection).
+To flash the watch directly over the local network:
+1. Ensure the Pebble mobile app is open on your phone with **Developer Connection** enabled (Settings → Developer Connection).
 2. Run the direct installer:
 ```bash
 devenv shell -- python3 scripts/install_watch.py <PHONE_IP>
@@ -129,7 +164,7 @@ To distribute **Pulsar 1970** to all Pebble users worldwide:
 
 ## Historical Note: Why "TIME COMPUTER"?
 
-When the Hamilton Watch Company unveiled the original Pulsar in 1970 on the *Tonight Show Starring Johnny Carson*, it had no moving parts, gears, or hands—an unprecedented leap in electronics. In 1972, Hamilton incorporated the dedicated subsidiary **"Pulsar Time Computer, Inc."** All original P1, P2 ("Astronaut"), and P3 timepieces were branded as *Pulsar Time Computers*.
+When the Hamilton Watch Company unveiled the original Pulsar in 1970 on the *Tonight Show Starring Johnny Carson*, it had no moving parts, gears, or hands—an unprecedented leap in solid-state electronics. In 1972, Hamilton incorporated the dedicated subsidiary **"Pulsar Time Computer, Inc."** All original P1, P2 ("Astronaut"), and P3 timepieces were branded as *Pulsar Time Computers*.
 
 ---
 

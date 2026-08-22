@@ -60,9 +60,9 @@ def create_hero_mockup():
     draw.text((76, 562), "Pebble Time 2 (Emery) • Time / Steel • Pebble 2 • Classic", fill=(170, 170, 180), font=font_desc)
 
     # 3. Right Watches Display Section
-    emery_path = 'screenshots/emery_time.png'
-    basalt_path = 'screenshots/basalt_time.png'
-    diorite_path = 'screenshots/diorite_time.png'
+    emery_path = 'screenshots/emery-time.png'
+    basalt_path = 'screenshots/basalt-time.png'
+    diorite_path = 'screenshots/diorite-time.png'
 
     # 1. Pebble Time (Basalt) - Left Secondary
     if os.path.exists(basalt_path):

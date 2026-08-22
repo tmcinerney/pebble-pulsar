@@ -38,7 +38,7 @@ def main():
         time.sleep(2)
         
         for mode in MODES:
-            out_file = f"screenshots/{platform}_{mode}.png"
+            out_file = f"screenshots/{platform}-{mode}.png"
             print(f"Capturing {out_file}...")
             run_cmd(f"devenv shell -- pebble screenshot --emulator {platform} {out_file}")
             time.sleep(0.5)
