@@ -19,36 +19,59 @@ Built for the **Rebble / RePebble** ecosystem with native support for the **Pebb
 
 ---
 
+## Quick Start & Interaction Guide
+
+### 💡 Operating Modes
+* **Always-On Mode (Default):** The dot-matrix time is continuously visible with blinking colon and active status dots.
+* **Stealth Mode (Authentic 1972 Experience):** Replicates the real 1970s Pulsar P1/P2/P3 experience where the LED display remains completely dark to conserve power beneath the synthetic ruby crystal. 
+  * **To read the time:** **Flick your wrist or gently tap the watch**. The time will brightly illuminate for 4 seconds before fading back to sleep.
+  * **To view other stats:** Subsequent taps while awake cycle through Live Seconds (`:SS`), Date, Daily Steps, and Battery.
+
+### 👋 Wrist Flick & Tap Actions
+In the Pebble mobile app settings, you can configure what a wrist flick does:
+* **Cycle All (Default):** Temporarily switches through Time &rarr; Live Seconds &rarr; Date &rarr; Steps &rarr; Battery, automatically returning to Time after 4 seconds.
+* **Live Seconds Counter (`:SS`):** Instant 4-second burst of real-time ticking seconds.
+* **Calendar Date (`MM DD` / `DD MM`):** Quick check of current month and day.
+* **Step Count (`08420`):** Immediate readout of your daily Pebble Health steps.
+* **Battery Level (` 85 %`):** Battery percentage readout.
+
+---
+
 ## Features & Capabilities
 
 ### 1. Authentic 1970s LED Matrix & Visuals
 - **5×7 GaAsP Dot-Matrix LEDs:** Mathematically rendered circular LED dies that scale crisply across all display resolutions.
-- **Authentic ~6° Vintage Italic Slant:** Replicates the physical rightward die tilt characteristic of 1970s Litronix/Bowmar LED modules (toggleable in Clay settings).
+- **Authentic 12° Vintage Italic Slant:** Replicates the physical rightward die tilt characteristic of 1970s Litronix/Bowmar LED modules (toggleable in Clay settings for upright block mode).
 - **GaAsP Ghost Matrix:** Unlit LED dies are rendered in deep maroon (`GColorBulgarianRose`) on a pitch-black background (`GColorBlack`), mimicking unlit semiconductor dies beneath synthetic ruby mineral crystal.
 - **Pure Seamless Black Background:** Borderless design that integrates seamlessly with the physical watch bezel and glass.
 - **Noise-Free 1-Bit Monochrome Rendering:** Clean, pure black background on Pebble 2 (`diorite`) and Classic (`aplite`) with zero dither noise and solid high-contrast white LED dies.
-- **Customizable Bezel Footer:** Choose between `TIME COMPUTER` (1972 Hamilton homage), `HAMILTON`, `PULSAR`, or `None (Clean / Minimal)`.
+- **Customizable Brand Headers & Footers:** Choose top header (`PULSAR`, `HAMILTON`, `SOLID STATE`, or `None`) and bezel footer (`TIME COMPUTER`, `SOLID STATE`, `HAMILTON`, `PULSAR`, `SWISS MADE`, or `None`).
 
 ### 2. Multi-Mode Display Engine (Wrist Flick / Tap)
 Cycle through 5 interactive display modes via wrist flick or tap:
-1. **Time Mode (`HH:MM`):** 12h/24h time with blinking GaAsP colon and AM/PM LED indicator dot.
+1. **Time Mode (`HH:MM`):** 12h/24h time with blinking GaAsP colon, optional leading zero, and AM/PM LED indicator dot.
 2. **Live Seconds Mode (`:SS`):** Real-time ticking seconds counter.
-3. **Calendar Date Mode (`MM DD`):** Space-age month and day readout.
+3. **Calendar Date Mode (`MM DD` / `DD MM`):** Space-age month and day readout with configurable format.
 4. **Step Counter Mode (`08420`):** 5-digit daily step count powered by the Pebble Health API.
 5. **Battery Level Mode (` 85 %` / `100 %`):** Digital battery percentage monitor.
 
-### 3. LED Colorways
+### 3. LED Colorways & Inverted Theme
 - **Neon Ruby (GaAsP High-Luminance):** Vivid red semiconductor LED with maroon ghost dies.
 - **Deep Red (Classic 1972):** Traditional deep ruby crystal homage.
 - **Prototype Green (GaP 1975):** Vintage green LED homage.
 - **Amber Gold (HP-01 Style):** Warm golden-yellow space-age calculation watch homage.
 - **Cobalt Blue:** Modern electric blue styling.
 - **Lunar White:** High-contrast crisp white LED dies.
+- **Inverted Paper (Black on White):** Crisp black matrix LEDs on a paper-white background for high-visibility bright outdoor sunlight.
 
-### 4. Health & Alerts
-- **10-Dot Micro-LED Step Progress Bar:** 10 discrete micro-dots showing daily progress towards a configurable step goal (5,000 to 15,000 steps).
-- **Stealth Push-to-Wake Mode:** Replicates the original Pulsar power-saving behavior—display remains dark until awakened for 4 seconds by wrist movement.
+### 4. Health, Progress & Alerts
+- **10-Dot Micro-LED Progress Bar:** Multi-mode indicator above the footer:
+  - **Daily Step Progress:** 10 micro-dots showing progress towards your daily step goal (5k to 15k).
+  - **Battery Meter:** 1 dot = 10% battery charge level.
+  - **Disabled / Off:** Clean minimal bezel.
+- **Stealth Push-to-Wake Mode:** 4-second flick/tap illumination.
 - **Hourly Vibration Chime:** Configurable silent hourly alert (Off, Single Pulse, Double Pulse).
+- **Bluetooth Disconnect Alert:** Optional double-pulse wrist vibration if phone connection drops.
 - **Status Indicators:** Subtle LED status dots for Bluetooth disconnect and battery low (<20%).
 
 ---

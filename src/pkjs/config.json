@@ -11,6 +11,10 @@
         "defaultValue": "Operating Mode"
       },
       {
+        "type": "text",
+        "defaultValue": "💡 <b>How it works:</b><br>• <b>Always-On:</b> Keeps the LED time continuously visible.<br>• <b>Stealth (1972 Push-to-Wake):</b> Replicates the original 1972 Pulsar push-button experience. The display stays dark until you <b>flick your wrist or tap your watch</b>, illuminating the LEDs for 4 seconds."
+      },
+      {
         "type": "radiogroup",
         "messageKey": "AppKeyOperatingMode",
         "label": "Operating Mode",
@@ -21,7 +25,7 @@
             "value": "0"
           },
           {
-            "label": "Stealth (Push-to-Wake 4s)",
+            "label": "Stealth (Flick/Tap to Wake 4s)",
             "value": "1"
           }
         ]
@@ -147,6 +151,7 @@
         "type": "select",
         "messageKey": "AppKeyBeadMode",
         "label": "Dot Meter Mode",
+        "description": "Choose what the row of 10 micro-LEDs above the footer displays.",
         "defaultValue": "0",
         "options": [
           {
@@ -230,7 +235,11 @@
     "items": [
       {
         "type": "heading",
-        "defaultValue": "Interaction & Motion"
+        "defaultValue": "Interaction & Gestures"
+      },
+      {
+        "type": "text",
+        "defaultValue": "👋 <b>Wrist Flick & Tap Gestures:</b><br>• In <b>Stealth Mode</b>: A quick wrist flick or tap illuminates the watch for 4 seconds.<br>• In <b>Always-On Mode</b>: A wrist flick triggers your chosen action below, returning to Time after 4 seconds."
       },
       {
         "type": "select",
@@ -243,7 +252,7 @@
             "value": "0"
           },
           {
-            "label": "Live Seconds Counter",
+            "label": "Live Seconds Counter (:SS)",
             "value": "1"
           },
           {
@@ -273,6 +282,7 @@
         "type": "select",
         "messageKey": "AppKeyHourlyVibe",
         "label": "Hourly Chime",
+        "description": "Subtle wrist vibration at the top of every hour.",
         "defaultValue": "0",
         "options": [
           {
