@@ -26,12 +26,13 @@ jobs:
           name: devenv
 
       - name: Install Devenv
-        uses: cachix/devenv-action@v1.4
-        with:
-          run: |
-            echo "Building Pebble Universal Bundle (emery, basalt, diorite, aplite)..."
-            pebble build
-            python3 scripts/validate_pbw.py build/pebble-pulsar.pbw
+        run: nix profile install nixpkgs#devenv
+
+      - name: Build Universal Pebble Bundle
+        run: |
+          devenv shell -- pebble clean
+          devenv shell -- pebble build
+          python3 scripts/validate_pbw.py build/pebble-pulsar.pbw
 
       - name: Upload PBW Artifact
         uses: actions/upload-artifact@v4

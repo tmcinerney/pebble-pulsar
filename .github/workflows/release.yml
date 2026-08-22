@@ -27,13 +27,14 @@ jobs:
         with:
           name: devenv
 
-      - name: Install Devenv & Build
-        uses: cachix/devenv-action@v1.4
-        with:
-          run: |
-            pebble clean
-            pebble build
-            python3 scripts/validate_pbw.py build/pebble-pulsar.pbw
+      - name: Install Devenv
+        run: nix profile install nixpkgs#devenv
+
+      - name: Build Universal Pebble Bundle
+        run: |
+          devenv shell -- pebble clean
+          devenv shell -- pebble build
+          python3 scripts/validate_pbw.py build/pebble-pulsar.pbw
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
