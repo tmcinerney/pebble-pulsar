@@ -738,99 +738,110 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 
 static int tuple_to_int(Tuple *tuple, int default_val) {
   if (!tuple) return default_val;
-  if (tuple->type == TUPLE_INT) {
-    if (tuple->length == 1) return tuple->value->int8;
-    if (tuple->length == 2) return tuple->value->int16;
-    if (tuple->length == 4) return tuple->value->int32;
-  } else if (tuple->type == TUPLE_UINT) {
-    if (tuple->length == 1) return tuple->value->uint8;
-    if (tuple->length == 2) return tuple->value->uint16;
-    if (tuple->length == 4) return tuple->value->uint32;
-  } else if (tuple->type == TUPLE_CSTRING) {
-    return atoi(tuple->value->cstring);
+  switch (tuple->type) {
+    case TUPLE_INT:
+    case TUPLE_UINT:
+      if (tuple->length == 1) return (int)tuple->value->int8;
+      if (tuple->length == 2) return (int)tuple->value->int16;
+      if (tuple->length == 4) return (int)tuple->value->int32;
+      return (int)tuple->value->int32;
+    case TUPLE_CSTRING:
+      if (tuple->value && tuple->value->cstring) {
+        return atoi(tuple->value->cstring);
+      }
+      break;
+    default:
+      break;
   }
   return default_val;
 }
 
 static bool tuple_to_bool(Tuple *tuple, bool default_val) {
   if (!tuple) return default_val;
-  if (tuple->type == TUPLE_INT || tuple->type == TUPLE_UINT) {
-    return tuple_to_int(tuple, default_val ? 1 : 0) != 0;
-  } else if (tuple->type == TUPLE_CSTRING) {
-    return (strcmp(tuple->value->cstring, "true") == 0 || strcmp(tuple->value->cstring, "1") == 0);
+  switch (tuple->type) {
+    case TUPLE_INT:
+    case TUPLE_UINT:
+      return tuple_to_int(tuple, default_val ? 1 : 0) != 0;
+    case TUPLE_CSTRING:
+      if (tuple->value && tuple->value->cstring) {
+        return (strcmp(tuple->value->cstring, "true") == 0 ||
+                strcmp(tuple->value->cstring, "1") == 0);
+      }
+      break;
+    default:
+      break;
   }
   return default_val;
 }
 
+static void inbox_dropped_callback(AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "AppMessage dropped: %d", (int)reason);
+}
+
+static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "AppMessage outbox failed: %d", (int)reason);
+}
+
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
-  Tuple *t_op = dict_find(iterator, MESSAGE_KEY_AppKeyOperatingMode);
-  if (t_op) {
-    s_operating_mode = tuple_to_int(t_op, s_operating_mode);
-    persist_write_int(STORAGE_KEY_OPERATING_MODE, s_operating_mode);
-  }
-  Tuple *t_col = dict_find(iterator, MESSAGE_KEY_AppKeyColorway);
-  if (t_col) {
-    s_colorway = tuple_to_int(t_col, s_colorway);
-    if (s_colorway < 0 || s_colorway >= NUM_COLORWAYS) s_colorway = 0;
-    persist_write_int(STORAGE_KEY_COLORWAY, s_colorway);
-  }
-  Tuple *t_flick = dict_find(iterator, MESSAGE_KEY_AppKeyFlickAction);
-  if (t_flick) {
-    s_flick_action = tuple_to_int(t_flick, s_flick_action);
-    persist_write_int(STORAGE_KEY_FLICK_ACTION, s_flick_action);
-  }
-  Tuple *t_vibe = dict_find(iterator, MESSAGE_KEY_AppKeyHourlyVibe);
-  if (t_vibe) {
-    s_hourly_vibe = tuple_to_int(t_vibe, s_hourly_vibe);
-    persist_write_int(STORAGE_KEY_HOURLY_VIBE, s_hourly_vibe);
-  }
-  Tuple *t_bt_vibe = dict_find(iterator, MESSAGE_KEY_AppKeyBtVibe);
-  if (t_bt_vibe) {
-    s_bt_vibe = tuple_to_bool(t_bt_vibe, s_bt_vibe);
-    persist_write_bool(STORAGE_KEY_BT_VIBE, s_bt_vibe);
-  }
-  Tuple *t_bead_mode = dict_find(iterator, MESSAGE_KEY_AppKeyBeadMode);
-  if (t_bead_mode) {
-    s_bead_mode = tuple_to_int(t_bead_mode, s_bead_mode);
-    persist_write_int(STORAGE_KEY_BEAD_MODE, s_bead_mode);
-  } else {
-    Tuple *t_beads = dict_find(iterator, MESSAGE_KEY_AppKeyShowStepBeads);
-    if (t_beads) {
-      bool show = tuple_to_bool(t_beads, true);
+  APP_LOG(APP_LOG_LEVEL_INFO, "AppMessage received!");
+  for (Tuple *t = dict_read_first(iterator); t != NULL; t = dict_read_next(iterator)) {
+    uint32_t key = t->key;
+    if (key == MESSAGE_KEY_AppKeyOperatingMode) {
+      s_operating_mode = tuple_to_int(t, s_operating_mode);
+      persist_write_int(STORAGE_KEY_OPERATING_MODE, s_operating_mode);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyOperatingMode: %d", s_operating_mode);
+    } else if (key == MESSAGE_KEY_AppKeyColorway) {
+      s_colorway = tuple_to_int(t, s_colorway);
+      if (s_colorway < 0 || s_colorway >= NUM_COLORWAYS) s_colorway = 0;
+      persist_write_int(STORAGE_KEY_COLORWAY, s_colorway);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyColorway: %d", s_colorway);
+    } else if (key == MESSAGE_KEY_AppKeyFlickAction) {
+      s_flick_action = tuple_to_int(t, s_flick_action);
+      persist_write_int(STORAGE_KEY_FLICK_ACTION, s_flick_action);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyFlickAction: %d", s_flick_action);
+    } else if (key == MESSAGE_KEY_AppKeyHourlyVibe) {
+      s_hourly_vibe = tuple_to_int(t, s_hourly_vibe);
+      persist_write_int(STORAGE_KEY_HOURLY_VIBE, s_hourly_vibe);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyHourlyVibe: %d", s_hourly_vibe);
+    } else if (key == MESSAGE_KEY_AppKeyBtVibe) {
+      s_bt_vibe = tuple_to_bool(t, s_bt_vibe);
+      persist_write_bool(STORAGE_KEY_BT_VIBE, s_bt_vibe);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyBtVibe: %d", (int)s_bt_vibe);
+    } else if (key == MESSAGE_KEY_AppKeyBeadMode) {
+      s_bead_mode = tuple_to_int(t, s_bead_mode);
+      persist_write_int(STORAGE_KEY_BEAD_MODE, s_bead_mode);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyBeadMode: %d", s_bead_mode);
+    } else if (key == MESSAGE_KEY_AppKeyShowStepBeads) {
+      bool show = tuple_to_bool(t, true);
       s_bead_mode = show ? BEAD_MODE_STEPS : BEAD_MODE_OFF;
       persist_write_int(STORAGE_KEY_BEAD_MODE, s_bead_mode);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyShowStepBeads: %d", (int)show);
+    } else if (key == MESSAGE_KEY_AppKeyItalicSlant) {
+      s_italic_slant = tuple_to_bool(t, s_italic_slant);
+      persist_write_bool(STORAGE_KEY_ITALIC_SLANT, s_italic_slant);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyItalicSlant: %d", (int)s_italic_slant);
+    } else if (key == MESSAGE_KEY_AppKeyHeaderStyle) {
+      s_header_style = tuple_to_int(t, s_header_style);
+      persist_write_int(STORAGE_KEY_HEADER_STYLE, s_header_style);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyHeaderStyle: %d", s_header_style);
+    } else if (key == MESSAGE_KEY_AppKeyFooterStyle) {
+      s_footer_style = tuple_to_int(t, s_footer_style);
+      persist_write_int(STORAGE_KEY_FOOTER_STYLE, s_footer_style);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyFooterStyle: %d", s_footer_style);
+    } else if (key == MESSAGE_KEY_AppKeyDateFormat) {
+      s_date_format = tuple_to_int(t, s_date_format);
+      persist_write_int(STORAGE_KEY_DATE_FORMAT, s_date_format);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyDateFormat: %d", s_date_format);
+    } else if (key == MESSAGE_KEY_AppKeyLeadingZero) {
+      s_leading_zero = tuple_to_bool(t, s_leading_zero);
+      persist_write_bool(STORAGE_KEY_LEADING_ZERO, s_leading_zero);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyLeadingZero: %d", (int)s_leading_zero);
+    } else if (key == MESSAGE_KEY_AppKeyStepGoal) {
+      s_step_goal = tuple_to_int(t, s_step_goal);
+      if (s_step_goal <= 0) s_step_goal = 10000;
+      persist_write_int(STORAGE_KEY_STEP_GOAL, s_step_goal);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyStepGoal: %d", s_step_goal);
     }
-  }
-  Tuple *t_slant = dict_find(iterator, MESSAGE_KEY_AppKeyItalicSlant);
-  if (t_slant) {
-    s_italic_slant = tuple_to_bool(t_slant, s_italic_slant);
-    persist_write_bool(STORAGE_KEY_ITALIC_SLANT, s_italic_slant);
-  }
-  Tuple *t_header = dict_find(iterator, MESSAGE_KEY_AppKeyHeaderStyle);
-  if (t_header) {
-    s_header_style = tuple_to_int(t_header, s_header_style);
-    persist_write_int(STORAGE_KEY_HEADER_STYLE, s_header_style);
-  }
-  Tuple *t_footer = dict_find(iterator, MESSAGE_KEY_AppKeyFooterStyle);
-  if (t_footer) {
-    s_footer_style = tuple_to_int(t_footer, s_footer_style);
-    persist_write_int(STORAGE_KEY_FOOTER_STYLE, s_footer_style);
-  }
-  Tuple *t_date_fmt = dict_find(iterator, MESSAGE_KEY_AppKeyDateFormat);
-  if (t_date_fmt) {
-    s_date_format = tuple_to_int(t_date_fmt, s_date_format);
-    persist_write_int(STORAGE_KEY_DATE_FORMAT, s_date_format);
-  }
-  Tuple *t_leading_zero = dict_find(iterator, MESSAGE_KEY_AppKeyLeadingZero);
-  if (t_leading_zero) {
-    s_leading_zero = tuple_to_bool(t_leading_zero, s_leading_zero);
-    persist_write_bool(STORAGE_KEY_LEADING_ZERO, s_leading_zero);
-  }
-  Tuple *t_goal = dict_find(iterator, MESSAGE_KEY_AppKeyStepGoal);
-  if (t_goal) {
-    s_step_goal = tuple_to_int(t_goal, s_step_goal);
-    if (s_step_goal <= 0) s_step_goal = 10000;
-    persist_write_int(STORAGE_KEY_STEP_GOAL, s_step_goal);
   }
   layer_mark_dirty(s_canvas_layer);
 }
@@ -905,7 +916,11 @@ static void init(void) {
   
   // AppMessage configuration
   app_message_register_inbox_received(inbox_received_callback);
-  app_message_open(256, 256);
+  app_message_register_inbox_dropped(inbox_dropped_callback);
+  app_message_register_outbox_failed(outbox_failed_callback);
+  const uint32_t inbox_size = app_message_inbox_size_maximum();
+  const uint32_t outbox_size = app_message_outbox_size_maximum();
+  app_message_open(inbox_size > 0 ? inbox_size : 1024, outbox_size > 0 ? outbox_size : 256);
 
   // Subscribe to services
   tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
