@@ -13,7 +13,7 @@ def install(phone_ip="192.168.10.203", pbw_path="build/pebble-pulsar.pbw"):
     print("Ensure the Pebble app is OPEN on your phone with 'Developer Connection' enabled.")
     
     pebble = None
-    max_retries = 15
+    max_retries = 30
     for attempt in range(1, max_retries + 1):
         try:
             transport = WebsocketTransport(url)
@@ -21,16 +21,15 @@ def install(phone_ip="192.168.10.203", pbw_path="build/pebble-pulsar.pbw"):
             pebble.connect()
             pebble.run_async()
             break
-        except Exception as e:
+        except Exception:
             if attempt < max_retries:
-                print(f"  [Attempt {attempt}/{max_retries}] Waiting for Pebble App Developer Connection on {phone_ip}:9000 ...")
+                print(f"  [{attempt}/{max_retries}] Waiting for Pebble app WebSocket on {phone_ip}:9000 (toggle Developer Connection ON in the app)...", flush=True)
                 time.sleep(2)
             else:
-                print(f"\n❌ Could not connect to {url}.")
-                print("Troubleshooting steps:")
-                print("1. Open the Pebble app on your phone.")
-                print("2. Go to Settings -> Developer -> Toggle 'Developer Connection' ON.")
-                print(f"3. Confirm your phone's Wi-Fi IP is {phone_ip}.")
+                print(f"\n❌ Connection timed out to {url}.", flush=True)
+                print("1. Open the Pebble app on your phone.", flush=True)
+                print("2. Go to Settings -> Developer Options -> Turn 'Developer Connection' ON.", flush=True)
+                print("3. Keep the Pebble app open on your screen.", flush=True)
                 sys.exit(1)
     
     print(f"\n✓ Connected to watch: {pebble.watch_info.board} (Platform {pebble.watch_info.running.hardware_platform}, FW {pebble.watch_info.running.version_tag})")
