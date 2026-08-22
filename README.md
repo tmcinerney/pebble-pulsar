@@ -1,6 +1,17 @@
 # Pulsar 1970 (Pebble Time 2 / Pebble Time Watchface)
 
-![Pulsar 1970 Pebble Time 2 Hero Mockup](screenshots/pulsar-time2-hero.png)
+<p align="center">
+  <img src="screenshots/pulsar-time2-hero.png" width="100%" alt="Pulsar 1970 Hero Banner">
+</p>
+
+<p align="center">
+  <img src="screenshots/renders/pebble-time2-3d-angle.png" width="48%" alt="3D Pebble Time 2 Studio Render" />
+  <img src="screenshots/renders/pebble-pulsar-flick-actions-optimized.gif" width="48%" alt="Pulsar 1970 Wrist Flick Gesture Animation" />
+</p>
+
+<p align="center">
+  <em>Left: 3D studio product render of the Pebble Time 2. Right: Real-time wrist-flick gesture cycling across all 5 display modes.</em>
+</p>
 
 A high-fidelity retro digital watchface inspired by the iconic **1970s Hamilton Pulsar** ("Time Computer" P1, P2, and P3 models)—the world's first commercial digital LED wristwatch.
 
