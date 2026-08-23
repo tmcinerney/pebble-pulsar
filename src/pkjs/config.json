@@ -208,20 +208,24 @@
             "value": "0"
           },
           {
-            "label": "1970s Knight Rider / Marquee Chaser",
+            "label": "1970s Knight Rider / Cylon Comet",
             "value": "1"
           },
           {
-            "label": "Breathing / Pulsing Glow",
+            "label": "Breathing / Heartbeat Pulse",
             "value": "2"
           },
           {
-            "label": "Solid Battery Level (No Animation)",
+            "label": "1970s Theater Marquee (Alternating LEDs)",
             "value": "3"
           },
           {
-            "label": "Disabled (Normal Display)",
+            "label": "Solid Battery Gauge (No Animation)",
             "value": "4"
+          },
+          {
+            "label": "Disabled (Normal Display)",
+            "value": "5"
           }
         ]
       },

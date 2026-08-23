@@ -93,8 +93,9 @@ enum ChargingStyle {
   CHARGING_STYLE_FLOW = 0,
   CHARGING_STYLE_CHASER = 1,
   CHARGING_STYLE_PULSE = 2,
-  CHARGING_STYLE_SOLID = 3,
-  CHARGING_STYLE_OFF = 4
+  CHARGING_STYLE_MARQUEE = 3,
+  CHARGING_STYLE_SOLID = 4,
+  CHARGING_STYLE_OFF = 5
 };
 
 // Header Styles
@@ -585,25 +586,32 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
     if (is_charging_active) {
       // High-speed smooth charging animations (~120ms frame cycle)
       if (s_charging_style == CHARGING_STYLE_CHASER) {
-        // 1970s Cylon / Knight Rider Ping-Pong Sweep across all 10 beads
+        // 1970s Cylon / Knight Rider 3-Dot Comet Ping-Pong Sweep across all 10 beads
         int period = 18;
         int step = s_anim_frame % period;
         int active_idx = (step < 10) ? step : (period - step);
-        lit = is_active && (i == active_idx);
+        bool is_head = (i == active_idx);
+        bool is_tail = (i == active_idx - 1) || (i == active_idx + 1);
+        lit = is_active && (is_head || is_tail);
       } else if (s_charging_style == CHARGING_STYLE_PULSE) {
-        // Breathing / Pulse: Current battery level beads gently pulse in sync
+        // Breathing / Heartbeat Pulse: Active charge level pulses in a lub-dub rhythm
         int current_beads = (s_battery_level + 9) / 10;
         if (current_beads > num_beads) current_beads = num_beads;
         if (current_beads < 1) current_beads = 1;
-        bool pulse_on = (s_anim_frame % 10) < 6;
+        int beat_frame = s_anim_frame % 16;
+        bool pulse_on = (beat_frame >= 0 && beat_frame <= 2) || (beat_frame >= 5 && beat_frame <= 7);
         lit = is_active && (i < current_beads) && pulse_on;
+      } else if (s_charging_style == CHARGING_STYLE_MARQUEE) {
+        // 1970s Theater Marquee Alternator (odd / even alternating LEDs)
+        bool phase = ((s_anim_frame / 3) % 2) == 0;
+        lit = is_active && ((i % 2 == 0) == phase);
       } else if (s_charging_style == CHARGING_STYLE_FLOW) {
-        // Progressive Flow: Solid up to current charge level + travelling pulse on remaining beads
-        if (s_battery_level >= 100) {
+        // Progressive Flow: Solid up to current charge level + flowing cascade to 100%
+        int current_beads = s_battery_level / 10;
+        if (current_beads >= num_beads) {
           int wave_idx = s_anim_frame % num_beads;
           lit = is_active && (i != wave_idx);
         } else {
-          int current_beads = s_battery_level / 10;
           if (i < current_beads) {
             lit = is_active;
           } else {
@@ -621,8 +629,30 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
     } else {
       // Standard Battery or Step Meter
       if (s_bead_mode == BEAD_MODE_STEPS) {
-        int threshold = ((i + 1) * goal) / num_beads;
-        lit = is_active && (steps >= threshold);
+        if (steps >= goal) {
+          // Goal exceeded!
+          if (steps >= 2 * goal) {
+            // 200%+ Overdrive: All 10 beads pulse in victory wave
+            bool flash = (sec % 2 == 0);
+            lit = is_active && flash;
+          } else {
+            // Lap 2 (100% - 200%): All 10 base beads are lit, but the surplus % beads pulse!
+            int surplus_steps = steps - goal;
+            int lap2_beads = (surplus_steps * num_beads) / goal;
+            if (i < lap2_beads) {
+              // Lap 2 beads pulse every second
+              bool lap2_pulse = (sec % 2 == 0);
+              lit = is_active && lap2_pulse;
+            } else {
+              // Remaining base beads stay solid
+              lit = is_active;
+            }
+          }
+        } else {
+          // Normal 0% to 100% fill
+          int threshold = ((i + 1) * goal) / num_beads;
+          lit = is_active && (steps >= threshold);
+        }
       } else if (s_bead_mode == BEAD_MODE_BATTERY) {
         int threshold = (i + 1) * 10;
         lit = is_active && (s_battery_level >= threshold);
@@ -928,8 +958,29 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   // 6. Vintage Space-Age Footer
   if (s_footer_style != FOOTER_STYLE_NONE) {
     const char *footer_text = "T I M E   C O M P U T E R";
-    if (s_display_mode == DISPLAY_MODE_STEPS && is_active) {
-      footer_text = "S T E P S";
+    if (s_charging_preview) {
+      if (s_charging_style == CHARGING_STYLE_FLOW) {
+        footer_text = "F L O W   P R E V I E W";
+      } else if (s_charging_style == CHARGING_STYLE_CHASER) {
+        footer_text = "C H A S E R   P R E V I E W";
+      } else if (s_charging_style == CHARGING_STYLE_PULSE) {
+        footer_text = "P U L S E   P R E V I E W";
+      } else if (s_charging_style == CHARGING_STYLE_MARQUEE) {
+        footer_text = "M A R Q U E E   P R E V I E W";
+      } else if (s_charging_style == CHARGING_STYLE_SOLID) {
+        footer_text = "S O L I D   G A U G E";
+      } else {
+        footer_text = "A N I M   O F F";
+      }
+    } else if (s_display_mode == DISPLAY_MODE_STEPS && is_active) {
+      int goal = s_step_goal > 0 ? s_step_goal : 10000;
+      if (steps >= 2 * goal) {
+        footer_text = "★   2 X   G O A L   ★";
+      } else if (steps >= goal) {
+        footer_text = "★   G O A L   M E T   ★";
+      } else {
+        footer_text = "S T E P S";
+      }
     } else if (s_display_mode == DISPLAY_MODE_BATTERY && is_active) {
       footer_text = "B A T T E R Y";
     } else if (s_display_mode == DISPLAY_MODE_DATE && is_active) {
@@ -1104,13 +1155,13 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       persist_write_int(STORAGE_KEY_CHARGING_STYLE, s_charging_style);
       APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyChargingStyle: %d", s_charging_style);
       
-      // Trigger 8-second high-speed live preview on watch
+      // Trigger 12-second high-speed live preview on watch
       s_charging_preview = true;
       s_anim_frame = 0;
       if (s_preview_timer) {
         app_timer_cancel(s_preview_timer);
       }
-      s_preview_timer = app_timer_register(8000, preview_timer_callback, NULL);
+      s_preview_timer = app_timer_register(12000, preview_timer_callback, NULL);
       update_charging_animation();
     } else if (key == MESSAGE_KEY_AppKeyNightlight) {
       s_nightlight = tuple_to_bool(t, s_nightlight);
