@@ -33,6 +33,10 @@
 
 int pulsar_char_to_glyph(char c);
 
+void pulsar_draw_digit_custom_ghost(GContext *ctx, int x_offset, int y_offset, int digit_index, 
+                                   const Colorway *palette, bool is_active, int bounds_w, 
+                                   int spacing_x, int spacing_y, int dot_radius, bool italic_slant, bool show_ghost);
+
 void pulsar_draw_digit_custom(GContext *ctx, int x_offset, int y_offset, int digit_index, 
                              const Colorway *palette, bool is_active, int bounds_w, 
                              int spacing_x, int spacing_y, int dot_radius, bool italic_slant);

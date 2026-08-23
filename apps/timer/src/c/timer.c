@@ -135,6 +135,7 @@ static void trigger_alarm_firing(void) {
 
 static void stop_alarm_firing(void) {
   s_is_alarm_firing = false;
+  light_enable(false);
   if (s_alarm_pulse_timer) {
     app_timer_cancel(s_alarm_pulse_timer);
     s_alarm_pulse_timer = NULL;
@@ -154,6 +155,7 @@ static void start_timer(void) {
   s_is_running = true;
   s_is_paused = false;
   s_is_alarm_firing = false;
+  light_enable(true);
 
   // Schedule background wakeup
   if (s_wakeup_id >= 0) {
@@ -177,6 +179,7 @@ static void pause_timer(void) {
   update_remaining_from_clock();
   s_is_running = false;
   s_is_paused = true;
+  light_enable(false);
 
   if (s_wakeup_id >= 0) {
     wakeup_cancel(s_wakeup_id);
@@ -198,6 +201,7 @@ static void reset_timer(void) {
   s_is_running = false;
   s_is_paused = false;
   s_is_alarm_firing = false;
+  light_enable(false);
 
   if (s_wakeup_id >= 0) {
     wakeup_cancel(s_wakeup_id);
@@ -473,6 +477,7 @@ static void init(void) {
 }
 
 static void deinit(void) {
+  light_enable(false);
   save_state();
   if (s_tick_timer) {
     app_timer_cancel(s_tick_timer);

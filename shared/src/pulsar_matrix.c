@@ -70,9 +70,9 @@ int pulsar_char_to_glyph(char c) {
   }
 }
 
-void pulsar_draw_digit_custom(GContext *ctx, int x_offset, int y_offset, int digit_index, 
-                             const Colorway *palette, bool is_active, int bounds_w, 
-                             int spacing_x, int spacing_y, int dot_radius, bool italic_slant) {
+void pulsar_draw_digit_custom_ghost(GContext *ctx, int x_offset, int y_offset, int digit_index, 
+                                   const Colorway *palette, bool is_active, int bounds_w, 
+                                   int spacing_x, int spacing_y, int dot_radius, bool italic_slant, bool show_ghost) {
   if (digit_index < 0 || digit_index >= NUM_GLYPHS) digit_index = GLYPH_BLANK;
   
   int slant_scale = italic_slant ? spacing_x : 0;
@@ -89,7 +89,7 @@ void pulsar_draw_digit_custom(GContext *ctx, int x_offset, int y_offset, int dig
       if (is_lit) {
         graphics_context_set_fill_color(ctx, palette->lit);
         graphics_fill_circle(ctx, GPoint(dot_x, dot_y), dot_radius);
-      } else {
+      } else if (show_ghost) {
 #if defined(PBL_COLOR)
         if (palette->outer_bg.argb != GColorWhite.argb) {
           graphics_context_set_stroke_color(ctx, palette->ghost);
@@ -106,6 +106,13 @@ void pulsar_draw_digit_custom(GContext *ctx, int x_offset, int y_offset, int dig
       }
     }
   }
+}
+
+void pulsar_draw_digit_custom(GContext *ctx, int x_offset, int y_offset, int digit_index, 
+                             const Colorway *palette, bool is_active, int bounds_w, 
+                             int spacing_x, int spacing_y, int dot_radius, bool italic_slant) {
+  pulsar_draw_digit_custom_ghost(ctx, x_offset, y_offset, digit_index, palette, is_active, bounds_w, 
+                                spacing_x, spacing_y, dot_radius, italic_slant, true);
 }
 
 void pulsar_draw_digit(GContext *ctx, int x_offset, int y_offset, int digit_index, 

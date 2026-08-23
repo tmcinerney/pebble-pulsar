@@ -78,6 +78,7 @@ static void start_stopwatch(void) {
   time_ms(&s_start_sec, &s_start_ms);
   s_is_running = true;
   s_browse_lap_idx = -1;
+  light_enable(true);
   if (s_audio_enabled || s_vibe_enabled) {
     pulsar_sound_start();
   }
@@ -91,6 +92,7 @@ static void stop_stopwatch(void) {
   if (!s_is_running) return;
   s_accumulated_ms = get_current_elapsed_ms();
   s_is_running = false;
+  light_enable(false);
   if (s_refresh_timer) {
     app_timer_cancel(s_refresh_timer);
     s_refresh_timer = NULL;
@@ -200,20 +202,20 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   int d4 = secs % 10;
 
   // 4. Main MM:SS Digits (Shifted up to give breathing room for sub-seconds)
-  int main_y = bounds.size.w > 180 ? 44 : 30;
+  int main_y = bounds.size.w > 180 ? 40 : 26;
   bool colon_lit = s_is_running ? ((elapsed_ms % 1000) < 500) : true;
   pulsar_draw_4digits_at_y(ctx, bounds, main_y, d1, d2, d3, d4, true, colon_lit, palette, true, s_italic_slant);
 
-  // 5. Centiseconds Sub-Display (Centered beneath main digits)
+  // 5. Centiseconds Sub-Display (Larger, beautifully spaced, glowing without ghost mesh)
   int sub_c1 = centis / 10;
   int sub_c2 = centis % 10;
-  int sub_spacing_x = bounds.size.w > 180 ? 4 : 3;
-  int sub_spacing_y = bounds.size.w > 180 ? 5 : 4;
-  int sub_dot_radius = 1;
-  int sub_gap = bounds.size.w > 180 ? 6 : 4;
-  int dot_gap = bounds.size.w > 180 ? 6 : 4;
+  int sub_spacing_x = bounds.size.w > 180 ? 5 : 4;
+  int sub_spacing_y = bounds.size.w > 180 ? 6 : 5;
+  int sub_dot_radius = bounds.size.w > 180 ? 2 : 1;
+  int sub_gap = bounds.size.w > 180 ? 8 : 6;
+  int dot_gap = bounds.size.w > 180 ? 8 : 6;
   int sub_span = (DIGIT_WIDTH - 1) * sub_spacing_x;
-  int sub_y = bounds.size.w > 180 ? 104 : 74;
+  int sub_y = bounds.size.w > 180 ? 100 : 70;
   int sub_slant = s_italic_slant ? sub_spacing_x : 0;
   int sub_total_w = (sub_span * 2) + sub_gap + dot_gap + sub_slant;
   int sub_start_x = (bounds.size.w - sub_total_w) / 2;
@@ -224,16 +226,16 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_fill_color(ctx, palette->lit);
   graphics_fill_circle(ctx, GPoint(dot_x, dot_y), sub_dot_radius);
 
-  // Sub digits
+  // Sub digits (pure glowing LED dots)
   int c1_x = sub_start_x + dot_gap;
   int c2_x = c1_x + sub_span + sub_gap;
-  pulsar_draw_digit_custom(ctx, c1_x, sub_y, sub_c1, palette, true, bounds.size.w, 
-                           sub_spacing_x, sub_spacing_y, sub_dot_radius, s_italic_slant);
-  pulsar_draw_digit_custom(ctx, c2_x, sub_y, sub_c2, palette, true, bounds.size.w, 
-                           sub_spacing_x, sub_spacing_y, sub_dot_radius, s_italic_slant);
+  pulsar_draw_digit_custom_ghost(ctx, c1_x, sub_y, sub_c1, palette, true, bounds.size.w, 
+                                sub_spacing_x, sub_spacing_y, sub_dot_radius, s_italic_slant, false);
+  pulsar_draw_digit_custom_ghost(ctx, c2_x, sub_y, sub_c2, palette, true, bounds.size.w, 
+                                sub_spacing_x, sub_spacing_y, sub_dot_radius, s_italic_slant, false);
 
   // 6. Tachymeter Micro-LED Chaser (Placed cleanly below centiseconds)
-  int bead_y = bounds.size.w > 180 ? 152 : 114;
+  int bead_y = bounds.size.w > 180 ? 154 : 116;
   pulsar_draw_tachymeter_beads_at_y(ctx, bounds, bead_y, palette, true, elapsed_ms, s_is_running);
 
   // 7. Footer Status
@@ -336,11 +338,13 @@ static void init(void) {
   app_message_open(256, 64);
 
   if (s_is_running) {
+    light_enable(true);
     s_refresh_timer = app_timer_register(REFRESH_RATE_MS, refresh_timer_callback, NULL);
   }
 }
 
 static void deinit(void) {
+  light_enable(false);
   save_state();
   if (s_refresh_timer) {
     app_timer_cancel(s_refresh_timer);
