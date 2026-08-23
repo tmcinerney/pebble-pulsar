@@ -340,15 +340,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   bool is_flash_frame = s_is_ringing && (s_ring_pulse_count % 2 == 1);
 
   // 2. Alert Beacon Frame & Banner fills when ringing
-  int banner_h = bounds.size.w > 180 ? 28 : 22;
   if (is_flash_frame) {
-    graphics_context_set_fill_color(ctx, palette->lit);
-    graphics_fill_rect(ctx, GRect(0, 0, bounds.size.w, banner_h), 0, GCornerNone);
-    graphics_fill_rect(ctx, GRect(0, bounds.size.h - banner_h, bounds.size.w, banner_h), 0, GCornerNone);
-
-    graphics_context_set_stroke_color(ctx, palette->lit);
-    graphics_context_set_stroke_width(ctx, 2);
-    graphics_draw_rect(ctx, GRect(1, 1, bounds.size.w - 2, bounds.size.h - 2));
+    pulsar_draw_alert_banners(ctx, bounds, palette);
   }
 
   // Determine high-contrast text color for header and footer banners
