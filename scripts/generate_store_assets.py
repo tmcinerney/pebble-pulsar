@@ -57,9 +57,9 @@ def create_store_assets():
     # Bullet Highlights
     bullets = [
         "● Authentic 5x7 GaAsP Dot-Matrix LEDs",
-        "● 5 Modes: Time, Sec, Date, Steps, Batt",
-        "● Pebble Health 10-Dot Progress Bar",
-        "● Pebble Time 2, Time, P2 & Classic"
+        "● 6 Modes: Time, Sec, Date, Steps, Batt, HR",
+        "● Reorderable Tap Cycle & Stealth Wake",
+        "● Retro Charging Animations & Nightlight"
     ]
     by = 158
     for b in bullets:

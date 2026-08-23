@@ -44,10 +44,10 @@ def create_hero_mockup():
 
     bullets = [
         "● Procedural 5x7 GaAsP Dot-Matrix LEDs",
-        "● 5 Modes: Time, Sec, Date, Steps, Battery",
-        "● Pebble Health 10-Dot Progress Bar",
-        "● 6 Vintage Colorways & 6° Italic Slant",
-        "● Stealth Push-to-Wake & Hourly Vibe Chimes"
+        "● 6 Modes: Time, Sec, Date, Steps, Batt, HR",
+        "● Reorderable Custom Tap Cycle Sequence",
+        "● Clock-Synchronized Charging Animations",
+        "● Step Overdrive Celebration & Nightlight"
     ]
     by = 315
     for b in bullets:

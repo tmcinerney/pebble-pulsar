@@ -1,6 +1,7 @@
 {
   "name": "pebble-pulsar",
   "author": "Travers McInerney",
+  "description": "The world's first digital LED wristwatch (1972 Hamilton Pulsar), recreated for Pebble with authentic 5x7 GaAsP dot-matrix LEDs, 6 display modes, customizable tap cycle sequencing, retro charging animations, and nightlight mode.",
   "version": "2.1.0",
   "versionLabel": "2.1.0",
   "keywords": [

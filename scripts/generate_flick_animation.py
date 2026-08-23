@@ -37,8 +37,9 @@ def create_flick_animation():
         ("Time Mode", "18:14 GaAsP LEDs", "screenshots/emery-time.png"),
         ("Live Seconds", "Push-to-View Counter", "screenshots/emery-seconds.png"),
         ("Calendar Date", "Month & Day Display", "screenshots/emery-date.png"),
-        ("Pebble Health", "Step Counter & Beads", "screenshots/emery-steps.png"),
-        ("Battery State", "Power Fuel Gauge", "screenshots/emery-battery.png")
+        ("Daily Steps", "Step Counter & Beads", "screenshots/emery-steps.png"),
+        ("Battery State", "Power Fuel Gauge", "screenshots/emery-battery.png"),
+        ("Heart Rate", "Optical BPM Monitor", "screenshots/emery-heartrate.png")
     ]
 
     mode_renders = []
@@ -89,16 +90,16 @@ def create_flick_animation():
             frame.paste(cur_img, (wx, wy), cur_img)
 
             # Status overlay card at bottom
-            card_w, card_h = 440, 75
+            card_w, card_h = 460, 75
             card_x = (CANVAS_W - card_w) // 2
             card_y = CANVAS_H - 140
             f_draw.rounded_rectangle([card_x, card_y, card_x + card_w, card_y + card_h], radius=12, fill=(20, 20, 26), outline=(45, 45, 55), width=1)
             f_draw.text((card_x + 24, card_y + 16), cur_title, fill=(255, 255, 255), font=font_mode)
             f_draw.text((card_x + 24, card_y + 44), cur_sub, fill=(220, 50, 50), font=font_sub)
 
-            # Mode Dots (1..5)
-            for d in range(5):
-                dot_x = card_x + card_w - 110 + (d * 18)
+            # Mode Dots (1..6)
+            for d in range(len(modes)):
+                dot_x = card_x + card_w - 130 + (d * 18)
                 dot_y = card_y + 38
                 dot_color = (230, 40, 40) if d == i else (50, 50, 60)
                 f_draw.ellipse([dot_x - 5, dot_y - 5, dot_x + 5, dot_y + 5], fill=dot_color)
@@ -158,7 +159,7 @@ def create_flick_animation():
                 f_draw.text((px + 28, py + 9), "⚡ WRIST FLICK", fill=(255, 255, 255), font=font_flick)
 
             # Status overlay card at bottom
-            card_w, card_h = 440, 75
+            card_w, card_h = 460, 75
             card_x = (CANVAS_W - card_w) // 2
             card_y = CANVAS_H - 140
             f_draw.rounded_rectangle([card_x, card_y, card_x + card_w, card_y + card_h], radius=12, fill=(20, 20, 26), outline=(45, 45, 55), width=1)
@@ -166,8 +167,8 @@ def create_flick_animation():
             f_draw.text((card_x + 24, card_y + 44), sub_disp, fill=(220, 50, 50), font=font_sub)
 
             active_d = next_i if t >= 0.45 else i
-            for d in range(5):
-                dot_x = card_x + card_w - 110 + (d * 18)
+            for d in range(len(modes)):
+                dot_x = card_x + card_w - 130 + (d * 18)
                 dot_y = card_y + 38
                 dot_color = (230, 40, 40) if d == active_d else (50, 50, 60)
                 f_draw.ellipse([dot_x - 5, dot_y - 5, dot_x + 5, dot_y + 5], fill=dot_color)

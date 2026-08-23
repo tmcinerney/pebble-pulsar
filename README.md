@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <em>Left: Authentic Pebble Time 2 hardware in 316L brushed stainless steel with procedural GaAsP LED matrix. Right: Live wrist-flick gesture animation cycling through all 5 display modes.</em>
+  <em>Left: Authentic Pebble Time 2 hardware in 316L brushed stainless steel with procedural GaAsP LED matrix. Right: Live wrist-flick gesture animation cycling through all 6 display modes.</em>
 </p>
 
 A high-fidelity retro digital watchface inspired by the iconic **1970s Hamilton Pulsar** ("Time Computer" P1, P2, and P3 models)—the world's first commercial digital LED wristwatch.
@@ -25,7 +25,7 @@ Built for the **Rebble / RePebble** ecosystem with native support for the **Pebb
 * **Always-On Mode (Default):** The dot-matrix time is continuously visible with blinking colon and active status dots.
 * **Stealth Mode (Authentic 1970 Push-to-Wake):** Replicates the vintage Hamilton Pulsar push-button experience where the LED display remains dark to conserve power beneath the synthetic ruby crystal. 
   * **To read the time:** **Flick your wrist, tap the crystal, or touch the screen (Pebble Time 2)**. The time brightly illuminates and automatically engages the backlight for 4 seconds.
-  * **To view other stats:** Subsequent taps/touches while awake cycle through Live Seconds (`:SS`), Date, Daily Steps, and Battery.
+  * **To view other stats:** Subsequent taps/touches while awake cycle through Live Seconds (`:SS`), Date, Daily Steps, Battery, and Heart Rate.
 
 ### 👋 Wrist Flick, Tap & Touch Actions
 In the Pebble mobile app settings, you can configure what a wrist flick, crystal tap, or screen touch does:
@@ -34,7 +34,7 @@ In the Pebble mobile app settings, you can configure what a wrist flick, crystal
 * **Calendar Date (`MM DD` / `DD MM`):** Quick check of current month and day.
 * **Step Count (`08420`):** Immediate readout of your daily Pebble Health steps with Overdrive celebrations.
 * **Battery Level (` 85 %`):** Battery percentage readout.
-* **Heart Rate (`♥  72`):** Real-time BPM pulse rate on supported hardware (Pebble 2 HR).
+* **Heart Rate (`♥  72`):** Real-time BPM pulse rate on supported hardware (Pebble 2 HR / Health).
 
 ---
 
@@ -108,9 +108,14 @@ Cycle through 6 interactive display modes via wrist flick, crystal tap, or capac
   <img src="screenshots/mockups/pebble-time2-device.png" width="320" alt="Pebble Time 2 Hardware Mockup" />
 </p>
 
-| Time (`18:14`) | Live Seconds (`:52`) | Date (`08.21`) | Daily Steps (`08420`) | Battery (`85%`) |
-| :---: | :---: | :---: | :---: | :---: |
-| ![Emery Time](screenshots/emery-time.png) | ![Emery Seconds](screenshots/emery-seconds.png) | ![Emery Date](screenshots/emery-date.png) | ![Emery Steps](screenshots/emery-steps.png) | ![Emery Battery](screenshots/emery-battery.png) |
+| Time (`18:14`) | Live Seconds (`:52`) | Date (`08.21`) | Daily Steps (`08420`) | Battery (`85%`) | Heart Rate (`♥ 72`) |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| ![Emery Time](screenshots/emery-time.png) | ![Emery Seconds](screenshots/emery-seconds.png) | ![Emery Date](screenshots/emery-date.png) | ![Emery Steps](screenshots/emery-steps.png) | ![Emery Battery](screenshots/emery-battery.png) | ![Emery Heart Rate](screenshots/emery-heartrate.png) |
+
+#### Special Feature Stills (Emery)
+| Step Goal Overdrive (`12500`) | Cylon Charging Sweep | Theater Marquee Charging |
+| :---: | :---: | :---: |
+| ![Step Overdrive](screenshots/emery-steps-overdrive.png) | ![Cylon Charging](screenshots/emery-charging-cylon.png) | ![Marquee Charging](screenshots/emery-charging-marquee.png) |
 
 ---
 
@@ -122,23 +127,23 @@ Cycle through 6 interactive display modes via wrist flick, crystal tap, or capac
   <img src="screenshots/mockups/pebble-basalt-device.png" width="320" alt="Pebble Time Steel Hardware Mockup" />
 </p>
 
-| Time (`18:15`) | Live Seconds (`:52`) | Date (`08.21`) | Daily Steps (`08420`) | Battery (`85%`) |
-| :---: | :---: | :---: | :---: | :---: |
-| ![Basalt Time](screenshots/basalt-time.png) | ![Basalt Seconds](screenshots/basalt-seconds.png) | ![Basalt Date](screenshots/basalt-date.png) | ![Basalt Steps](screenshots/basalt-steps.png) | ![Basalt Battery](screenshots/basalt-battery.png) |
+| Time (`18:15`) | Live Seconds (`:52`) | Date (`08.21`) | Daily Steps (`08420`) | Battery (`85%`) | Heart Rate (`♥ 72`) |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| ![Basalt Time](screenshots/basalt-time.png) | ![Basalt Seconds](screenshots/basalt-seconds.png) | ![Basalt Date](screenshots/basalt-date.png) | ![Basalt Steps](screenshots/basalt-steps.png) | ![Basalt Battery](screenshots/basalt-battery.png) | ![Basalt Heart Rate](screenshots/basalt-heartrate.png) |
 
 ---
 
 ### 3. Pebble 2 HR (`diorite`)
 * **Hardware:** Matte Sport Polycarbonate with silicone grips, 1.26" Transflective Monochrome Memory LCD (144×168 pixels @ 182 PPI, 1-bit)
-* **Highlights:** Glare-free sunlight visibility, pure high-contrast white LED dies, zero dither artifacts.
+* **Highlights:** Glare-free sunlight visibility, pure high-contrast white LED dies, zero dither artifacts, optical heart rate sensor.
 
 <p align="center">
   <img src="screenshots/mockups/pebble-diorite-device.png" width="320" alt="Pebble 2 HR Hardware Mockup" />
 </p>
 
-| Time (`18:11`) | Live Seconds (`:52`) | Date (`08.21`) | Daily Steps (`08420`) | Battery (`85%`) |
-| :---: | :---: | :---: | :---: | :---: |
-| ![Diorite Time](screenshots/diorite-time.png) | ![Diorite Seconds](screenshots/diorite-seconds.png) | ![Diorite Date](screenshots/diorite-date.png) | ![Diorite Steps](screenshots/diorite-steps.png) | ![Diorite Battery](screenshots/diorite-battery.png) |
+| Time (`18:11`) | Live Seconds (`:52`) | Date (`08.21`) | Daily Steps (`08420`) | Battery (`85%`) | Heart Rate (`♥ 72`) |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| ![Diorite Time](screenshots/diorite-time.png) | ![Diorite Seconds](screenshots/diorite-seconds.png) | ![Diorite Date](screenshots/diorite-date.png) | ![Diorite Steps](screenshots/diorite-steps.png) | ![Diorite Battery](screenshots/diorite-battery.png) | ![Diorite Heart Rate](screenshots/diorite-heartrate.png) |
 
 ---
 
