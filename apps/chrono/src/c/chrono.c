@@ -183,7 +183,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
   // 2. Header
-  pulsar_draw_header(ctx, bounds, "C H R O N O", palette);
+  int header_y = bounds.size.w > 180 ? 12 : 8;
+  pulsar_draw_header_at_y(ctx, bounds, header_y, "C H R O N O", palette);
 
   // 3. Time calculation
   uint32_t elapsed_ms = get_current_elapsed_ms();
@@ -201,12 +202,12 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   int d3 = secs / 10;
   int d4 = secs % 10;
 
-  // 4. Main MM:SS Digits (Shifted up to give breathing room for sub-seconds)
-  int main_y = bounds.size.w > 180 ? 40 : 26;
+  // 4. Main MM:SS Digits (Consistent 10-16px gap from header)
+  int main_y = bounds.size.w > 180 ? 44 : 30;
   bool colon_lit = s_is_running ? ((elapsed_ms % 1000) < 500) : true;
   pulsar_draw_4digits_at_y(ctx, bounds, main_y, d1, d2, d3, d4, true, colon_lit, palette, true, s_italic_slant);
 
-  // 5. Centiseconds Sub-Display (Larger, beautifully spaced, glowing without ghost mesh)
+  // 5. Centiseconds Sub-Display (Consistent 10-16px gap from main digits)
   int sub_c1 = centis / 10;
   int sub_c2 = centis % 10;
   int sub_spacing_x = bounds.size.w > 180 ? 5 : 4;
@@ -215,9 +216,9 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   int sub_gap = bounds.size.w > 180 ? 8 : 6;
   int dot_gap = bounds.size.w > 180 ? 8 : 6;
   int sub_span = (DIGIT_WIDTH - 1) * sub_spacing_x;
-  int sub_y = bounds.size.w > 180 ? 100 : 70;
+  int sub_y = bounds.size.w > 180 ? 108 : 76;
   int sub_slant = s_italic_slant ? sub_spacing_x : 0;
-  int sub_total_w = (sub_span * 2) + sub_gap + dot_gap + sub_slant;
+  int sub_total_w = dot_gap + (sub_span * 2) + sub_gap + sub_slant;
   int sub_start_x = (bounds.size.w - sub_total_w) / 2;
 
   // Decimal dot
@@ -234,11 +235,11 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   pulsar_draw_digit_custom_ghost(ctx, c2_x, sub_y, sub_c2, palette, true, bounds.size.w, 
                                 sub_spacing_x, sub_spacing_y, sub_dot_radius, s_italic_slant, false);
 
-  // 6. Tachymeter Micro-LED Chaser (Placed cleanly below centiseconds)
-  int bead_y = bounds.size.w > 180 ? 154 : 116;
+  // 6. Tachymeter Micro-LED Chaser (Consistent 12-18px gap from centiseconds)
+  int bead_y = bounds.size.w > 180 ? 162 : 118;
   pulsar_draw_tachymeter_beads_at_y(ctx, bounds, bead_y, palette, true, elapsed_ms, s_is_running);
 
-  // 7. Footer Status
+  // 7. Footer Status (Consistent 16-20px gap from bead bar)
   static char footer_buffer[32];
   if (s_flash_lap_num > 0) {
     snprintf(footer_buffer, sizeof(footer_buffer), "L A P   %02d   S E T", s_flash_lap_num);
@@ -251,7 +252,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   } else {
     snprintf(footer_buffer, sizeof(footer_buffer), "P A U S E D");
   }
-  pulsar_draw_footer(ctx, bounds, footer_buffer, palette);
+  int footer_y = bounds.size.w > 180 ? 182 : 134;
+  pulsar_draw_footer_at_y(ctx, bounds, footer_y, footer_buffer, palette);
 }
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {

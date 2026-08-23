@@ -1,29 +1,37 @@
 #include "pulsar_brand.h"
 
-void pulsar_draw_header(GContext *ctx, GRect bounds, const char *header_text, const Colorway *palette) {
+void pulsar_draw_header_at_y(GContext *ctx, GRect bounds, int header_y, const char *header_text, const Colorway *palette) {
   if (!header_text || strlen(header_text) == 0) return;
   
   GFont font_header = bounds.size.w > 180 ? 
                       fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD) : 
                       fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD);
-  int header_y = bounds.size.w > 180 ? HEADER_Y : HEADER_Y;
   graphics_context_set_text_color(ctx, palette->text_outer);
   graphics_draw_text(ctx, header_text, font_header,
                      GRect(0, header_y, bounds.size.w, bounds.size.w > 180 ? 24 : 18),
                      GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
-void pulsar_draw_footer(GContext *ctx, GRect bounds, const char *footer_text, const Colorway *palette) {
+void pulsar_draw_header(GContext *ctx, GRect bounds, const char *header_text, const Colorway *palette) {
+  int header_y = bounds.size.w > 180 ? HEADER_Y : HEADER_Y;
+  pulsar_draw_header_at_y(ctx, bounds, header_y, header_text, palette);
+}
+
+void pulsar_draw_footer_at_y(GContext *ctx, GRect bounds, int footer_y, const char *footer_text, const Colorway *palette) {
   if (!footer_text || strlen(footer_text) == 0) return;
 
   GFont font_footer = bounds.size.w > 180 ? 
                       fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD) : 
                       fonts_get_system_font(FONT_KEY_GOTHIC_14);
-  int footer_y = bounds.size.w > 180 ? FOOTER_Y : FOOTER_Y;
   graphics_context_set_text_color(ctx, palette->text_outer);
   graphics_draw_text(ctx, footer_text, font_footer,
                      GRect(0, footer_y, bounds.size.w, bounds.size.w > 180 ? 20 : 14),
                      GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+}
+
+void pulsar_draw_footer(GContext *ctx, GRect bounds, const char *footer_text, const Colorway *palette) {
+  int footer_y = bounds.size.w > 180 ? FOOTER_Y : FOOTER_Y;
+  pulsar_draw_footer_at_y(ctx, bounds, footer_y, footer_text, palette);
 }
 
 void pulsar_draw_annunciators(GContext *ctx, GRect bounds, const Colorway *palette, 
