@@ -1,40 +1,17 @@
 #include <pebble.h>
+#include "pulsar_palette.h"
+#include "pulsar_layout.h"
+#include "pulsar_matrix.h"
+#include "pulsar_micro_bar.h"
+#include "pulsar_brand.h"
+#include "pulsar_audio.h"
 
 /**
  * 1970s Hamilton Pulsar Watchface for Pebble Time / Pebble Time 2
  * 
  * Inspired by the Pulsar P1 / P2 / P3 "Time Computer".
- * Features:
- * - Procedural GaAsP 5x7 Dot-Matrix LED digits.
- * - Unlit "ghost" LED dies rendered beneath the synthetic ruby crystal.
- * - Dynamic geometry scaling for Pebble Time 2 (Emery: 200x228) and Pebble Time / Pebble 2 (144x168).
- * - Multi-Mode Display Engine: Time, Live Seconds (:SS), Date (MM DD / DD MM), Steps (08420), Battery (100%).
- * - Clay Settings: Operating Mode, Themes (including Inverted Paper), Slant, Header/Footer, Bead Mode, Date Format, Vibrations.
- * - 10-Dot Micro-LED Progress Bar (Steps vs Battery Meter vs Off).
- * - Hourly chime & Bluetooth disconnect alert.
- * - Persistent storage & AppMessage settings listener.
  */
 
-#if defined(PBL_PLATFORM_EMERY)
-  #define DOT_RADIUS        2
-  #define DOT_SPACING_X     7
-  #define DOT_SPACING_Y     8
-  #define DIGIT_GAP         14
-  #define COLON_GAP         22
-  #define TOP_MARGIN        70
-  #define INDICATOR_RADIUS  2
-#else // Basalt, Diorite, Aplite (144x168)
-  #define DOT_RADIUS        1
-  #define DOT_SPACING_X     5
-  #define DOT_SPACING_Y     6
-  #define DIGIT_GAP         10
-  #define COLON_GAP         16
-  #define TOP_MARGIN        48
-  #define INDICATOR_RADIUS  1
-#endif
-
-#define DIGIT_WIDTH 5
-#define DIGIT_HEIGHT 7
 #define WAKE_DURATION_MS 4000
 
 // Storage & Message Keys
@@ -58,11 +35,6 @@
 #define STORAGE_KEY_CYCLE_SLOT_3     10017
 #define STORAGE_KEY_CYCLE_SLOT_4     10018
 #define STORAGE_KEY_CYCLE_SLOT_5     10019
-#define STORAGE_KEY_SOUND_ENABLED    10020
-#define STORAGE_KEY_HOURLY_BEEP      10021
-#define STORAGE_KEY_STEP_CELEBRATION 10022
-#define STORAGE_KEY_BT_SOUND         10023
-#define STORAGE_KEY_CELEBRATED_DAY   10024
 
 #ifndef MESSAGE_KEY_AppKeyOperatingMode
 #define MESSAGE_KEY_AppKeyOperatingMode   10000
@@ -85,10 +57,6 @@
 #define MESSAGE_KEY_AppKeyCycleSlot3     10017
 #define MESSAGE_KEY_AppKeyCycleSlot4     10018
 #define MESSAGE_KEY_AppKeyCycleSlot5     10019
-#define MESSAGE_KEY_AppKeySoundEnabled   10020
-#define MESSAGE_KEY_AppKeyHourlyBeep     10021
-#define MESSAGE_KEY_AppKeyStepCelebration 10022
-#define MESSAGE_KEY_AppKeyBtSound        10023
 #endif
 
 // Operating Modes
@@ -138,18 +106,6 @@ enum DateFormat {
   DATE_FORMAT_DM = 1  // Day Month
 };
 
-// Colorways
-enum ColorwayId {
-  COLORWAY_VIBRANT_RUBY = 0,
-  COLORWAY_DEEP_RED = 1,
-  COLORWAY_PROTOTYPE_GREEN = 2,
-  COLORWAY_AMBER_GOLD = 3,
-  COLORWAY_COBALT_BLUE = 4,
-  COLORWAY_LUNAR_WHITE = 5,
-  COLORWAY_INVERTED_PAPER = 6
-};
-#define NUM_COLORWAYS 7
-
 // Display Modes
 enum DisplayMode {
   DISPLAY_MODE_TIME = 0,
@@ -177,98 +133,6 @@ enum HourlyVibe {
   HOURLY_VIBE_DOUBLE = 2
 };
 
-// Step Goal Celebration
-enum StepCelebration {
-  STEP_CELEBRATION_OFF = 0,
-  STEP_CELEBRATION_VIBE = 1,
-  STEP_CELEBRATION_AUDIO = 2,
-  STEP_CELEBRATION_BOTH = 3
-};
-
-typedef struct {
-  GColor lit;
-  GColor ghost;
-  GColor accent;
-  GColor outer_bg;
-  GColor inner_bg;
-  GColor text_outer;
-} Colorway;
-
-static Colorway get_current_palette(int colorway_index) {
-  Colorway p;
-#if defined(PBL_COLOR)
-  p.outer_bg = GColorBlack;
-  p.inner_bg = GColorBlack;
-  p.text_outer = GColorWhite;
-  
-  switch (colorway_index) {
-    case COLORWAY_DEEP_RED:
-      // Hot Lava Orange (Vintage LED)
-      p.lit = GColorOrange;
-      p.ghost = GColorBulgarianRose;
-      p.accent = GColorSunsetOrange;
-      break;
-    case COLORWAY_PROTOTYPE_GREEN:
-      // Authentic 1975 GaP Phosphor Green
-      p.lit = GColorBrightGreen;
-      p.ghost = GColorDarkGreen;
-      p.accent = GColorSpringBud;
-      break;
-    case COLORWAY_AMBER_GOLD:
-      // Amber Gold (HP-01 Space-Age LED)
-      p.lit = GColorYellow;
-      p.ghost = GColorArmyGreen;
-      p.accent = GColorChromeYellow;
-      break;
-    case COLORWAY_COBALT_BLUE:
-      // Electric Cyan / Blue (Radiant on Reflective LCD)
-      p.lit = GColorCyan;
-      p.ghost = GColorMidnightGreen;
-      p.accent = GColorVividCerulean;
-      break;
-    case COLORWAY_LUNAR_WHITE:
-      // Lunar White / Silver
-      p.lit = GColorWhite;
-      p.ghost = GColorDarkGray;
-      p.accent = GColorLightGray;
-      break;
-    case COLORWAY_INVERTED_PAPER:
-      // Inverted E-Paper
-      p.outer_bg = GColorWhite;
-      p.inner_bg = GColorWhite;
-      p.text_outer = GColorBlack;
-      p.lit = GColorBlack;
-      p.ghost = GColorLightGray;
-      p.accent = GColorDarkGray;
-      break;
-    case COLORWAY_VIBRANT_RUBY:
-    default:
-      // Classic 1972 GaAsP Ruby Red
-      p.lit = GColorRed;
-      p.ghost = GColorBulgarianRose;
-      p.accent = GColorRed;
-      break;
-  }
-#else
-  if (colorway_index == COLORWAY_INVERTED_PAPER) {
-    p.outer_bg = GColorWhite;
-    p.inner_bg = GColorWhite;
-    p.text_outer = GColorBlack;
-    p.lit = GColorBlack;
-    p.ghost = GColorWhite;
-    p.accent = GColorBlack;
-  } else {
-    p.lit = GColorWhite;
-    p.ghost = GColorBlack;
-    p.accent = GColorWhite;
-    p.outer_bg = GColorBlack;
-    p.inner_bg = GColorBlack;
-    p.text_outer = GColorWhite;
-  }
-#endif
-  return p;
-}
-
 // State Variables
 static Window *s_main_window;
 static Layer *s_canvas_layer;
@@ -280,11 +144,7 @@ static int s_operating_mode = MODE_ALWAYS_ON;
 static int s_colorway = COLORWAY_VIBRANT_RUBY;
 static int s_flick_action = FLICK_ACTION_CYCLE;
 static int s_hourly_vibe = HOURLY_VIBE_OFF;
-static bool s_hourly_beep = false;
 static bool s_bt_vibe = false;
-static bool s_bt_sound = false;
-static bool s_sound_enabled = true;
-static int s_step_celebration = STEP_CELEBRATION_VIBE;
 static int s_bead_mode = BEAD_MODE_STEPS;
 static bool s_italic_slant = true;
 static int s_header_style = HEADER_STYLE_PULSAR;
@@ -298,7 +158,7 @@ static int s_cycle_slot1 = 1; // Live Seconds
 static int s_cycle_slot2 = 2; // Date
 static int s_cycle_slot3 = 3; // Daily Steps
 static int s_cycle_slot4 = 4; // Battery Level
-static int s_cycle_slot5 = 5; // Heart Rate (Auto-skipped on non-health platforms)
+static int s_cycle_slot5 = 0; // Heart Rate (Disabled by default, opt-in for HR devices)
 
 static bool s_bluetooth_connected = true;
 static int s_battery_level = 100;
@@ -309,10 +169,6 @@ static AppTimer *s_preview_timer = NULL;
 static AppTimer *s_charge_anim_timer = NULL;
 static int s_anim_frame = 0;
 static int s_last_vibe_hour = -1;
-#if defined(PBL_HEALTH)
-static int s_last_celebrated_day = -1;
-static bool s_step_goal_celebrated = false;
-#endif
 
 static void update_nightlight(void) {
   bool should_light = s_nightlight && (s_battery_charging || s_battery_plugged);
@@ -321,8 +177,8 @@ static void update_nightlight(void) {
 
 static void charge_anim_timer_callback(void *data) {
   s_charge_anim_timer = NULL;
-  bool is_animating = (s_battery_charging || s_battery_plugged || s_charging_preview) &&
-                      (s_charging_style != CHARGING_STYLE_OFF) &&
+  bool is_animating = (s_battery_charging || s_battery_plugged || s_charging_preview) && 
+                      (s_charging_style != CHARGING_STYLE_OFF) && 
                       (s_charging_style != CHARGING_STYLE_SOLID);
   if (is_animating) {
     s_anim_frame++;
@@ -332,8 +188,8 @@ static void charge_anim_timer_callback(void *data) {
 }
 
 static void update_charging_animation(void) {
-  bool is_animating = (s_battery_charging || s_battery_plugged || s_charging_preview) &&
-                      (s_charging_style != CHARGING_STYLE_OFF) &&
+  bool is_animating = (s_battery_charging || s_battery_plugged || s_charging_preview) && 
+                      (s_charging_style != CHARGING_STYLE_OFF) && 
                       (s_charging_style != CHARGING_STYLE_SOLID);
   if (is_animating) {
     if (!s_charge_anim_timer) {
@@ -346,29 +202,6 @@ static void update_charging_animation(void) {
     }
   }
 }
-
-// Authentic 1970s Hamilton Pulsar Rigid 5x7 GaAsP LED Matrix Font (0-9, Blank, B, A, T, %, H, R, -, ♥)
-static const uint8_t FONT_5X7[19][7] = {
-    {0x1F, 0x11, 0x11, 0x11, 0x11, 0x11, 0x1F}, // 0 - Classic rigid rectangular frame
-    {0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E}, // 1 - Clean centered digital 1
-    {0x1F, 0x01, 0x01, 0x1F, 0x10, 0x10, 0x1F}, // 2 - Space-age block 2
-    {0x1F, 0x01, 0x01, 0x1F, 0x01, 0x01, 0x1F}, // 3 - Space-age block 3
-    {0x11, 0x11, 0x11, 0x1F, 0x01, 0x01, 0x01}, // 4 - Classic digital 4
-    {0x1F, 0x10, 0x10, 0x1F, 0x01, 0x01, 0x1F}, // 5 - Space-age block 5
-    {0x1F, 0x10, 0x10, 0x1F, 0x11, 0x11, 0x1F}, // 6 - Space-age block 6
-    {0x1F, 0x01, 0x01, 0x02, 0x04, 0x04, 0x04}, // 7 - Clean digital 7 with centered stem
-    {0x1F, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x1F}, // 8 - Space-age block 8
-    {0x1F, 0x11, 0x11, 0x1F, 0x01, 0x01, 0x1F}, // 9 - Space-age block 9
-    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, // 10 = Blank
-    {0x1E, 0x11, 0x11, 0x1E, 0x11, 0x11, 0x1E}, // 11 = 'B'
-    {0x0E, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11}, // 12 = 'A'
-    {0x1F, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04}, // 13 = 'T'
-    {0x18, 0x19, 0x02, 0x04, 0x08, 0x13, 0x03}, // 14 = '%'
-    {0x11, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11}, // 15 = 'H'
-    {0x1E, 0x11, 0x11, 0x1E, 0x14, 0x12, 0x11}, // 16 = 'R'
-    {0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00}, // 17 = '-'
-    {0x0A, 0x1F, 0x1F, 0x1F, 0x0E, 0x04, 0x00}  // 18 = '♥' (Heart)
-};
 
 static int get_step_count(void) {
   int steps = 0;
@@ -394,41 +227,11 @@ static int get_heart_rate(void) {
   if (mask & HealthServiceAccessibilityMaskAvailable) {
     hr = (int)health_service_peek_current_value(metric);
   } else {
-    // Fallback: peek directly if sensor is active
     hr = (int)health_service_peek_current_value(metric);
   }
 #endif
   return hr;
 }
-
-static void play_sound_effect(uint16_t freq_hz, uint32_t dur_ms, uint8_t vol, SpeakerWaveform waveform) {
-#ifdef _PBL_API_EXISTS_speaker_play_tone
-  if (!s_sound_enabled) return;
-#ifdef _PBL_API_EXISTS_speaker_is_muted
-  if (speaker_is_muted()) return;
-#endif
-  speaker_play_tone(freq_hz, dur_ms, vol, waveform);
-#endif
-}
-
-#if defined(PBL_HEALTH)
-static void play_celebration_sound(void) {
-#ifdef _PBL_API_EXISTS_speaker_play_notes
-  if (!s_sound_enabled) return;
-#ifdef _PBL_API_EXISTS_speaker_is_muted
-  if (speaker_is_muted()) return;
-#endif
-  const SpeakerNote notes[] = {
-    { .midi_note = 88, .waveform = (uint8_t)SpeakerWaveformSquare, .duration_ms = 90, .velocity = 100, .reserved = 0 },
-    { .midi_note = 91, .waveform = (uint8_t)SpeakerWaveformSquare, .duration_ms = 90, .velocity = 100, .reserved = 0 },
-    { .midi_note = 96, .waveform = (uint8_t)SpeakerWaveformSquare, .duration_ms = 160, .velocity = 110, .reserved = 0 }
-  };
-  speaker_play_notes(notes, 3, 65);
-#elif defined(_PBL_API_EXISTS_speaker_play_tone)
-  play_sound_effect(2093, 160, 65, SpeakerWaveformSquare);
-#endif
-}
-#endif
 
 static void preview_timer_callback(void *data) {
   s_preview_timer = NULL;
@@ -456,7 +259,6 @@ static void trigger_display_change(int mode) {
 }
 
 static void advance_display_mode(void) {
-  // Direct flick action override
   if (s_flick_action == FLICK_ACTION_SECONDS) {
     trigger_display_change(DISPLAY_MODE_SECONDS);
     return;
@@ -478,7 +280,6 @@ static void advance_display_mode(void) {
     return;
   }
 
-  // Custom Reorderable & Toggleable Cycle Sequence
   int active_slots[5];
   int active_count = 0;
   int raw_slots[5] = {s_cycle_slot1, s_cycle_slot2, s_cycle_slot3, s_cycle_slot4, s_cycle_slot5};
@@ -487,10 +288,9 @@ static void advance_display_mode(void) {
     if (slot_val >= 1 && slot_val <= 5) {
 #if !defined(PBL_HEALTH)
       if (slot_val == DISPLAY_MODE_HEART_RATE) {
-        continue; // Skip heart rate on platforms without health support
+        continue;
       }
 #endif
-      // Deduplicate so duplicate selections don't stall navigation
       bool duplicate = false;
       for (int j = 0; j < active_count; j++) {
         if (active_slots[j] == slot_val) {
@@ -533,20 +333,9 @@ static void advance_display_mode(void) {
 }
 
 static void tap_handler(AccelAxisType axis, int32_t direction) {
-  static uint32_t s_last_tap_epoch_ms = 0;
-  time_t sec = 0;
-  uint16_t ms = 0;
-  time_ms(&sec, &ms);
-  uint32_t now_ms = (uint32_t)sec * 1000 + ms;
-  if (now_ms - s_last_tap_epoch_ms < 200) {
-    return; // Debounce rapid duplicate triggers (200ms)
-  }
-  s_last_tap_epoch_ms = now_ms;
-
   light_enable_interaction();
   if (s_operating_mode == MODE_STEALTH) {
     if (!s_stealth_awake) {
-      // First tap/flick in stealth mode: Wake up to TIME (or direct mode)
       s_stealth_awake = true;
       if (s_flick_action == FLICK_ACTION_SECONDS) {
         s_display_mode = DISPLAY_MODE_SECONDS;
@@ -557,11 +346,7 @@ static void tap_handler(AccelAxisType axis, int32_t direction) {
       } else if (s_flick_action == FLICK_ACTION_BATTERY) {
         s_display_mode = DISPLAY_MODE_BATTERY;
       } else if (s_flick_action == FLICK_ACTION_HEART_RATE) {
-#if defined(PBL_HEALTH)
         s_display_mode = DISPLAY_MODE_HEART_RATE;
-#else
-        s_display_mode = DISPLAY_MODE_TIME;
-#endif
       } else {
         s_display_mode = DISPLAY_MODE_TIME;
       }
@@ -571,23 +356,27 @@ static void tap_handler(AccelAxisType axis, int32_t direction) {
       s_mode_timer = app_timer_register(WAKE_DURATION_MS, mode_timer_callback, NULL);
       layer_mark_dirty(s_canvas_layer);
     } else {
-      // Already awake: advance through configured cycle sequence
       advance_display_mode();
     }
   } else {
-    // MODE_ALWAYS_ON: advance through configured cycle sequence
     advance_display_mode();
   }
 }
 
+#if PBL_API_EXISTS(touch_service_subscribe)
+static void touch_handler(const TouchEvent *event, void *context) {
+  if (event->type == TouchEvent_Touchdown) {
+    tap_handler(ACCEL_AXIS_Z, 1);
+  }
+}
+#endif
+
 static void bluetooth_callback(bool connected) {
-  if (!connected && s_bluetooth_connected) {
-    if (s_bt_vibe) {
-      vibes_double_pulse();
-    }
-    if (s_bt_sound) {
-      play_sound_effect(880, 120, 70, SpeakerWaveformSawtooth);
-    }
+  if (s_bt_vibe && !connected && s_bluetooth_connected) {
+    vibes_double_pulse();
+#if PBL_API_EXISTS(speaker_play_tone)
+    speaker_play_tone(880, 120, 70, SpeakerWaveformSawtooth);
+#endif
   }
   s_bluetooth_connected = connected;
   layer_mark_dirty(s_canvas_layer);
@@ -603,92 +392,27 @@ static void battery_callback(BatteryChargeState state) {
 }
 
 #if defined(PBL_HEALTH)
-static void check_step_goal_celebration(void) {
-  if (s_step_celebration == STEP_CELEBRATION_OFF || s_step_goal <= 0 || s_step_goal_celebrated) {
-    return;
-  }
-  int steps = get_step_count();
-  if (steps >= s_step_goal) {
-    s_step_goal_celebrated = true;
-    if (s_step_celebration == STEP_CELEBRATION_VIBE || s_step_celebration == STEP_CELEBRATION_BOTH) {
-      vibes_double_pulse();
-    }
-    if (s_step_celebration == STEP_CELEBRATION_AUDIO || s_step_celebration == STEP_CELEBRATION_BOTH) {
-      play_celebration_sound();
-    }
-  }
-}
-
 static void health_handler(HealthEventType event, void *context) {
   if (event == HealthEventMovementUpdate || event == HealthEventHeartRateUpdate) {
-    if (event == HealthEventMovementUpdate) {
-      check_step_goal_celebration();
-    }
     layer_mark_dirty(s_canvas_layer);
   }
 }
 #endif
 
-static void draw_matrix_digit_custom(GContext *ctx, int x_offset, int y_offset, int digit_index, 
-                                     const Colorway *palette, bool is_active, int bounds_w,
-                                     int spacing_x, int spacing_y, int dot_radius) {
-  if (digit_index < 0 || digit_index > 18) digit_index = 10;
-  
-  int slant_scale = (bounds_w > 180) ? 7 : 5;
-  
-  for (int r = 0; r < DIGIT_HEIGHT; r++) {
-    uint8_t row_bits = FONT_5X7[digit_index][r];
-    int slant_x = s_italic_slant ? (((DIGIT_HEIGHT - 1 - r) * slant_scale) / (DIGIT_HEIGHT - 1)) : 0;
-    
-    for (int c = 0; c < DIGIT_WIDTH; c++) {
-      bool is_lit = is_active && ((row_bits >> (4 - c)) & 0x01);
-      int dot_x = x_offset + (c * spacing_x) + slant_x;
-      int dot_y = y_offset + (r * spacing_y);
-      
-      if (is_lit) {
-        graphics_context_set_fill_color(ctx, palette->lit);
-        graphics_fill_circle(ctx, GPoint(dot_x, dot_y), dot_radius);
-      } else {
-#if defined(PBL_COLOR)
-        if (s_colorway != COLORWAY_INVERTED_PAPER) {
-          // Subtle ghost die beneath dark crystal on 64-color displays
-          graphics_context_set_fill_color(ctx, palette->ghost);
-          graphics_fill_circle(ctx, GPoint(dot_x, dot_y), 1);
-        }
-#else
-        // Pure black / white on 1-bit monochrome (no dither noise)
-#endif
-      }
-    }
-  }
-}
-
-static void draw_matrix_digit(GContext *ctx, int x_offset, int y_offset, int digit_index, const Colorway *palette, bool is_active, int bounds_w) {
-  draw_matrix_digit_custom(ctx, x_offset, y_offset, digit_index, palette, is_active, bounds_w, DOT_SPACING_X, DOT_SPACING_Y, DOT_RADIUS);
-}
-
 static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette, int steps, int sec, uint16_t now_ms) {
   bool is_charging_active = (s_battery_charging || s_battery_plugged || s_charging_preview) && (s_charging_style != CHARGING_STYLE_OFF);
   if (s_bead_mode == BEAD_MODE_OFF && !is_charging_active) return;
-
-  int num_beads = 10;
-  int bead_spacing = bounds.size.w > 180 ? 10 : 7;
-  int bead_radius = bounds.size.w > 180 ? 2 : 1;
-  int total_bead_width = (num_beads - 1) * bead_spacing;
-  int start_x = (bounds.size.w - total_bead_width) / 2;
-  int bead_y = bounds.size.w > 180 ? 148 : 108;
+  
+  bool beads_lit[NUM_MICRO_BEADS] = {false};
   bool on_power = (s_battery_charging || s_battery_plugged);
   bool is_active = (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake || (on_power && s_nightlight) || s_charging_preview;
   int goal = s_step_goal > 0 ? s_step_goal : 10000;
-
-  for (int i = 0; i < num_beads; i++) {
+  
+  for (int i = 0; i < NUM_MICRO_BEADS; i++) {
     bool lit = false;
-
+    
     if (is_charging_active) {
-      // Clock-Synchronized Charging Animations (locked to master second & millisecond crystal)
       if (s_charging_style == CHARGING_STYLE_CHASER) {
-        // 1970s Cylon / Knight Rider 3-Dot Comet Ping-Pong Sweep across all 10 beads
-        // Full 18-step ping-pong cycle tuned to exactly 2.0 seconds (locked to whole seconds)
         int total_ms = ((sec % 2) * 1000) + now_ms;
         int step = (total_ms * 18) / 2000;
         if (step > 17) step = 17;
@@ -697,63 +421,51 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
         bool is_tail = (i == active_idx - 1) || (i == active_idx + 1);
         lit = is_active && (is_head || is_tail);
       } else if (s_charging_style == CHARGING_STYLE_PULSE) {
-        // Breathing / Heartbeat Pulse: Active charge level pulses in synchrony with the second clock
-        // Dual-beat heartbeat (lub-dub) at 0ms and 300ms, resting at 500-1000ms
         int current_beads = (s_battery_level + 9) / 10;
-        if (current_beads > num_beads) current_beads = num_beads;
+        if (current_beads > NUM_MICRO_BEADS) current_beads = NUM_MICRO_BEADS;
         if (current_beads < 1) current_beads = 1;
         bool pulse_on = (now_ms < 180) || (now_ms >= 300 && now_ms < 480);
         lit = is_active && (i < current_beads) && pulse_on;
       } else if (s_charging_style == CHARGING_STYLE_MARQUEE) {
-        // 1970s Theater Marquee Alternator (odd / even alternating LEDs in sync with half-seconds)
         bool phase = (now_ms < 500);
         lit = is_active && ((i % 2 == 0) == phase);
       } else if (s_charging_style == CHARGING_STYLE_FLOW) {
-        // Progressive Flow: Solid up to current charge level + flowing cascade resetting on the second mark
         int current_beads = s_battery_level / 10;
-        if (current_beads >= num_beads) {
-          int wave_idx = (now_ms * num_beads) / 1000;
+        if (current_beads >= NUM_MICRO_BEADS) {
+          int wave_idx = (now_ms * NUM_MICRO_BEADS) / 1000;
           lit = is_active && (i != wave_idx);
         } else {
           if (i < current_beads) {
             lit = is_active;
           } else {
-            int remaining = num_beads - current_beads;
-            int cycle_pos = (remaining > 0) ? ((now_ms * remaining) / 1000) : 0;
+            int remaining = NUM_MICRO_BEADS - current_beads;
+            int cycle_pos = (remaining > 0) ? ((now_ms * (remaining + 2)) / 1000) : 0;
             lit = is_active && (i == (current_beads + cycle_pos));
           }
         }
       } else if (s_charging_style == CHARGING_STYLE_SOLID) {
-        // Solid battery level while charging
         int current_beads = (s_battery_level + 9) / 10;
-        if (current_beads > num_beads) current_beads = num_beads;
+        if (current_beads > NUM_MICRO_BEADS) current_beads = NUM_MICRO_BEADS;
         lit = is_active && (i < current_beads);
       }
     } else {
-      // Standard Battery or Step Meter
       if (s_bead_mode == BEAD_MODE_STEPS) {
         if (steps >= goal) {
-          // Goal exceeded!
           if (steps >= 2 * goal) {
-            // 200%+ Overdrive: All 10 beads pulse in victory wave
             bool flash = (sec % 2 == 0);
             lit = is_active && flash;
           } else {
-            // Lap 2 (100% - 200%): All 10 base beads are lit, but the surplus % beads pulse!
             int surplus_steps = steps - goal;
-            int lap2_beads = (surplus_steps * num_beads) / goal;
+            int lap2_beads = (surplus_steps * NUM_MICRO_BEADS) / goal;
             if (i < lap2_beads) {
-              // Lap 2 beads pulse every second
               bool lap2_pulse = (sec % 2 == 0);
               lit = is_active && lap2_pulse;
             } else {
-              // Remaining base beads stay solid
               lit = is_active;
             }
           }
         } else {
-          // Normal 0% to 100% fill
-          int threshold = ((i + 1) * goal) / num_beads;
+          int threshold = ((i + 1) * goal) / NUM_MICRO_BEADS;
           lit = is_active && (steps >= threshold);
         }
       } else if (s_bead_mode == BEAD_MODE_BATTERY) {
@@ -761,40 +473,24 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
         lit = is_active && (s_battery_level >= threshold);
       }
     }
-    int bx = start_x + (i * bead_spacing);
-    
-#if defined(PBL_COLOR)
-    if (s_colorway == COLORWAY_INVERTED_PAPER) {
-      if (lit) {
-        graphics_context_set_fill_color(ctx, GColorBlack);
-        graphics_fill_circle(ctx, GPoint(bx, bead_y), bead_radius);
-      }
-    } else {
-      GColor bead_color = lit ? palette->lit : palette->ghost;
-      graphics_context_set_fill_color(ctx, bead_color);
-      graphics_fill_circle(ctx, GPoint(bx, bead_y), lit ? bead_radius : 1);
-    }
-#else
-    if (lit) {
-      graphics_context_set_fill_color(ctx, palette->lit);
-      graphics_fill_circle(ctx, GPoint(bx, bead_y), bead_radius);
-    }
-#endif
+    beads_lit[i] = lit;
   }
+  
+  pulsar_draw_micro_beads(ctx, bounds, palette, is_active, beads_lit);
 }
 
 static void canvas_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
-  Colorway active_palette = get_current_palette(s_colorway % NUM_COLORWAYS);
+  Colorway active_palette = pulsar_get_palette(s_colorway % NUM_COLORWAYS);
   const Colorway *palette = &active_palette;
   bool on_power = (s_battery_charging || s_battery_plugged);
   bool is_active = (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake || (on_power && s_nightlight) || s_charging_preview;
   
-  // 1. Background Fill across entire screen (Zero border clutter)
+  // 1. Background Fill
   graphics_context_set_fill_color(ctx, palette->outer_bg);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
-  // 2. Vintage Space-Age Brand Header at Top
+  // 2. Brand Header
   if (s_header_style != HEADER_STYLE_NONE) {
     const char *header_text = "P U L S A R";
     if (s_header_style == HEADER_STYLE_HAMILTON) {
@@ -802,118 +498,56 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     } else if (s_header_style == HEADER_STYLE_SOLID_STATE) {
       header_text = "S O L I D   S T A T E";
     }
-    GFont font_header = bounds.size.w > 180 ? 
-                        fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD) : 
-                        fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD);
-    int header_y = bounds.size.w > 180 ? 14 : 8;
-    graphics_context_set_text_color(ctx, palette->text_outer);
-    graphics_draw_text(ctx, header_text, font_header,
-                       GRect(0, header_y, bounds.size.w, bounds.size.w > 180 ? 24 : 18),
-                       GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    pulsar_draw_header(ctx, bounds, header_text, palette);
   }
 
-  // 3. Status Annunciator Dots (Top Left: BT Disconnect, Top Right: Battery Low / Charging)
+  // 3. Annunciator Dots
   time_t now;
   uint16_t now_ms = 0;
   time_ms(&now, &now_ms);
   struct tm *tick_time = localtime(&now);
   int steps = get_step_count();
 
-  int ind_y = bounds.size.w > 180 ? 20 : 12;
-  int ind_margin = bounds.size.w > 180 ? 18 : 12;
-  if (!s_bluetooth_connected) {
-    graphics_context_set_fill_color(ctx, palette->lit);
-    graphics_fill_circle(ctx, GPoint(ind_margin, ind_y), INDICATOR_RADIUS);
-  }
-  if (s_battery_charging || s_battery_plugged) {
-    // Charging Indicator Dot (pulses in sync with second clock)
-    bool ind_lit = s_battery_charging ? (now_ms < 500) : true;
-    if (ind_lit) {
-      graphics_context_set_fill_color(ctx, palette->lit);
-      graphics_fill_circle(ctx, GPoint(bounds.size.w - ind_margin, ind_y), INDICATOR_RADIUS);
-    }
-  } else if (s_battery_level <= 20) {
-    graphics_context_set_fill_color(ctx, palette->lit);
-    graphics_fill_circle(ctx, GPoint(bounds.size.w - ind_margin, ind_y), INDICATOR_RADIUS);
-  }
+  bool bt_disc = !s_bluetooth_connected;
+  bool bat_alert = (s_battery_charging || s_battery_plugged) ? (s_battery_charging ? (now_ms < 500) : true) : (s_battery_level <= 20);
+  pulsar_draw_annunciators(ctx, bounds, palette, bt_disc, bat_alert, s_battery_charging || s_battery_plugged);
 
   // 4. Data Extraction & Display Engine
-  int digit_span_x = (DIGIT_WIDTH - 1) * DOT_SPACING_X;
-  int start_y = bounds.size.w > 180 ? 70 : 48;
-  int slant_scale = (bounds.size.w > 180) ? 7 : 5;
-  int max_slant = s_italic_slant ? slant_scale : 0;
-
   if (s_display_mode == DISPLAY_MODE_STEPS && is_active) {
-    // 5-Digit Step Count Layout (e.g., 0 8 4 2 0)
     int clamped_steps = steps > 99999 ? 99999 : steps;
-    int s1 = (clamped_steps / 10000) % 10;
-    int s2 = (clamped_steps / 1000) % 10;
-    int s3 = (clamped_steps / 100) % 10;
-    int s4 = (clamped_steps / 10) % 10;
-    int s5 = clamped_steps % 10;
-
-    int step_spacing_x = bounds.size.w > 180 ? 6 : 4;
-    int step_spacing_y = bounds.size.w > 180 ? 7 : 5;
-    int step_dot_radius = bounds.size.w > 180 ? 2 : 1;
-    int step_gap = bounds.size.w > 180 ? 11 : 8;
-    int step_digit_span = (DIGIT_WIDTH - 1) * step_spacing_x;
-
-    int total_5_width = (5 * step_digit_span) + (4 * step_gap) + max_slant;
-    int start_5_x = (bounds.size.w - total_5_width) / 2;
-    int step_start_y = bounds.size.w > 180 ? 72 : 50;
-
-    int s_digits[5] = {s1, s2, s3, s4, s5};
-    for (int i = 0; i < 5; i++) {
-      int dx = start_5_x + (i * (step_digit_span + step_gap));
-      draw_matrix_digit_custom(ctx, dx, step_start_y, s_digits[i], palette, is_active, bounds.size.w,
-                               step_spacing_x, step_spacing_y, step_dot_radius);
-    }
+    int s_digits[5] = {
+      (clamped_steps / 10000) % 10,
+      (clamped_steps / 1000) % 10,
+      (clamped_steps / 100) % 10,
+      (clamped_steps / 10) % 10,
+      clamped_steps % 10
+    };
+    pulsar_draw_5digits(ctx, bounds, s_digits, palette, is_active, s_italic_slant);
   } else if (s_display_mode == DISPLAY_MODE_HEART_RATE && is_active) {
-    // 5-Character Heart Rate Layout (♥  72 or ♥ 125 or ♥ --)
     int hr = get_heart_rate();
-    int h1 = 18; // ♥ Heart symbol
-    int h2 = 10; // blank
-    int h3 = 10; // blank
-    int h4 = 10; // blank
-    int h5 = 10; // blank
-
+    int h_digits[5] = {GLYPH_HEART, GLYPH_BLANK, GLYPH_BLANK, GLYPH_BLANK, GLYPH_BLANK};
     if (hr > 0) {
       if (hr >= 100) {
-        h3 = (hr / 100) % 10;
-        h4 = (hr / 10) % 10;
-        h5 = hr % 10;
+        h_digits[2] = (hr / 100) % 10;
+        h_digits[3] = (hr / 10) % 10;
+        h_digits[4] = hr % 10;
       } else {
-        h4 = (hr / 10) % 10;
-        h5 = hr % 10;
+        h_digits[3] = (hr / 10) % 10;
+        h_digits[4] = hr % 10;
       }
     } else {
-      // Sensor acquiring / calibrating: ♥ --
-      h4 = 17; // '-'
-      h5 = 17; // '-'
+      h_digits[3] = GLYPH_DASH;
+      h_digits[4] = GLYPH_DASH;
     }
-
-    int hr_spacing_x = bounds.size.w > 180 ? 6 : 4;
-    int hr_spacing_y = bounds.size.w > 180 ? 7 : 5;
-    int hr_dot_radius = bounds.size.w > 180 ? 2 : 1;
-    int hr_gap = bounds.size.w > 180 ? 11 : 8;
-    int hr_digit_span = (DIGIT_WIDTH - 1) * hr_spacing_x;
-
-    int total_hr_width = (5 * hr_digit_span) + (4 * hr_gap) + max_slant;
-    int start_hr_x = (bounds.size.w - total_hr_width) / 2;
-    int hr_start_y = bounds.size.w > 180 ? 72 : 50;
-
-    int h_digits[5] = {h1, h2, h3, h4, h5};
-    for (int i = 0; i < 5; i++) {
-      int dx = start_hr_x + (i * (hr_digit_span + hr_gap));
-      draw_matrix_digit_custom(ctx, dx, hr_start_y, h_digits[i], palette, is_active, bounds.size.w,
-                               hr_spacing_x, hr_spacing_y, hr_dot_radius);
-    }
+    pulsar_draw_5digits(ctx, bounds, h_digits, palette, is_active, s_italic_slant);
   } else if (s_display_mode == DISPLAY_MODE_SECONDS) {
-    // Centered Live Seconds Layout (:SS)
     int secs = tick_time->tm_sec;
-    int sec_tens = is_active ? (secs / 10) : 10;
-    int sec_ones = is_active ? (secs % 10) : 10;
+    int sec_tens = is_active ? (secs / 10) : GLYPH_BLANK;
+    int sec_ones = is_active ? (secs % 10) : GLYPH_BLANK;
     
+    int digit_span_x = (DIGIT_WIDTH - 1) * DOT_SPACING_X;
+    int slant_scale = (bounds.size.w > 180) ? 7 : 5;
+    int max_slant = s_italic_slant ? slant_scale : 0;
     int sec_digit_gap = bounds.size.w > 180 ? 14 : 10;
     int sec_colon_gap = bounds.size.w > 180 ? 22 : 16;
     int sec_total_width = (digit_span_x * 2) + sec_digit_gap + sec_colon_gap + max_slant;
@@ -922,32 +556,14 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     int sec_d3_x = sec_start_x + sec_colon_gap;
     int sec_d4_x = sec_d3_x + digit_span_x + sec_digit_gap;
     
-    draw_matrix_digit(ctx, sec_d3_x, start_y, sec_tens, palette, is_active, bounds.size.w);
-    draw_matrix_digit(ctx, sec_d4_x, start_y, sec_ones, palette, is_active, bounds.size.w);
+    pulsar_draw_digit(ctx, sec_d3_x, TOP_MARGIN, sec_tens, palette, is_active, bounds.size.w, s_italic_slant);
+    pulsar_draw_digit(ctx, sec_d4_x, TOP_MARGIN, sec_ones, palette, is_active, bounds.size.w, s_italic_slant);
     
-    // Centered Colon before seconds digits
     int sec_colon_base_x = sec_start_x + (sec_colon_gap / 2);
-    int colon_slant1 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 2) * slant_scale) / (DIGIT_HEIGHT - 1)) : 0;
-    int colon_slant2 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 4) * slant_scale) / (DIGIT_HEIGHT - 1)) : 0;
-    int sec_colon_x1 = sec_colon_base_x + colon_slant1;
-    int sec_colon_x2 = sec_colon_base_x + colon_slant2;
-    int colon_y1 = start_y + (DOT_SPACING_Y * 2);
-    int colon_y2 = start_y + (DOT_SPACING_Y * 4);
-    
-#if defined(PBL_COLOR)
-    graphics_context_set_fill_color(ctx, is_active ? palette->lit : palette->ghost);
-    graphics_fill_circle(ctx, GPoint(sec_colon_x1, colon_y1), is_active ? DOT_RADIUS : 1);
-    graphics_fill_circle(ctx, GPoint(sec_colon_x2, colon_y2), is_active ? DOT_RADIUS : 1);
-#else
-    if (is_active) {
-      graphics_context_set_fill_color(ctx, palette->lit);
-      graphics_fill_circle(ctx, GPoint(sec_colon_x1, colon_y1), DOT_RADIUS);
-      graphics_fill_circle(ctx, GPoint(sec_colon_x2, colon_y2), DOT_RADIUS);
-    }
-#endif
+    pulsar_draw_colon(ctx, sec_colon_base_x, TOP_MARGIN, palette, is_active, true, bounds.size.w, s_italic_slant);
   } else {
     // 4-Digit Layout for Time, Date, Battery
-    int d1 = 10, d2 = 10, d3 = 10, d4 = 10;
+    int d1 = GLYPH_BLANK, d2 = GLYPH_BLANK, d3 = GLYPH_BLANK, d4 = GLYPH_BLANK;
     bool show_colon = false;
     bool colon_blinking = false;
 
@@ -975,11 +591,11 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
           d1 = 1;
           d2 = 0;
           d3 = 0;
-          d4 = 14; // %
+          d4 = GLYPH_PERCENT;
         } else {
           d2 = bat / 10;
           d3 = bat % 10;
-          d4 = 14; // %
+          d4 = GLYPH_PERCENT;
         }
       }
     } else {
@@ -991,7 +607,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
           if (hours == 0) hours = 12;
         }
         if (hours < 10) {
-          d1 = s_leading_zero ? 0 : 10; // blank or 0
+          d1 = s_leading_zero ? 0 : GLYPH_BLANK;
         } else {
           d1 = hours / 10;
         }
@@ -1004,45 +620,21 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
       }
     }
 
-    int total_width = (digit_span_x * 4) + (DIGIT_GAP * 2) + COLON_GAP + max_slant;
-    int start_x = (bounds.size.w - total_width) / 2;
-
-    int d1_x = start_x;
-    int d2_x = d1_x + digit_span_x + DIGIT_GAP;
-    int d3_x = d2_x + digit_span_x + COLON_GAP;
-    int d4_x = d3_x + digit_span_x + DIGIT_GAP;
-    
-    draw_matrix_digit(ctx, d1_x, start_y, d1, palette, is_active, bounds.size.w);
-    draw_matrix_digit(ctx, d2_x, start_y, d2, palette, is_active, bounds.size.w);
-    draw_matrix_digit(ctx, d3_x, start_y, d3, palette, is_active, bounds.size.w);
-    draw_matrix_digit(ctx, d4_x, start_y, d4, palette, is_active, bounds.size.w);
-    
-    // Colon Dots with matching slant angle
-    int d2_right = d2_x + digit_span_x;
-    int colon_base_x = d2_right + (COLON_GAP / 2);
-    int colon_slant1 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 2) * slant_scale) / (DIGIT_HEIGHT - 1)) : 0;
-    int colon_slant2 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 4) * slant_scale) / (DIGIT_HEIGHT - 1)) : 0;
-    int colon_x1 = colon_base_x + colon_slant1;
-    int colon_x2 = colon_base_x + colon_slant2;
-    int colon_y1 = start_y + (DOT_SPACING_Y * 2);
-    int colon_y2 = start_y + (DOT_SPACING_Y * 4);
-    
     bool colon_lit = show_colon && is_active && (!colon_blinking || (tick_time->tm_sec % 2 == 0));
-#if defined(PBL_COLOR)
-    GColor colon_color = colon_lit ? palette->lit : palette->ghost;
-    graphics_context_set_fill_color(ctx, colon_color);
-    graphics_fill_circle(ctx, GPoint(colon_x1, colon_y1), colon_lit ? DOT_RADIUS : 1);
-    graphics_fill_circle(ctx, GPoint(colon_x2, colon_y2), colon_lit ? DOT_RADIUS : 1);
-#else
-    if (colon_lit) {
-      graphics_context_set_fill_color(ctx, palette->lit);
-      graphics_fill_circle(ctx, GPoint(colon_x1, colon_y1), DOT_RADIUS);
-      graphics_fill_circle(ctx, GPoint(colon_x2, colon_y2), DOT_RADIUS);
-    }
-#endif
+    pulsar_draw_4digits(ctx, bounds, d1, d2, d3, d4, show_colon, colon_lit, palette, is_active, s_italic_slant);
     
     // Middle separator dot for Date Mode
     if (s_display_mode == DISPLAY_MODE_DATE && is_active) {
+      int digit_span_x = (DIGIT_WIDTH - 1) * DOT_SPACING_X;
+      int slant_scale = (bounds.size.w > 180) ? 7 : 5;
+      int max_slant = s_italic_slant ? slant_scale : 0;
+      int total_width = (digit_span_x * 4) + (DIGIT_GAP * 2) + COLON_GAP + max_slant;
+      int start_x = (bounds.size.w - total_width) / 2;
+      int d2_right = start_x + (digit_span_x * 2) + DIGIT_GAP;
+      int colon_base_x = d2_right + (COLON_GAP / 2);
+      int colon_slant2 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 4) * slant_scale) / (DIGIT_HEIGHT - 1)) : 0;
+      int colon_x2 = colon_base_x + colon_slant2;
+      int colon_y2 = TOP_MARGIN + (DOT_SPACING_Y * 4);
       graphics_context_set_fill_color(ctx, palette->lit);
       graphics_fill_circle(ctx, GPoint(colon_x2, colon_y2), DOT_RADIUS);
     }
@@ -1051,8 +643,13 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     if (is_active && !clock_is_24h_style() && s_display_mode == DISPLAY_MODE_TIME) {
       bool is_pm = tick_time->tm_hour >= 12;
       if (is_pm) {
+        int digit_span_x = (DIGIT_WIDTH - 1) * DOT_SPACING_X;
+        int slant_scale = (bounds.size.w > 180) ? 7 : 5;
+        int max_slant = s_italic_slant ? slant_scale : 0;
+        int total_width = (digit_span_x * 4) + (DIGIT_GAP * 2) + COLON_GAP + max_slant;
+        int start_x = (bounds.size.w - total_width) / 2;
         graphics_context_set_fill_color(ctx, palette->lit);
-        graphics_fill_circle(ctx, GPoint(start_x, start_y + (DIGIT_HEIGHT * DOT_SPACING_Y) + 4), INDICATOR_RADIUS);
+        graphics_fill_circle(ctx, GPoint(start_x, TOP_MARGIN + (DIGIT_HEIGHT * DOT_SPACING_Y) + 4), INDICATOR_RADIUS);
       }
     }
   }
@@ -1105,50 +702,32 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
         footer_text = "S W I S S   M A D E";
       }
     }
-    
-    GFont font_footer = bounds.size.w > 180 ? 
-                        fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD) : 
-                        fonts_get_system_font(FONT_KEY_GOTHIC_14);
-    int footer_y = bounds.size.w > 180 ? 192 : 142;
-    graphics_context_set_text_color(ctx, palette->text_outer);
-    graphics_draw_text(ctx, footer_text, font_footer,
-                       GRect(0, footer_y, bounds.size.w, bounds.size.w > 180 ? 20 : 14),
-                       GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    pulsar_draw_footer(ctx, bounds, footer_text, palette);
   }
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-  // Check hourly chime (vibration and/or audio beep)
   if (units_changed & HOUR_UNIT) {
-    if ((s_hourly_vibe != HOURLY_VIBE_OFF || s_hourly_beep) && tick_time->tm_hour != s_last_vibe_hour) {
+    if (s_hourly_vibe != HOURLY_VIBE_OFF && tick_time->tm_hour != s_last_vibe_hour) {
       s_last_vibe_hour = tick_time->tm_hour;
       if (s_hourly_vibe == HOURLY_VIBE_SINGLE) {
         vibes_short_pulse();
+#if PBL_API_EXISTS(speaker_play_tone)
+        speaker_play_tone(1760, 80, 50, SpeakerWaveformSquare);
+#endif
       } else if (s_hourly_vibe == HOURLY_VIBE_DOUBLE) {
         vibes_double_pulse();
-      }
-      if (s_hourly_beep) {
-        play_sound_effect(1760, 80, 50, SpeakerWaveformSquare);
+#if PBL_API_EXISTS(speaker_play_tone)
+        speaker_play_tone(2093, 100, 50, SpeakerWaveformSquare);
+#endif
       }
     }
   }
 
-#if defined(PBL_HEALTH)
-  int current_day = tick_time->tm_yday;
-  if (current_day != s_last_celebrated_day) {
-    s_last_celebrated_day = current_day;
-    s_step_goal_celebrated = false;
-    persist_write_int(STORAGE_KEY_CELEBRATED_DAY, current_day);
-  }
-  check_step_goal_celebration();
-#endif
-
-  // Re-assert continuous nightlight if active on dock
   if (s_nightlight && (s_battery_charging || s_battery_plugged)) {
     light_enable(true);
   }
 
-  // Redraw every second if Live Seconds is active, or if animated charging/preview is active, or Always-On
   bool animating_charge = (s_battery_charging || s_battery_plugged || s_charging_preview) && (s_charging_style != CHARGING_STYLE_OFF) && (s_charging_style != CHARGING_STYLE_SOLID);
   if (s_display_mode == DISPLAY_MODE_SECONDS || animating_charge || (s_operating_mode == MODE_ALWAYS_ON && (units_changed & SECOND_UNIT))) {
     layer_mark_dirty(s_canvas_layer);
@@ -1204,73 +783,57 @@ static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResul
 }
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
-  APP_LOG(APP_LOG_LEVEL_INFO, "AppMessage received!");
   for (Tuple *t = dict_read_first(iterator); t != NULL; t = dict_read_next(iterator)) {
     uint32_t key = t->key;
     if (key == MESSAGE_KEY_AppKeyOperatingMode) {
       s_operating_mode = tuple_to_int(t, s_operating_mode);
       persist_write_int(STORAGE_KEY_OPERATING_MODE, s_operating_mode);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyOperatingMode: %d", s_operating_mode);
     } else if (key == MESSAGE_KEY_AppKeyColorway) {
       s_colorway = tuple_to_int(t, s_colorway);
       if (s_colorway < 0 || s_colorway >= NUM_COLORWAYS) s_colorway = 0;
       persist_write_int(STORAGE_KEY_COLORWAY, s_colorway);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyColorway: %d", s_colorway);
     } else if (key == MESSAGE_KEY_AppKeyFlickAction) {
       s_flick_action = tuple_to_int(t, s_flick_action);
       persist_write_int(STORAGE_KEY_FLICK_ACTION, s_flick_action);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyFlickAction: %d", s_flick_action);
     } else if (key == MESSAGE_KEY_AppKeyHourlyVibe) {
       s_hourly_vibe = tuple_to_int(t, s_hourly_vibe);
       persist_write_int(STORAGE_KEY_HOURLY_VIBE, s_hourly_vibe);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyHourlyVibe: %d", s_hourly_vibe);
     } else if (key == MESSAGE_KEY_AppKeyBtVibe) {
       s_bt_vibe = tuple_to_bool(t, s_bt_vibe);
       persist_write_bool(STORAGE_KEY_BT_VIBE, s_bt_vibe);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyBtVibe: %d", (int)s_bt_vibe);
     } else if (key == MESSAGE_KEY_AppKeyBeadMode) {
       s_bead_mode = tuple_to_int(t, s_bead_mode);
       persist_write_int(STORAGE_KEY_BEAD_MODE, s_bead_mode);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyBeadMode: %d", s_bead_mode);
     } else if (key == MESSAGE_KEY_AppKeyShowStepBeads) {
       bool show = tuple_to_bool(t, true);
       s_bead_mode = show ? BEAD_MODE_STEPS : BEAD_MODE_OFF;
       persist_write_int(STORAGE_KEY_BEAD_MODE, s_bead_mode);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyShowStepBeads: %d", (int)show);
     } else if (key == MESSAGE_KEY_AppKeyItalicSlant) {
       s_italic_slant = tuple_to_bool(t, s_italic_slant);
       persist_write_bool(STORAGE_KEY_ITALIC_SLANT, s_italic_slant);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyItalicSlant: %d", (int)s_italic_slant);
     } else if (key == MESSAGE_KEY_AppKeyHeaderStyle) {
       s_header_style = tuple_to_int(t, s_header_style);
       persist_write_int(STORAGE_KEY_HEADER_STYLE, s_header_style);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyHeaderStyle: %d", s_header_style);
     } else if (key == MESSAGE_KEY_AppKeyFooterStyle) {
       s_footer_style = tuple_to_int(t, s_footer_style);
       persist_write_int(STORAGE_KEY_FOOTER_STYLE, s_footer_style);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyFooterStyle: %d", s_footer_style);
     } else if (key == MESSAGE_KEY_AppKeyDateFormat) {
       s_date_format = tuple_to_int(t, s_date_format);
       persist_write_int(STORAGE_KEY_DATE_FORMAT, s_date_format);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyDateFormat: %d", s_date_format);
     } else if (key == MESSAGE_KEY_AppKeyLeadingZero) {
       s_leading_zero = tuple_to_bool(t, s_leading_zero);
       persist_write_bool(STORAGE_KEY_LEADING_ZERO, s_leading_zero);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyLeadingZero: %d", (int)s_leading_zero);
     } else if (key == MESSAGE_KEY_AppKeyStepGoal) {
       s_step_goal = tuple_to_int(t, s_step_goal);
       if (s_step_goal <= 0) s_step_goal = 10000;
       persist_write_int(STORAGE_KEY_STEP_GOAL, s_step_goal);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyStepGoal: %d", s_step_goal);
     } else if (key == MESSAGE_KEY_AppKeyChargingStyle) {
       int new_style = tuple_to_int(t, s_charging_style);
       bool changed = (new_style != s_charging_style);
       s_charging_style = new_style;
       persist_write_int(STORAGE_KEY_CHARGING_STYLE, s_charging_style);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyChargingStyle: %d (changed: %d)", s_charging_style, (int)changed);
-
+      
       if (changed && (s_charging_style != CHARGING_STYLE_OFF)) {
-        // Trigger 12-second live preview only when the user actively changes the style
         s_charging_preview = true;
         s_anim_frame = 0;
         if (s_preview_timer) {
@@ -1284,12 +847,10 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       bool changed = (new_nightlight != s_nightlight);
       s_nightlight = new_nightlight;
       persist_write_bool(STORAGE_KEY_NIGHTLIGHT, s_nightlight);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyNightlight: %d (changed: %d)", (int)s_nightlight, (int)changed);
-
+      
       if (changed && s_nightlight) {
         light_enable(true);
         if (!s_battery_charging && !s_battery_plugged) {
-          // 5-second preview of backlight only when user actively toggles it on
           if (s_preview_timer) app_timer_cancel(s_preview_timer);
           s_preview_timer = app_timer_register(5000, preview_timer_callback, NULL);
         }
@@ -1299,39 +860,18 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     } else if (key == MESSAGE_KEY_AppKeyCycleSlot1) {
       s_cycle_slot1 = tuple_to_int(t, s_cycle_slot1);
       persist_write_int(STORAGE_KEY_CYCLE_SLOT_1, s_cycle_slot1);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyCycleSlot1: %d", s_cycle_slot1);
     } else if (key == MESSAGE_KEY_AppKeyCycleSlot2) {
       s_cycle_slot2 = tuple_to_int(t, s_cycle_slot2);
       persist_write_int(STORAGE_KEY_CYCLE_SLOT_2, s_cycle_slot2);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyCycleSlot2: %d", s_cycle_slot2);
     } else if (key == MESSAGE_KEY_AppKeyCycleSlot3) {
       s_cycle_slot3 = tuple_to_int(t, s_cycle_slot3);
       persist_write_int(STORAGE_KEY_CYCLE_SLOT_3, s_cycle_slot3);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyCycleSlot3: %d", s_cycle_slot3);
     } else if (key == MESSAGE_KEY_AppKeyCycleSlot4) {
       s_cycle_slot4 = tuple_to_int(t, s_cycle_slot4);
       persist_write_int(STORAGE_KEY_CYCLE_SLOT_4, s_cycle_slot4);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyCycleSlot4: %d", s_cycle_slot4);
     } else if (key == MESSAGE_KEY_AppKeyCycleSlot5) {
       s_cycle_slot5 = tuple_to_int(t, s_cycle_slot5);
       persist_write_int(STORAGE_KEY_CYCLE_SLOT_5, s_cycle_slot5);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyCycleSlot5: %d", s_cycle_slot5);
-    } else if (key == MESSAGE_KEY_AppKeySoundEnabled) {
-      s_sound_enabled = tuple_to_bool(t, s_sound_enabled);
-      persist_write_bool(STORAGE_KEY_SOUND_ENABLED, s_sound_enabled);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeySoundEnabled: %d", (int)s_sound_enabled);
-    } else if (key == MESSAGE_KEY_AppKeyHourlyBeep) {
-      s_hourly_beep = tuple_to_bool(t, s_hourly_beep);
-      persist_write_bool(STORAGE_KEY_HOURLY_BEEP, s_hourly_beep);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyHourlyBeep: %d", (int)s_hourly_beep);
-    } else if (key == MESSAGE_KEY_AppKeyStepCelebration) {
-      s_step_celebration = tuple_to_int(t, s_step_celebration);
-      persist_write_int(STORAGE_KEY_STEP_CELEBRATION, s_step_celebration);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyStepCelebration: %d", s_step_celebration);
-    } else if (key == MESSAGE_KEY_AppKeyBtSound) {
-      s_bt_sound = tuple_to_bool(t, s_bt_sound);
-      persist_write_bool(STORAGE_KEY_BT_SOUND, s_bt_sound);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyBtSound: %d", (int)s_bt_sound);
     }
   }
   layer_mark_dirty(s_canvas_layer);
@@ -1351,26 +891,9 @@ static void load_settings(void) {
   if (persist_exists(STORAGE_KEY_HOURLY_VIBE)) {
     s_hourly_vibe = persist_read_int(STORAGE_KEY_HOURLY_VIBE);
   }
-  if (persist_exists(STORAGE_KEY_HOURLY_BEEP)) {
-    s_hourly_beep = persist_read_bool(STORAGE_KEY_HOURLY_BEEP);
-  }
   if (persist_exists(STORAGE_KEY_BT_VIBE)) {
     s_bt_vibe = persist_read_bool(STORAGE_KEY_BT_VIBE);
   }
-  if (persist_exists(STORAGE_KEY_BT_SOUND)) {
-    s_bt_sound = persist_read_bool(STORAGE_KEY_BT_SOUND);
-  }
-  if (persist_exists(STORAGE_KEY_SOUND_ENABLED)) {
-    s_sound_enabled = persist_read_bool(STORAGE_KEY_SOUND_ENABLED);
-  }
-  if (persist_exists(STORAGE_KEY_STEP_CELEBRATION)) {
-    s_step_celebration = persist_read_int(STORAGE_KEY_STEP_CELEBRATION);
-  }
-#if defined(PBL_HEALTH)
-  if (persist_exists(STORAGE_KEY_CELEBRATED_DAY)) {
-    s_last_celebrated_day = persist_read_int(STORAGE_KEY_CELEBRATED_DAY);
-  }
-#endif
   if (persist_exists(STORAGE_KEY_BEAD_MODE)) {
     s_bead_mode = persist_read_int(STORAGE_KEY_BEAD_MODE);
   } else if (persist_exists(STORAGE_KEY_SHOW_STEP_BEADS)) {
@@ -1442,15 +965,18 @@ static void init(void) {
   });
   window_stack_push(s_main_window, true);
   
-  // AppMessage configuration
   app_message_register_inbox_received(inbox_received_callback);
   app_message_register_inbox_dropped(inbox_dropped_callback);
   app_message_register_outbox_failed(outbox_failed_callback);
   app_message_open(1024, 128);
 
-  // Subscribe to services
   tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
   accel_tap_service_subscribe(tap_handler);
+#if PBL_API_EXISTS(touch_service_subscribe)
+  if (touch_service_is_enabled()) {
+    touch_service_subscribe(touch_handler, NULL);
+  }
+#endif
   connection_service_subscribe((ConnectionHandlers) {
     .pebble_app_connection_handler = bluetooth_callback
   });
@@ -1460,7 +986,6 @@ static void init(void) {
   health_service_events_subscribe(health_handler, NULL);
 #endif
   
-  // Initial state
   s_bluetooth_connected = connection_service_peek_pebble_app_connection();
   BatteryChargeState charge_state = battery_state_service_peek();
   s_battery_level = charge_state.charge_percent;
@@ -1474,6 +999,11 @@ static void deinit(void) {
   light_enable(false);
 #if defined(PBL_HEALTH)
   health_service_events_unsubscribe();
+#endif
+#if PBL_API_EXISTS(touch_service_subscribe)
+  if (touch_service_is_enabled()) {
+    touch_service_unsubscribe();
+  }
 #endif
   battery_state_service_unsubscribe();
   connection_service_unsubscribe();
