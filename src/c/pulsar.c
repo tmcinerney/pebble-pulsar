@@ -58,6 +58,11 @@
 #define STORAGE_KEY_CYCLE_SLOT_3     10017
 #define STORAGE_KEY_CYCLE_SLOT_4     10018
 #define STORAGE_KEY_CYCLE_SLOT_5     10019
+#define STORAGE_KEY_SOUND_ENABLED    10020
+#define STORAGE_KEY_HOURLY_BEEP      10021
+#define STORAGE_KEY_STEP_CELEBRATION 10022
+#define STORAGE_KEY_BT_SOUND         10023
+#define STORAGE_KEY_CELEBRATED_DAY   10024
 
 #ifndef MESSAGE_KEY_AppKeyOperatingMode
 #define MESSAGE_KEY_AppKeyOperatingMode   10000
@@ -80,6 +85,10 @@
 #define MESSAGE_KEY_AppKeyCycleSlot3     10017
 #define MESSAGE_KEY_AppKeyCycleSlot4     10018
 #define MESSAGE_KEY_AppKeyCycleSlot5     10019
+#define MESSAGE_KEY_AppKeySoundEnabled   10020
+#define MESSAGE_KEY_AppKeyHourlyBeep     10021
+#define MESSAGE_KEY_AppKeyStepCelebration 10022
+#define MESSAGE_KEY_AppKeyBtSound        10023
 #endif
 
 // Operating Modes
@@ -166,6 +175,14 @@ enum HourlyVibe {
   HOURLY_VIBE_OFF = 0,
   HOURLY_VIBE_SINGLE = 1,
   HOURLY_VIBE_DOUBLE = 2
+};
+
+// Step Goal Celebration
+enum StepCelebration {
+  STEP_CELEBRATION_OFF = 0,
+  STEP_CELEBRATION_VIBE = 1,
+  STEP_CELEBRATION_AUDIO = 2,
+  STEP_CELEBRATION_BOTH = 3
 };
 
 typedef struct {
@@ -263,7 +280,11 @@ static int s_operating_mode = MODE_ALWAYS_ON;
 static int s_colorway = COLORWAY_VIBRANT_RUBY;
 static int s_flick_action = FLICK_ACTION_CYCLE;
 static int s_hourly_vibe = HOURLY_VIBE_OFF;
+static bool s_hourly_beep = false;
 static bool s_bt_vibe = false;
+static bool s_bt_sound = false;
+static bool s_sound_enabled = true;
+static int s_step_celebration = STEP_CELEBRATION_VIBE;
 static int s_bead_mode = BEAD_MODE_STEPS;
 static bool s_italic_slant = true;
 static int s_header_style = HEADER_STYLE_PULSAR;
@@ -277,7 +298,7 @@ static int s_cycle_slot1 = 1; // Live Seconds
 static int s_cycle_slot2 = 2; // Date
 static int s_cycle_slot3 = 3; // Daily Steps
 static int s_cycle_slot4 = 4; // Battery Level
-static int s_cycle_slot5 = 0; // Heart Rate (Disabled by default, opt-in for HR devices)
+static int s_cycle_slot5 = 5; // Heart Rate (Auto-skipped on non-health platforms)
 
 static bool s_bluetooth_connected = true;
 static int s_battery_level = 100;
@@ -288,6 +309,10 @@ static AppTimer *s_preview_timer = NULL;
 static AppTimer *s_charge_anim_timer = NULL;
 static int s_anim_frame = 0;
 static int s_last_vibe_hour = -1;
+#if defined(PBL_HEALTH)
+static int s_last_celebrated_day = -1;
+static bool s_step_goal_celebrated = false;
+#endif
 
 static void update_nightlight(void) {
   bool should_light = s_nightlight && (s_battery_charging || s_battery_plugged);
@@ -375,6 +400,35 @@ static int get_heart_rate(void) {
 #endif
   return hr;
 }
+
+static void play_sound_effect(uint16_t freq_hz, uint32_t dur_ms, uint8_t vol, SpeakerWaveform waveform) {
+#ifdef _PBL_API_EXISTS_speaker_play_tone
+  if (!s_sound_enabled) return;
+#ifdef _PBL_API_EXISTS_speaker_is_muted
+  if (speaker_is_muted()) return;
+#endif
+  speaker_play_tone(freq_hz, dur_ms, vol, waveform);
+#endif
+}
+
+#if defined(PBL_HEALTH)
+static void play_celebration_sound(void) {
+#ifdef _PBL_API_EXISTS_speaker_play_notes
+  if (!s_sound_enabled) return;
+#ifdef _PBL_API_EXISTS_speaker_is_muted
+  if (speaker_is_muted()) return;
+#endif
+  const SpeakerNote notes[] = {
+    { .midi_note = 88, .waveform = (uint8_t)SpeakerWaveformSquare, .duration_ms = 90, .velocity = 100, .reserved = 0 },
+    { .midi_note = 91, .waveform = (uint8_t)SpeakerWaveformSquare, .duration_ms = 90, .velocity = 100, .reserved = 0 },
+    { .midi_note = 96, .waveform = (uint8_t)SpeakerWaveformSquare, .duration_ms = 160, .velocity = 110, .reserved = 0 }
+  };
+  speaker_play_notes(notes, 3, 65);
+#elif defined(_PBL_API_EXISTS_speaker_play_tone)
+  play_sound_effect(2093, 160, 65, SpeakerWaveformSquare);
+#endif
+}
+#endif
 
 static void preview_timer_callback(void *data) {
   s_preview_timer = NULL;
@@ -484,8 +538,8 @@ static void tap_handler(AccelAxisType axis, int32_t direction) {
   uint16_t ms = 0;
   time_ms(&sec, &ms);
   uint32_t now_ms = (uint32_t)sec * 1000 + ms;
-  if (now_ms - s_last_tap_epoch_ms < 250) {
-    return; // Debounce rapid duplicate triggers
+  if (now_ms - s_last_tap_epoch_ms < 200) {
+    return; // Debounce rapid duplicate triggers (200ms)
   }
   s_last_tap_epoch_ms = now_ms;
 
@@ -526,30 +580,14 @@ static void tap_handler(AccelAxisType axis, int32_t direction) {
   }
 }
 
-#if PBL_API_EXISTS(tap_recognizer_create)
-static Recognizer *s_tap_recognizer = NULL;
-
-static void tap_recognizer_callback(const Recognizer *recognizer, RecognizerEvent event_type) {
-  if (event_type == RecognizerEvent_Completed || event_type == RecognizerEvent_Started) {
-    tap_handler(ACCEL_AXIS_Z, 1);
-  }
-}
-#endif
-
-#if PBL_API_EXISTS(touch_service_subscribe)
-static void touch_handler(const TouchEvent *event, void *context) {
-  if (event->type == TouchEvent_Touchdown || event->type == TouchEvent_Liftoff) {
-    tap_handler(ACCEL_AXIS_Z, 1);
-  }
-}
-#endif
-
 static void bluetooth_callback(bool connected) {
-  if (s_bt_vibe && !connected && s_bluetooth_connected) {
-    vibes_double_pulse();
-#if PBL_API_EXISTS(speaker_play_tone)
-    speaker_play_tone(880, 120, 70, SpeakerWaveformSawtooth);
-#endif
+  if (!connected && s_bluetooth_connected) {
+    if (s_bt_vibe) {
+      vibes_double_pulse();
+    }
+    if (s_bt_sound) {
+      play_sound_effect(880, 120, 70, SpeakerWaveformSawtooth);
+    }
   }
   s_bluetooth_connected = connected;
   layer_mark_dirty(s_canvas_layer);
@@ -565,8 +603,27 @@ static void battery_callback(BatteryChargeState state) {
 }
 
 #if defined(PBL_HEALTH)
+static void check_step_goal_celebration(void) {
+  if (s_step_celebration == STEP_CELEBRATION_OFF || s_step_goal <= 0 || s_step_goal_celebrated) {
+    return;
+  }
+  int steps = get_step_count();
+  if (steps >= s_step_goal) {
+    s_step_goal_celebrated = true;
+    if (s_step_celebration == STEP_CELEBRATION_VIBE || s_step_celebration == STEP_CELEBRATION_BOTH) {
+      vibes_double_pulse();
+    }
+    if (s_step_celebration == STEP_CELEBRATION_AUDIO || s_step_celebration == STEP_CELEBRATION_BOTH) {
+      play_celebration_sound();
+    }
+  }
+}
+
 static void health_handler(HealthEventType event, void *context) {
   if (event == HealthEventMovementUpdate || event == HealthEventHeartRateUpdate) {
+    if (event == HealthEventMovementUpdate) {
+      check_step_goal_celebration();
+    }
     layer_mark_dirty(s_canvas_layer);
   }
 }
@@ -1061,23 +1118,30 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-  // Check hourly vibration
+  // Check hourly chime (vibration and/or audio beep)
   if (units_changed & HOUR_UNIT) {
-    if (s_hourly_vibe != HOURLY_VIBE_OFF && tick_time->tm_hour != s_last_vibe_hour) {
+    if ((s_hourly_vibe != HOURLY_VIBE_OFF || s_hourly_beep) && tick_time->tm_hour != s_last_vibe_hour) {
       s_last_vibe_hour = tick_time->tm_hour;
       if (s_hourly_vibe == HOURLY_VIBE_SINGLE) {
         vibes_short_pulse();
-#if PBL_API_EXISTS(speaker_play_tone)
-        speaker_play_tone(1760, 80, 50, SpeakerWaveformSquare);
-#endif
       } else if (s_hourly_vibe == HOURLY_VIBE_DOUBLE) {
         vibes_double_pulse();
-#if PBL_API_EXISTS(speaker_play_tone)
-        speaker_play_tone(2093, 100, 50, SpeakerWaveformSquare);
-#endif
+      }
+      if (s_hourly_beep) {
+        play_sound_effect(1760, 80, 50, SpeakerWaveformSquare);
       }
     }
   }
+
+#if defined(PBL_HEALTH)
+  int current_day = tick_time->tm_yday;
+  if (current_day != s_last_celebrated_day) {
+    s_last_celebrated_day = current_day;
+    s_step_goal_celebrated = false;
+    persist_write_int(STORAGE_KEY_CELEBRATED_DAY, current_day);
+  }
+  check_step_goal_celebration();
+#endif
 
   // Re-assert continuous nightlight if active on dock
   if (s_nightlight && (s_battery_charging || s_battery_plugged)) {
@@ -1252,6 +1316,22 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       s_cycle_slot5 = tuple_to_int(t, s_cycle_slot5);
       persist_write_int(STORAGE_KEY_CYCLE_SLOT_5, s_cycle_slot5);
       APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyCycleSlot5: %d", s_cycle_slot5);
+    } else if (key == MESSAGE_KEY_AppKeySoundEnabled) {
+      s_sound_enabled = tuple_to_bool(t, s_sound_enabled);
+      persist_write_bool(STORAGE_KEY_SOUND_ENABLED, s_sound_enabled);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeySoundEnabled: %d", (int)s_sound_enabled);
+    } else if (key == MESSAGE_KEY_AppKeyHourlyBeep) {
+      s_hourly_beep = tuple_to_bool(t, s_hourly_beep);
+      persist_write_bool(STORAGE_KEY_HOURLY_BEEP, s_hourly_beep);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyHourlyBeep: %d", (int)s_hourly_beep);
+    } else if (key == MESSAGE_KEY_AppKeyStepCelebration) {
+      s_step_celebration = tuple_to_int(t, s_step_celebration);
+      persist_write_int(STORAGE_KEY_STEP_CELEBRATION, s_step_celebration);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyStepCelebration: %d", s_step_celebration);
+    } else if (key == MESSAGE_KEY_AppKeyBtSound) {
+      s_bt_sound = tuple_to_bool(t, s_bt_sound);
+      persist_write_bool(STORAGE_KEY_BT_SOUND, s_bt_sound);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyBtSound: %d", (int)s_bt_sound);
     }
   }
   layer_mark_dirty(s_canvas_layer);
@@ -1271,9 +1351,26 @@ static void load_settings(void) {
   if (persist_exists(STORAGE_KEY_HOURLY_VIBE)) {
     s_hourly_vibe = persist_read_int(STORAGE_KEY_HOURLY_VIBE);
   }
+  if (persist_exists(STORAGE_KEY_HOURLY_BEEP)) {
+    s_hourly_beep = persist_read_bool(STORAGE_KEY_HOURLY_BEEP);
+  }
   if (persist_exists(STORAGE_KEY_BT_VIBE)) {
     s_bt_vibe = persist_read_bool(STORAGE_KEY_BT_VIBE);
   }
+  if (persist_exists(STORAGE_KEY_BT_SOUND)) {
+    s_bt_sound = persist_read_bool(STORAGE_KEY_BT_SOUND);
+  }
+  if (persist_exists(STORAGE_KEY_SOUND_ENABLED)) {
+    s_sound_enabled = persist_read_bool(STORAGE_KEY_SOUND_ENABLED);
+  }
+  if (persist_exists(STORAGE_KEY_STEP_CELEBRATION)) {
+    s_step_celebration = persist_read_int(STORAGE_KEY_STEP_CELEBRATION);
+  }
+#if defined(PBL_HEALTH)
+  if (persist_exists(STORAGE_KEY_CELEBRATED_DAY)) {
+    s_last_celebrated_day = persist_read_int(STORAGE_KEY_CELEBRATED_DAY);
+  }
+#endif
   if (persist_exists(STORAGE_KEY_BEAD_MODE)) {
     s_bead_mode = persist_read_int(STORAGE_KEY_BEAD_MODE);
   } else if (persist_exists(STORAGE_KEY_SHOW_STEP_BEADS)) {
@@ -1328,25 +1425,9 @@ static void main_window_load(Window *window) {
   s_canvas_layer = layer_create(bounds);
   layer_set_update_proc(s_canvas_layer, canvas_update_proc);
   layer_add_child(window_layer, s_canvas_layer);
-
-#if PBL_API_EXISTS(tap_recognizer_create)
-  s_tap_recognizer = tap_recognizer_create(tap_recognizer_callback, NULL);
-  if (s_tap_recognizer) {
-    window_attach_recognizer(window, s_tap_recognizer);
-  }
-#endif
-#if PBL_API_EXISTS(window_set_touch_bridge_disabled)
-  window_set_touch_bridge_disabled(window, true);
-#endif
 }
 
 static void main_window_unload(Window *window) {
-#if PBL_API_EXISTS(tap_recognizer_create)
-  if (s_tap_recognizer) {
-    recognizer_destroy(s_tap_recognizer);
-    s_tap_recognizer = NULL;
-  }
-#endif
   layer_destroy(s_canvas_layer);
 }
 
@@ -1370,9 +1451,6 @@ static void init(void) {
   // Subscribe to services
   tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
   accel_tap_service_subscribe(tap_handler);
-#if PBL_API_EXISTS(touch_service_subscribe)
-  touch_service_subscribe(touch_handler, NULL);
-#endif
   connection_service_subscribe((ConnectionHandlers) {
     .pebble_app_connection_handler = bluetooth_callback
   });
@@ -1396,9 +1474,6 @@ static void deinit(void) {
   light_enable(false);
 #if defined(PBL_HEALTH)
   health_service_events_unsubscribe();
-#endif
-#if PBL_API_EXISTS(touch_service_subscribe)
-  touch_service_unsubscribe();
 #endif
   battery_state_service_unsubscribe();
   connection_service_unsubscribe();

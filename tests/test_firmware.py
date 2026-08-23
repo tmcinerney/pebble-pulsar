@@ -96,6 +96,10 @@ class TestFirmwareIntegrity(unittest.TestCase):
             "AppKeyCycleSlot3": "STORAGE_KEY_CYCLE_SLOT_3",
             "AppKeyCycleSlot4": "STORAGE_KEY_CYCLE_SLOT_4",
             "AppKeyCycleSlot5": "STORAGE_KEY_CYCLE_SLOT_5",
+            "AppKeySoundEnabled": "STORAGE_KEY_SOUND_ENABLED",
+            "AppKeyHourlyBeep": "STORAGE_KEY_HOURLY_BEEP",
+            "AppKeyStepCelebration": "STORAGE_KEY_STEP_CELEBRATION",
+            "AppKeyBtSound": "STORAGE_KEY_BT_SOUND",
         }
 
         for app_key, storage_key in key_mapping.items():

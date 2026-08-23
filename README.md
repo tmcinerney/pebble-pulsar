@@ -24,11 +24,11 @@ Built for the **Rebble / RePebble** ecosystem with native support for the **Pebb
 ### 💡 Operating Modes
 * **Always-On Mode (Default):** The dot-matrix time is continuously visible with blinking colon and active status dots.
 * **Stealth Mode (Authentic 1970 Push-to-Wake):** Replicates the vintage Hamilton Pulsar push-button experience where the LED display remains dark to conserve power beneath the synthetic ruby crystal. 
-  * **To read the time:** **Flick your wrist, tap the crystal, or touch the screen (Pebble Time 2)**. The time brightly illuminates and automatically engages the backlight for 4 seconds.
-  * **To view other stats:** Subsequent taps/touches while awake cycle through Live Seconds (`:SS`), Date, Daily Steps, Battery, and Heart Rate.
+  * **To read the time:** **Flick your wrist or tap the watch crystal/case**. The time brightly illuminates and automatically engages the backlight for 4 seconds.
+  * **To view other stats:** Subsequent taps or flicks while awake cycle through Live Seconds (`:SS`), Date, Daily Steps, Battery, and Heart Rate.
 
-### 👋 Wrist Flick, Tap & Touch Actions
-In the Pebble mobile app settings, you can configure what a wrist flick, crystal tap, or screen touch does:
+### 👋 Wrist Flick & Crystal Tap Actions
+In the Pebble mobile app settings, you can configure what a wrist flick or crystal tap does:
 * **Custom Reorderable Cycle (Default):** Customize the exact order and enabled state of up to 5 cycle slots (Live Seconds, Date, Steps, Battery, Heart Rate). Automatically returns to Time after 4 seconds of inactivity.
 * **Live Seconds Counter (`:SS`):** Instant 4-second burst of real-time ticking seconds.
 * **Calendar Date (`MM DD` / `DD MM`):** Quick check of current month and day.
@@ -48,8 +48,8 @@ In the Pebble mobile app settings, you can configure what a wrist flick, crystal
 - **Noise-Free 1-Bit Monochrome Rendering:** Clean, pure black background on Pebble 2 (`diorite`) and Classic (`aplite`) with zero dither noise and solid high-contrast white LED dies.
 - **Customizable Brand Headers & Footers:** Choose top header (`PULSAR`, `HAMILTON`, `SOLID STATE`, or `None`) and bezel footer (`TIME COMPUTER`, `SOLID STATE`, `HAMILTON`, `PULSAR`, `SWISS MADE`, or `None`).
 
-### 2. Multi-Mode Display Engine (Flick / Tap / Touch)
-Cycle through 6 interactive display modes via wrist flick, crystal tap, or capacitive touchscreen:
+### 2. Multi-Mode Display Engine (Flick & Tap)
+Cycle through 6 interactive display modes via wrist flick or crystal tap:
 1. **Time Mode (`HH:MM`):** 12h/24h time with blinking GaAsP colon, optional leading zero, and AM/PM LED indicator dot.
 2. **Live Seconds Mode (`:SS`):** Real-time ticking seconds counter.
 3. **Calendar Date Mode (`MM DD` / `DD MM`):** Space-age month and day readout with configurable format.
@@ -72,6 +72,7 @@ Cycle through 6 interactive display modes via wrist flick, crystal tap, or capac
 - **Standard Fill:** 10 micro-LED progress beads illuminate proportionally toward your daily goal (5k to 15k steps).
 - **Goal Met (100%–200%):** Footer displays `★ GOAL MET ★` and surplus "Lap 2" step beads pulse rhythmically every second.
 - **200%+ Overdrive:** Footer displays `★ 2X GOAL ★` with a synchronized victory wave across all 10 beads.
+- **Step Celebration Fanfare:** Optional 3-note MIDI fanfare (E6, G6, C7) or vibration celebration upon achieving your daily step goal.
 
 ### 5. LED Colorways & Inverted Theme
 - **Neon Ruby (GaAsP High-Luminance):** Vivid red semiconductor LED with maroon ghost dies.
@@ -82,14 +83,15 @@ Cycle through 6 interactive display modes via wrist flick, crystal tap, or capac
 - **Lunar White:** High-contrast crisp white LED dies.
 - **Inverted Paper (Black on White):** Crisp black matrix LEDs on a paper-white background for high-visibility bright outdoor sunlight.
 
-### 6. Health, Alerts & Hardware Integration
-- **Capacitive Touchscreen Support:** Native `TouchService` integration for Pebble Time 2 (`emery`) with automatic capability detection.
-- **Automatic Backlight on Wake:** Tapping, flicking, or touching in Stealth Mode engages the backlight timer so the display is clearly legible in total darkness.
-- **Retro Synth Speaker Chimes:** On speaker-equipped hardware, hourly alerts and Bluetooth disconnect warnings play 8-bit square/sawtooth audio chirps alongside vibration pulses.
+### 6. Vibration, Sound & Hardware Integration
+- **Full Vibration & Audio Controls:** Dedicated Clay settings for Master Audio toggle, Hourly Beep, Step Goal Fanfare, and Bluetooth Connection Alerts.
+- **Quiet Time Aware:** Automatically respects Pebble OS Quiet Time (`speaker_is_muted()`) to avoid unwanted sounds.
+- **Automatic Backlight on Wake:** Tapping or flicking in Stealth Mode engages the backlight timer so the display is clearly legible in total darkness.
+- **Retro Synth Speaker Chimes:** On speaker-equipped hardware, plays authentic 8-bit square/sawtooth audio chirps alongside haptic pulses.
 - **10-Dot Micro-LED Progress Bar:** Multi-mode indicator above the footer (Steps vs Battery Meter vs Off).
-- **Stealth Push-to-Wake Mode:** 4-second flick/tap/touch illumination.
+- **Stealth Push-to-Wake Mode:** 4-second flick/tap illumination.
 - **Hourly Vibration Chime:** Configurable silent hourly alert (Off, Single Pulse, Double Pulse).
-- **Bluetooth Disconnect Alert:** Optional double-pulse wrist vibration if phone connection drops.
+- **Bluetooth Disconnect Alert:** Optional double-pulse wrist vibration and audio chime if phone connection drops.
 - **Status Indicators:** Subtle LED status dots for Bluetooth disconnect and battery low (<20%).
 
 ---
@@ -112,10 +114,10 @@ Cycle through 6 interactive display modes via wrist flick, crystal tap, or capac
 | :---: | :---: | :---: | :---: | :---: | :---: |
 | ![Emery Time](screenshots/emery-time.png) | ![Emery Seconds](screenshots/emery-seconds.png) | ![Emery Date](screenshots/emery-date.png) | ![Emery Steps](screenshots/emery-steps.png) | ![Emery Battery](screenshots/emery-battery.png) | ![Emery Heart Rate](screenshots/emery-heartrate.png) |
 
-#### Special Feature Stills (Emery)
+#### Special Feature Animations (Emery)
 | Step Goal Overdrive (`12500`) | Cylon Charging Sweep | Theater Marquee Charging |
 | :---: | :---: | :---: |
-| ![Step Overdrive](screenshots/emery-steps-overdrive.png) | ![Cylon Charging](screenshots/emery-charging-cylon.png) | ![Marquee Charging](screenshots/emery-charging-marquee.png) |
+| ![Step Overdrive](screenshots/emery-steps-overdrive.gif) | ![Cylon Charging](screenshots/emery-charging-cylon.gif) | ![Marquee Charging](screenshots/emery-charging-marquee.gif) |
 
 ---
 

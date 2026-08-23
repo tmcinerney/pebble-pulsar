@@ -44,7 +44,11 @@
       "AppKeyCycleSlot2": 10016,
       "AppKeyCycleSlot3": 10017,
       "AppKeyCycleSlot4": 10018,
-      "AppKeyCycleSlot5": 10019
+      "AppKeyCycleSlot5": 10019,
+      "AppKeySoundEnabled": 10020,
+      "AppKeyHourlyBeep": 10021,
+      "AppKeyStepCelebration": 10022,
+      "AppKeyBtSound": 10023
     },
     "targetPlatforms": [
       "emery",
