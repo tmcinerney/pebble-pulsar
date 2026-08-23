@@ -7,7 +7,14 @@
 #include "pulsar_audio.h"
 
 #define WAKEUP_COOKIE_TIMER 1970
-#define NUM_PRESETS 10
+
+enum EditMode {
+  EDIT_NONE = 0,
+  EDIT_MINUTES = 1,
+  EDIT_SECONDS = 2
+};
+
+#define NUM_PRESETS 16
 
 typedef struct {
   const char *name;
@@ -15,7 +22,11 @@ typedef struct {
 } TimerPreset;
 
 static const TimerPreset PRESETS[NUM_PRESETS] = {
+  { "0 0 : 1 0   P R E S E T", 10 },
+  { "0 0 : 3 0   P R E S E T", 30 },
+  { "0 0 : 4 5   P R E S E T", 45 },
   { "0 1 : 0 0   P R E S E T", 60 },
+  { "0 2 : 0 0   P R E S E T", 120 },
   { "0 3 : 0 0   P R E S E T", 180 },
   { "0 5 : 0 0   P R E S E T", 300 },
   { "1 0 : 0 0   P R E S E T", 600 },
@@ -24,7 +35,9 @@ static const TimerPreset PRESETS[NUM_PRESETS] = {
   { "P O M O D O R O   2 5 M", 1500 },
   { "3 0 : 0 0   P R E S E T", 1800 },
   { "4 5 : 0 0   P R E S E T", 2700 },
-  { "6 0 : 0 0   P R E S E T", 3600 }
+  { "6 0 : 0 0   P R E S E T", 3600 },
+  { "9 0 : 0 0   P R E S E T", 5400 },
+  { "C U S T O M   T I M E R", -1 }
 };
 
 #define STORAGE_KEY_COLORWAY       10001
@@ -37,6 +50,7 @@ static const TimerPreset PRESETS[NUM_PRESETS] = {
 #define STORAGE_KEY_REMAINING_SEC  10043
 #define STORAGE_KEY_IS_RUNNING     10044
 #define STORAGE_KEY_WAKEUP_ID      10045
+#define STORAGE_KEY_CUSTOM_SEC     10046
 
 #ifndef MESSAGE_KEY_AppKeyColorway
 #define MESSAGE_KEY_AppKeyColorway       10001
@@ -49,13 +63,15 @@ static Window *s_main_window;
 static Layer *s_canvas_layer;
 static AppTimer *s_tick_timer = NULL;
 static AppTimer *s_alarm_pulse_timer = NULL;
+static AppTimer *s_blink_timer = NULL;
 
 static int s_colorway = COLORWAY_VIBRANT_RUBY;
 static bool s_italic_slant = true;
 static bool s_audio_enabled = true;
 static bool s_vibe_enabled = true;
 
-static int s_preset_index = 2; // Default 5 min
+static int s_preset_index = 6; // Default 5 min preset
+static int s_custom_sec = 30;  // Default custom duration
 static int s_total_duration_sec = 300;
 static int s_remaining_sec = 300;
 static bool s_is_running = false;
@@ -64,6 +80,19 @@ static bool s_is_alarm_firing = false;
 static time_t s_target_epoch = 0;
 static WakeupId s_wakeup_id = -1;
 static int s_alarm_flash_count = 0;
+
+static enum EditMode s_edit_mode = EDIT_NONE;
+static int s_edit_minutes = 0;
+static int s_edit_seconds = 30;
+static bool s_blink_state = true;
+
+static int get_preset_duration(int preset_idx) {
+  if (preset_idx < 0 || preset_idx >= NUM_PRESETS) preset_idx = 6;
+  if (PRESETS[preset_idx].seconds > 0) {
+    return PRESETS[preset_idx].seconds;
+  }
+  return (s_custom_sec > 0) ? s_custom_sec : 30;
+}
 
 static void update_remaining_from_clock(void) {
   if (!s_is_running) return;
@@ -77,6 +106,29 @@ static void update_remaining_from_clock(void) {
 }
 
 static void trigger_alarm_firing(void);
+
+static void blink_timer_callback(void *data) {
+  s_blink_timer = NULL;
+  if (s_edit_mode != EDIT_NONE) {
+    s_blink_state = !s_blink_state;
+    layer_mark_dirty(s_canvas_layer);
+    s_blink_timer = app_timer_register(400, blink_timer_callback, NULL);
+  }
+}
+
+static void update_blink_loop(void) {
+  if (s_edit_mode != EDIT_NONE) {
+    if (!s_blink_timer) {
+      s_blink_timer = app_timer_register(400, blink_timer_callback, NULL);
+    }
+  } else {
+    if (s_blink_timer) {
+      app_timer_cancel(s_blink_timer);
+      s_blink_timer = NULL;
+    }
+    s_blink_state = true;
+  }
+}
 
 static void timer_tick_callback(void *data) {
   s_tick_timer = NULL;
@@ -208,17 +260,76 @@ static void reset_timer(void) {
     s_alarm_pulse_timer = NULL;
   }
 
-  s_total_duration_sec = PRESETS[s_preset_index].seconds;
+  s_total_duration_sec = get_preset_duration(s_preset_index);
   s_remaining_sec = s_total_duration_sec;
   
   pulsar_sound_reset(s_audio_enabled, s_vibe_enabled);
   layer_mark_dirty(s_canvas_layer);
 }
 
+static void enter_edit_mode(void) {
+  s_edit_mode = EDIT_MINUTES;
+  int current_sec = (s_preset_index == NUM_PRESETS - 1) ? s_custom_sec : s_total_duration_sec;
+  if (current_sec <= 0) current_sec = 30;
+  s_edit_minutes = current_sec / 60;
+  s_edit_seconds = current_sec % 60;
+  s_blink_state = true;
+  pulsar_sound_lap(s_audio_enabled, s_vibe_enabled);
+  update_blink_loop();
+  layer_mark_dirty(s_canvas_layer);
+}
+
+static void finish_edit_mode(void) {
+  int total = (s_edit_minutes * 60) + s_edit_seconds;
+  if (total <= 0) total = 10; // Minimum 10 seconds
+  s_custom_sec = total;
+  s_preset_index = NUM_PRESETS - 1; // Select CUSTOM PRESET
+  s_total_duration_sec = total;
+  s_remaining_sec = total;
+  s_edit_mode = EDIT_NONE;
+  update_blink_loop();
+  
+  persist_write_int(STORAGE_KEY_CUSTOM_SEC, s_custom_sec);
+  persist_write_int(STORAGE_KEY_PRESET_IDX, s_preset_index);
+  persist_write_int(STORAGE_KEY_TOTAL_DURATION, s_total_duration_sec);
+  persist_write_int(STORAGE_KEY_REMAINING_SEC, s_remaining_sec);
+  
+  pulsar_sound_lap(s_audio_enabled, s_vibe_enabled);
+  layer_mark_dirty(s_canvas_layer);
+}
+
+static void select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
+  if (s_is_alarm_firing) {
+    stop_alarm_firing();
+    return;
+  }
+  if (s_is_running) return;
+
+  if (s_edit_mode == EDIT_NONE) {
+    enter_edit_mode();
+  } else {
+    finish_edit_mode();
+  }
+}
+
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   if (s_is_alarm_firing) {
     stop_alarm_firing();
-  } else if (s_is_running) {
+    return;
+  }
+
+  if (s_edit_mode == EDIT_MINUTES) {
+    s_edit_mode = EDIT_SECONDS;
+    s_blink_state = true;
+    pulsar_sound_start(s_audio_enabled, s_vibe_enabled);
+    layer_mark_dirty(s_canvas_layer);
+    return;
+  } else if (s_edit_mode == EDIT_SECONDS) {
+    finish_edit_mode();
+    return;
+  }
+
+  if (s_is_running) {
     pause_timer();
   } else {
     start_timer();
@@ -231,11 +342,22 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
     return;
   }
 
+  if (s_edit_mode == EDIT_MINUTES) {
+    s_edit_minutes = (s_edit_minutes + 1) % 100;
+    layer_mark_dirty(s_canvas_layer);
+    return;
+  } else if (s_edit_mode == EDIT_SECONDS) {
+    s_edit_seconds = (s_edit_seconds + 1) % 60;
+    layer_mark_dirty(s_canvas_layer);
+    return;
+  }
+
   if (s_is_running) {
-    // Quick Add +1 Minute
-    s_remaining_sec += 60;
-    s_total_duration_sec += 60;
-    s_target_epoch += 60;
+    // Quick Add +15s (if < 60s) or +60s
+    int add_sec = (s_remaining_sec < 60) ? 15 : 60;
+    s_remaining_sec += add_sec;
+    s_total_duration_sec += add_sec;
+    s_target_epoch += add_sec;
     if (s_wakeup_id >= 0) {
       wakeup_cancel(s_wakeup_id);
       s_wakeup_id = wakeup_schedule(s_target_epoch, WAKEUP_COOKIE_TIMER, true);
@@ -246,7 +368,7 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
     // Cycle preset up
     s_preset_index--;
     if (s_preset_index < 0) s_preset_index = NUM_PRESETS - 1;
-    s_total_duration_sec = PRESETS[s_preset_index].seconds;
+    s_total_duration_sec = get_preset_duration(s_preset_index);
     s_remaining_sec = s_total_duration_sec;
     pulsar_sound_start(s_audio_enabled, s_vibe_enabled);
     layer_mark_dirty(s_canvas_layer);
@@ -259,11 +381,22 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
     return;
   }
 
+  if (s_edit_mode == EDIT_MINUTES) {
+    s_edit_minutes = (s_edit_minutes + 99) % 100;
+    layer_mark_dirty(s_canvas_layer);
+    return;
+  } else if (s_edit_mode == EDIT_SECONDS) {
+    s_edit_seconds = (s_edit_seconds + 59) % 60;
+    layer_mark_dirty(s_canvas_layer);
+    return;
+  }
+
   if (s_is_running) {
-    // Quick Subtract -1 Minute (if > 60s)
-    if (s_remaining_sec > 60) {
-      s_remaining_sec -= 60;
-      s_target_epoch -= 60;
+    // Quick Subtract -15s or -60s
+    int sub_sec = (s_remaining_sec <= 60) ? 15 : 60;
+    if (s_remaining_sec > sub_sec) {
+      s_remaining_sec -= sub_sec;
+      s_target_epoch -= sub_sec;
       if (s_wakeup_id >= 0) {
         wakeup_cancel(s_wakeup_id);
         s_wakeup_id = wakeup_schedule(s_target_epoch, WAKEUP_COOKIE_TIMER, true);
@@ -277,7 +410,7 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
     // Cycle preset down
     s_preset_index++;
     if (s_preset_index >= NUM_PRESETS) s_preset_index = 0;
-    s_total_duration_sec = PRESETS[s_preset_index].seconds;
+    s_total_duration_sec = get_preset_duration(s_preset_index);
     s_remaining_sec = s_total_duration_sec;
     pulsar_sound_start(s_audio_enabled, s_vibe_enabled);
     layer_mark_dirty(s_canvas_layer);
@@ -286,6 +419,7 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
 
 static void click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
+  window_long_click_subscribe(BUTTON_ID_SELECT, 500, select_long_click_handler, NULL);
   window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
   window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
 }
@@ -329,35 +463,71 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
 
   // 3. Header
   const char *header_text = s_is_alarm_firing ? "* T I M E ' S  U P *" : "T I M E R";
+  if (s_edit_mode == EDIT_MINUTES) {
+    header_text = "S E T   M I N U T E S";
+  } else if (s_edit_mode == EDIT_SECONDS) {
+    header_text = "S E T   S E C O N D S";
+  }
   pulsar_draw_header(ctx, bounds, header_text, &banner_palette);
 
-  // 4. Time calculation
-  int total_sec = s_remaining_sec;
-  int mins = total_sec / 60;
-  int secs = total_sec % 60;
+  // 4. Time calculation & digits
+  int d1, d2, d3, d4;
+  if (s_edit_mode != EDIT_NONE) {
+    d1 = s_edit_minutes / 10;
+    d2 = s_edit_minutes % 10;
+    d3 = s_edit_seconds / 10;
+    d4 = s_edit_seconds % 10;
 
-  int d1 = mins / 10;
-  int d2 = mins % 10;
-  int d3 = secs / 10;
-  int d4 = secs % 10;
+    if (s_edit_mode == EDIT_MINUTES && !s_blink_state) {
+      d1 = GLYPH_BLANK;
+      d2 = GLYPH_BLANK;
+    } else if (s_edit_mode == EDIT_SECONDS && !s_blink_state) {
+      d3 = GLYPH_BLANK;
+      d4 = GLYPH_BLANK;
+    }
+  } else {
+    int total_sec = s_remaining_sec;
+    int mins = total_sec / 60;
+    int secs = total_sec % 60;
+    d1 = mins / 10;
+    d2 = mins % 10;
+    d3 = secs / 10;
+    d4 = secs % 10;
+  }
 
   // 5. Main 4-Digit Display
-  bool colon_lit = s_is_running ? (secs % 2 == 0) : true;
+  bool colon_lit = (s_edit_mode != EDIT_NONE) ? true : (s_is_running ? (s_remaining_sec % 2 == 0) : true);
   pulsar_draw_4digits(ctx, bounds, d1, d2, d3, d4, true, colon_lit, palette, true, s_italic_slant);
 
   // 6. 10-Dot Micro-LED Progress Bar
-  pulsar_draw_progress_beads(ctx, bounds, palette, true, s_remaining_sec, s_total_duration_sec);
+  if (s_edit_mode != EDIT_NONE) {
+    bool beads[NUM_MICRO_BEADS];
+    for (int i = 0; i < NUM_MICRO_BEADS; i++) beads[i] = (i % 2 == 0);
+    pulsar_draw_micro_beads(ctx, bounds, palette, true, beads);
+  } else {
+    pulsar_draw_progress_beads(ctx, bounds, palette, true, s_remaining_sec, s_total_duration_sec);
+  }
 
   // 7. Vintage Space-Age Footer
   static char footer_buffer[32];
   if (s_is_alarm_firing) {
     snprintf(footer_buffer, sizeof(footer_buffer), "★  A L E R T  ★");
+  } else if (s_edit_mode == EDIT_MINUTES) {
+    snprintf(footer_buffer, sizeof(footer_buffer), "S E L E C T :  S E C");
+  } else if (s_edit_mode == EDIT_SECONDS) {
+    snprintf(footer_buffer, sizeof(footer_buffer), "S E L E C T :  S A V E");
   } else if (s_is_running) {
     snprintf(footer_buffer, sizeof(footer_buffer), "C O U N T D O W N");
   } else if (s_is_paused) {
     snprintf(footer_buffer, sizeof(footer_buffer), "P A U S E D");
   } else {
-    snprintf(footer_buffer, sizeof(footer_buffer), "%s", PRESETS[s_preset_index].name);
+    if (s_preset_index == NUM_PRESETS - 1) {
+      int c_m = s_custom_sec / 60;
+      int c_s = s_custom_sec % 60;
+      snprintf(footer_buffer, sizeof(footer_buffer), "C U S T O M  %02d:%02d", c_m, c_s);
+    } else {
+      snprintf(footer_buffer, sizeof(footer_buffer), "%s", PRESETS[s_preset_index].name);
+    }
   }
   pulsar_draw_footer(ctx, bounds, footer_buffer, &banner_palette);
 }
@@ -397,14 +567,18 @@ static void load_state(void) {
   if (persist_exists(STORAGE_KEY_VIBE_ENABLED)) {
     s_vibe_enabled = persist_read_bool(STORAGE_KEY_VIBE_ENABLED);
   }
+  if (persist_exists(STORAGE_KEY_CUSTOM_SEC)) {
+    s_custom_sec = persist_read_int(STORAGE_KEY_CUSTOM_SEC);
+    if (s_custom_sec <= 0) s_custom_sec = 30;
+  }
   if (persist_exists(STORAGE_KEY_PRESET_IDX)) {
     s_preset_index = persist_read_int(STORAGE_KEY_PRESET_IDX);
-    if (s_preset_index < 0 || s_preset_index >= NUM_PRESETS) s_preset_index = 2;
+    if (s_preset_index < 0 || s_preset_index >= NUM_PRESETS) s_preset_index = 6;
   }
   if (persist_exists(STORAGE_KEY_TOTAL_DURATION)) {
     s_total_duration_sec = persist_read_int(STORAGE_KEY_TOTAL_DURATION);
   } else {
-    s_total_duration_sec = PRESETS[s_preset_index].seconds;
+    s_total_duration_sec = get_preset_duration(s_preset_index);
   }
   if (persist_exists(STORAGE_KEY_REMAINING_SEC)) {
     s_remaining_sec = persist_read_int(STORAGE_KEY_REMAINING_SEC);
@@ -428,6 +602,7 @@ static void load_state(void) {
 }
 
 static void save_state(void) {
+  persist_write_int(STORAGE_KEY_CUSTOM_SEC, s_custom_sec);
   persist_write_int(STORAGE_KEY_PRESET_IDX, s_preset_index);
   persist_write_int(STORAGE_KEY_TOTAL_DURATION, s_total_duration_sec);
   persist_write_int(STORAGE_KEY_REMAINING_SEC, s_remaining_sec);
@@ -489,6 +664,10 @@ static void deinit(void) {
   if (s_alarm_pulse_timer) {
     app_timer_cancel(s_alarm_pulse_timer);
     s_alarm_pulse_timer = NULL;
+  }
+  if (s_blink_timer) {
+    app_timer_cancel(s_blink_timer);
+    s_blink_timer = NULL;
   }
   window_destroy(s_main_window);
 }
