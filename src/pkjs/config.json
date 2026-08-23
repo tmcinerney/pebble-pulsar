@@ -381,7 +381,7 @@
         "type": "select",
         "messageKey": "AppKeyCycleSlot5",
         "label": "Slot 5 (5th Tap Screen)",
-        "defaultValue": "5",
+        "defaultValue": "0",
         "options": [
           { "label": "Disabled / None", "value": "0" },
           { "label": "Live Seconds Counter (:SS)", "value": "1" },

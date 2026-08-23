@@ -29,11 +29,12 @@ Built for the **Rebble / RePebble** ecosystem with native support for the **Pebb
 
 ### 👋 Wrist Flick, Tap & Touch Actions
 In the Pebble mobile app settings, you can configure what a wrist flick, crystal tap, or screen touch does:
-* **Cycle All (Default):** Temporarily switches through Time &rarr; Live Seconds &rarr; Date &rarr; Steps &rarr; Battery, automatically returning to Time after 4 seconds.
+* **Custom Reorderable Cycle (Default):** Customize the exact order and enabled state of up to 5 cycle slots (Live Seconds, Date, Steps, Battery, Heart Rate). Automatically returns to Time after 4 seconds of inactivity.
 * **Live Seconds Counter (`:SS`):** Instant 4-second burst of real-time ticking seconds.
 * **Calendar Date (`MM DD` / `DD MM`):** Quick check of current month and day.
-* **Step Count (`08420`):** Immediate readout of your daily Pebble Health steps.
+* **Step Count (`08420`):** Immediate readout of your daily Pebble Health steps with Overdrive celebrations.
 * **Battery Level (` 85 %`):** Battery percentage readout.
+* **Heart Rate (`♥  72`):** Real-time BPM pulse rate on supported hardware (Pebble 2 HR).
 
 ---
 
@@ -48,14 +49,31 @@ In the Pebble mobile app settings, you can configure what a wrist flick, crystal
 - **Customizable Brand Headers & Footers:** Choose top header (`PULSAR`, `HAMILTON`, `SOLID STATE`, or `None`) and bezel footer (`TIME COMPUTER`, `SOLID STATE`, `HAMILTON`, `PULSAR`, `SWISS MADE`, or `None`).
 
 ### 2. Multi-Mode Display Engine (Flick / Tap / Touch)
-Cycle through 5 interactive display modes via wrist flick, crystal tap, or capacitive touchscreen:
+Cycle through 6 interactive display modes via wrist flick, crystal tap, or capacitive touchscreen:
 1. **Time Mode (`HH:MM`):** 12h/24h time with blinking GaAsP colon, optional leading zero, and AM/PM LED indicator dot.
 2. **Live Seconds Mode (`:SS`):** Real-time ticking seconds counter.
 3. **Calendar Date Mode (`MM DD` / `DD MM`):** Space-age month and day readout with configurable format.
-4. **Step Counter Mode (`08420`):** 5-digit daily step count powered by the Pebble Health API.
+4. **Step Counter Mode (`08420`):** 5-digit daily step count powered by the Pebble Health API with Overdrive celebrations.
 5. **Battery Level Mode (` 85 %` / `100 %`):** Digital battery percentage monitor.
+6. **Heart Rate Mode (`♥  72`):** Live BPM readout with heart glyph on heart-rate equipped watches.
 
-### 3. LED Colorways & Inverted Theme
+### 3. Clock-Synchronized Charging Animations & Nightlight
+- **Quartz Master Synchronized:** Charging animations and status indicators are locked to whole seconds and sub-second millisecond intervals via `time_ms()`.
+- **Selectable Retro Animations:**
+  - **Progressive Flow / Fill:** Cascading LED flow across uncharged beads resetting on whole seconds.
+  - **1970s Cylon / Knight Rider Chaser:** 3-dot ping-pong comet sweep across all 10 micro-LEDs (tuned to an exact 2.0s period).
+  - **Breathing / Heartbeat Pulse:** Dual-beat heartbeat pulse (`lub-dub`) synchronized to the second colon.
+  - **1970s Theater Marquee:** Alternating odd/even LEDs on 500ms half-second intervals.
+  - **Solid Gauge:** Static battery level indicator.
+- **Bedside Nightlight Mode:** Keeps the screen backlight continuously illuminated while on the charger dock or nightstand.
+- **Delta-Guarded Live Previews:** 12-second charging animation and 5-second nightlight previews trigger only when you actively change their setting in Clay.
+
+### 4. Step Goal Overdrive & Lap 2 Celebrations
+- **Standard Fill:** 10 micro-LED progress beads illuminate proportionally toward your daily goal (5k to 15k steps).
+- **Goal Met (100%–200%):** Footer displays `★ GOAL MET ★` and surplus "Lap 2" step beads pulse rhythmically every second.
+- **200%+ Overdrive:** Footer displays `★ 2X GOAL ★` with a synchronized victory wave across all 10 beads.
+
+### 5. LED Colorways & Inverted Theme
 - **Neon Ruby (GaAsP High-Luminance):** Vivid red semiconductor LED with maroon ghost dies.
 - **Deep Red (Classic 1970):** Traditional deep ruby crystal homage.
 - **Prototype Green (GaP 1975):** Vintage green LED homage.
@@ -64,14 +82,11 @@ Cycle through 5 interactive display modes via wrist flick, crystal tap, or capac
 - **Lunar White:** High-contrast crisp white LED dies.
 - **Inverted Paper (Black on White):** Crisp black matrix LEDs on a paper-white background for high-visibility bright outdoor sunlight.
 
-### 4. Health, Alerts & Hardware Integration
+### 6. Health, Alerts & Hardware Integration
 - **Capacitive Touchscreen Support:** Native `TouchService` integration for Pebble Time 2 (`emery`) with automatic capability detection.
 - **Automatic Backlight on Wake:** Tapping, flicking, or touching in Stealth Mode engages the backlight timer so the display is clearly legible in total darkness.
 - **Retro Synth Speaker Chimes:** On speaker-equipped hardware, hourly alerts and Bluetooth disconnect warnings play 8-bit square/sawtooth audio chirps alongside vibration pulses.
-- **10-Dot Micro-LED Progress Bar:** Multi-mode indicator above the footer:
-  - **Daily Step Progress:** 10 micro-dots showing progress towards your daily step goal (5k to 15k).
-  - **Battery Meter:** 1 dot = 10% battery charge level.
-  - **Disabled / Off:** Clean minimal bezel.
+- **10-Dot Micro-LED Progress Bar:** Multi-mode indicator above the footer (Steps vs Battery Meter vs Off).
 - **Stealth Push-to-Wake Mode:** 4-second flick/tap/touch illumination.
 - **Hourly Vibration Chime:** Configurable silent hourly alert (Off, Single Pulse, Double Pulse).
 - **Bluetooth Disconnect Alert:** Optional double-pulse wrist vibration if phone connection drops.

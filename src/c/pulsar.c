@@ -277,7 +277,7 @@ static int s_cycle_slot1 = 1; // Live Seconds
 static int s_cycle_slot2 = 2; // Date
 static int s_cycle_slot3 = 3; // Daily Steps
 static int s_cycle_slot4 = 4; // Battery Level
-static int s_cycle_slot5 = 5; // Heart Rate
+static int s_cycle_slot5 = 0; // Heart Rate (Disabled by default, opt-in for HR devices)
 
 static bool s_bluetooth_connected = true;
 static int s_battery_level = 100;
@@ -296,8 +296,8 @@ static void update_nightlight(void) {
 
 static void charge_anim_timer_callback(void *data) {
   s_charge_anim_timer = NULL;
-  bool is_animating = (s_battery_charging || s_battery_plugged || s_charging_preview) && 
-                      (s_charging_style != CHARGING_STYLE_OFF) && 
+  bool is_animating = (s_battery_charging || s_battery_plugged || s_charging_preview) &&
+                      (s_charging_style != CHARGING_STYLE_OFF) &&
                       (s_charging_style != CHARGING_STYLE_SOLID);
   if (is_animating) {
     s_anim_frame++;
@@ -307,8 +307,8 @@ static void charge_anim_timer_callback(void *data) {
 }
 
 static void update_charging_animation(void) {
-  bool is_animating = (s_battery_charging || s_battery_plugged || s_charging_preview) && 
-                      (s_charging_style != CHARGING_STYLE_OFF) && 
+  bool is_animating = (s_battery_charging || s_battery_plugged || s_charging_preview) &&
+                      (s_charging_style != CHARGING_STYLE_OFF) &&
                       (s_charging_style != CHARGING_STYLE_SOLID);
   if (is_animating) {
     if (!s_charge_anim_timer) {
@@ -416,7 +416,11 @@ static void advance_display_mode(void) {
     trigger_display_change(DISPLAY_MODE_BATTERY);
     return;
   } else if (s_flick_action == FLICK_ACTION_HEART_RATE) {
+#if defined(PBL_HEALTH)
     trigger_display_change(DISPLAY_MODE_HEART_RATE);
+#else
+    trigger_display_change(DISPLAY_MODE_TIME);
+#endif
     return;
   }
 
@@ -425,8 +429,24 @@ static void advance_display_mode(void) {
   int active_count = 0;
   int raw_slots[5] = {s_cycle_slot1, s_cycle_slot2, s_cycle_slot3, s_cycle_slot4, s_cycle_slot5};
   for (int i = 0; i < 5; i++) {
-    if (raw_slots[i] >= 1 && raw_slots[i] <= 5) {
-      active_slots[active_count++] = raw_slots[i];
+    int slot_val = raw_slots[i];
+    if (slot_val >= 1 && slot_val <= 5) {
+#if !defined(PBL_HEALTH)
+      if (slot_val == DISPLAY_MODE_HEART_RATE) {
+        continue; // Skip heart rate on platforms without health support
+      }
+#endif
+      // Deduplicate so duplicate selections don't stall navigation
+      bool duplicate = false;
+      for (int j = 0; j < active_count; j++) {
+        if (active_slots[j] == slot_val) {
+          duplicate = true;
+          break;
+        }
+      }
+      if (!duplicate) {
+        active_slots[active_count++] = slot_val;
+      }
     }
   }
 
@@ -473,7 +493,11 @@ static void tap_handler(AccelAxisType axis, int32_t direction) {
       } else if (s_flick_action == FLICK_ACTION_BATTERY) {
         s_display_mode = DISPLAY_MODE_BATTERY;
       } else if (s_flick_action == FLICK_ACTION_HEART_RATE) {
+#if defined(PBL_HEALTH)
         s_display_mode = DISPLAY_MODE_HEART_RATE;
+#else
+        s_display_mode = DISPLAY_MODE_TIME;
+#endif
       } else {
         s_display_mode = DISPLAY_MODE_TIME;
       }
@@ -569,7 +593,7 @@ static void draw_matrix_digit(GContext *ctx, int x_offset, int y_offset, int dig
 static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette, int steps, int sec, uint16_t now_ms) {
   bool is_charging_active = (s_battery_charging || s_battery_plugged || s_charging_preview) && (s_charging_style != CHARGING_STYLE_OFF);
   if (s_bead_mode == BEAD_MODE_OFF && !is_charging_active) return;
-  
+
   int num_beads = 10;
   int bead_spacing = bounds.size.w > 180 ? 10 : 7;
   int bead_radius = bounds.size.w > 180 ? 2 : 1;
@@ -579,10 +603,10 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
   bool on_power = (s_battery_charging || s_battery_plugged);
   bool is_active = (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake || (on_power && s_nightlight) || s_charging_preview;
   int goal = s_step_goal > 0 ? s_step_goal : 10000;
-  
+
   for (int i = 0; i < num_beads; i++) {
     bool lit = false;
-    
+
     if (is_charging_active) {
       // Clock-Synchronized Charging Animations (locked to master second & millisecond crystal)
       if (s_charging_style == CHARGING_STYLE_CHASER) {
@@ -618,7 +642,7 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
             lit = is_active;
           } else {
             int remaining = num_beads - current_beads;
-            int cycle_pos = (remaining > 0) ? ((now_ms * (remaining + 2)) / 1000) : 0;
+            int cycle_pos = (remaining > 0) ? ((now_ms * remaining) / 1000) : 0;
             lit = is_active && (i == (current_beads + cycle_pos));
           }
         }
@@ -1160,7 +1184,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       s_charging_style = new_style;
       persist_write_int(STORAGE_KEY_CHARGING_STYLE, s_charging_style);
       APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyChargingStyle: %d (changed: %d)", s_charging_style, (int)changed);
-      
+
       if (changed && (s_charging_style != CHARGING_STYLE_OFF)) {
         // Trigger 12-second live preview only when the user actively changes the style
         s_charging_preview = true;
@@ -1177,7 +1201,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       s_nightlight = new_nightlight;
       persist_write_bool(STORAGE_KEY_NIGHTLIGHT, s_nightlight);
       APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyNightlight: %d (changed: %d)", (int)s_nightlight, (int)changed);
-      
+
       if (changed && s_nightlight) {
         light_enable(true);
         if (!s_battery_charging && !s_battery_plugged) {
