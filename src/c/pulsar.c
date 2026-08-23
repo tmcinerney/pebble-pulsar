@@ -479,6 +479,16 @@ static void advance_display_mode(void) {
 }
 
 static void tap_handler(AccelAxisType axis, int32_t direction) {
+  static uint32_t s_last_tap_epoch_ms = 0;
+  time_t sec = 0;
+  uint16_t ms = 0;
+  time_ms(&sec, &ms);
+  uint32_t now_ms = (uint32_t)sec * 1000 + ms;
+  if (now_ms - s_last_tap_epoch_ms < 250) {
+    return; // Debounce rapid duplicate triggers
+  }
+  s_last_tap_epoch_ms = now_ms;
+
   light_enable_interaction();
   if (s_operating_mode == MODE_STEALTH) {
     if (!s_stealth_awake) {
@@ -516,9 +526,19 @@ static void tap_handler(AccelAxisType axis, int32_t direction) {
   }
 }
 
+#if PBL_API_EXISTS(tap_recognizer_create)
+static Recognizer *s_tap_recognizer = NULL;
+
+static void tap_recognizer_callback(const Recognizer *recognizer, RecognizerEvent event_type) {
+  if (event_type == RecognizerEvent_Completed || event_type == RecognizerEvent_Started) {
+    tap_handler(ACCEL_AXIS_Z, 1);
+  }
+}
+#endif
+
 #if PBL_API_EXISTS(touch_service_subscribe)
 static void touch_handler(const TouchEvent *event, void *context) {
-  if (event->type == TouchEvent_Touchdown) {
+  if (event->type == TouchEvent_Touchdown || event->type == TouchEvent_Liftoff) {
     tap_handler(ACCEL_AXIS_Z, 1);
   }
 }
@@ -693,7 +713,7 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
         graphics_fill_circle(ctx, GPoint(bx, bead_y), bead_radius);
       }
     } else {
-      GColor bead_color = lit ? GColorWhite : palette->ghost;
+      GColor bead_color = lit ? palette->lit : palette->ghost;
       graphics_context_set_fill_color(ctx, bead_color);
       graphics_fill_circle(ctx, GPoint(bx, bead_y), lit ? bead_radius : 1);
     }
@@ -1309,12 +1329,24 @@ static void main_window_load(Window *window) {
   layer_set_update_proc(s_canvas_layer, canvas_update_proc);
   layer_add_child(window_layer, s_canvas_layer);
 
+#if PBL_API_EXISTS(tap_recognizer_create)
+  s_tap_recognizer = tap_recognizer_create(tap_recognizer_callback, NULL);
+  if (s_tap_recognizer) {
+    window_attach_recognizer(window, s_tap_recognizer);
+  }
+#endif
 #if PBL_API_EXISTS(window_set_touch_bridge_disabled)
   window_set_touch_bridge_disabled(window, true);
 #endif
 }
 
 static void main_window_unload(Window *window) {
+#if PBL_API_EXISTS(tap_recognizer_create)
+  if (s_tap_recognizer) {
+    recognizer_destroy(s_tap_recognizer);
+    s_tap_recognizer = NULL;
+  }
+#endif
   layer_destroy(s_canvas_layer);
 }
 
