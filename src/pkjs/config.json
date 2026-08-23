@@ -12,7 +12,7 @@
       },
       {
         "type": "text",
-        "defaultValue": "💡 <b>How it works:</b><br>• <b>Always-On:</b> Keeps the LED time continuously visible.<br>• <b>Stealth (1972 Push-to-Wake):</b> Replicates the original 1972 Pulsar push-button experience. The display stays dark until you <b>flick your wrist or tap your watch</b>, illuminating the LEDs for 4 seconds."
+        "defaultValue": "💡 <b>How it works:</b><br>• <b>Always-On:</b> Keeps the LED time continuously visible.<br>• <b>Stealth (1970 Push-to-Wake):</b> Replicates the original 1970 Pulsar push-button experience. The display rests in dark stealth mode until you <b>flick your wrist, tap your watch crystal, or touch the screen</b> (Pebble Time 2), illuminating the LEDs for 4 seconds."
       },
       {
         "type": "radiogroup",
@@ -25,7 +25,7 @@
             "value": "0"
           },
           {
-            "label": "Stealth (Flick/Tap to Wake 4s)",
+            "label": "Stealth (Flick/Tap/Touch to Wake 4s)",
             "value": "1"
           }
         ]
@@ -239,12 +239,12 @@
       },
       {
         "type": "text",
-        "defaultValue": "👋 <b>Wrist Flick & Tap Gestures:</b><br>• In <b>Stealth Mode</b>: A quick wrist flick or tap illuminates the watch for 4 seconds.<br>• In <b>Always-On Mode</b>: A wrist flick triggers your chosen action below, returning to Time after 4 seconds."
+        "defaultValue": "👋 <b>Wrist Flick, Tap & Touch Gestures:</b><br>• In <b>Stealth Mode</b>: A quick wrist flick, glass tap, or screen touch (Pebble Time 2) illuminates the watch for 4 seconds.<br>• In <b>Always-On Mode</b>: A flick, tap, or touch triggers your chosen action below, returning to Time after 4 seconds."
       },
       {
         "type": "select",
         "messageKey": "AppKeyFlickAction",
-        "label": "Wrist Flick / Tap Action",
+        "label": "Wrist Flick / Tap / Touch Action",
         "defaultValue": "0",
         "options": [
           {
@@ -276,13 +276,13 @@
     "items": [
       {
         "type": "heading",
-        "defaultValue": "Vibration Alerts"
+        "defaultValue": "Vibration & Sound Alerts"
       },
       {
         "type": "select",
         "messageKey": "AppKeyHourlyVibe",
         "label": "Hourly Chime",
-        "description": "Subtle wrist vibration at the top of every hour.",
+        "description": "Subtle wrist vibration (and retro synth audio beep on speaker-equipped hardware) at the top of every hour.",
         "defaultValue": "0",
         "options": [
           {

@@ -23,12 +23,12 @@ Built for the **Rebble / RePebble** ecosystem with native support for the **Pebb
 
 ### 💡 Operating Modes
 * **Always-On Mode (Default):** The dot-matrix time is continuously visible with blinking colon and active status dots.
-* **Stealth Mode (Authentic 1972 Experience):** Replicates the real 1970s Pulsar P1/P2/P3 experience where the LED display remains completely dark to conserve power beneath the synthetic ruby crystal. 
-  * **To read the time:** **Flick your wrist or gently tap the watch**. The time will brightly illuminate for 4 seconds before fading back to sleep.
-  * **To view other stats:** Subsequent taps while awake cycle through Live Seconds (`:SS`), Date, Daily Steps, and Battery.
+* **Stealth Mode (Authentic 1970 Push-to-Wake):** Replicates the vintage Hamilton Pulsar push-button experience where the LED display remains dark to conserve power beneath the synthetic ruby crystal. 
+  * **To read the time:** **Flick your wrist, tap the crystal, or touch the screen (Pebble Time 2)**. The time brightly illuminates and automatically engages the backlight for 4 seconds.
+  * **To view other stats:** Subsequent taps/touches while awake cycle through Live Seconds (`:SS`), Date, Daily Steps, and Battery.
 
-### 👋 Wrist Flick & Tap Actions
-In the Pebble mobile app settings, you can configure what a wrist flick does:
+### 👋 Wrist Flick, Tap & Touch Actions
+In the Pebble mobile app settings, you can configure what a wrist flick, crystal tap, or screen touch does:
 * **Cycle All (Default):** Temporarily switches through Time &rarr; Live Seconds &rarr; Date &rarr; Steps &rarr; Battery, automatically returning to Time after 4 seconds.
 * **Live Seconds Counter (`:SS`):** Instant 4-second burst of real-time ticking seconds.
 * **Calendar Date (`MM DD` / `DD MM`):** Quick check of current month and day.
@@ -47,8 +47,8 @@ In the Pebble mobile app settings, you can configure what a wrist flick does:
 - **Noise-Free 1-Bit Monochrome Rendering:** Clean, pure black background on Pebble 2 (`diorite`) and Classic (`aplite`) with zero dither noise and solid high-contrast white LED dies.
 - **Customizable Brand Headers & Footers:** Choose top header (`PULSAR`, `HAMILTON`, `SOLID STATE`, or `None`) and bezel footer (`TIME COMPUTER`, `SOLID STATE`, `HAMILTON`, `PULSAR`, `SWISS MADE`, or `None`).
 
-### 2. Multi-Mode Display Engine (Wrist Flick / Tap)
-Cycle through 5 interactive display modes via wrist flick or tap:
+### 2. Multi-Mode Display Engine (Flick / Tap / Touch)
+Cycle through 5 interactive display modes via wrist flick, crystal tap, or capacitive touchscreen:
 1. **Time Mode (`HH:MM`):** 12h/24h time with blinking GaAsP colon, optional leading zero, and AM/PM LED indicator dot.
 2. **Live Seconds Mode (`:SS`):** Real-time ticking seconds counter.
 3. **Calendar Date Mode (`MM DD` / `DD MM`):** Space-age month and day readout with configurable format.
@@ -57,19 +57,22 @@ Cycle through 5 interactive display modes via wrist flick or tap:
 
 ### 3. LED Colorways & Inverted Theme
 - **Neon Ruby (GaAsP High-Luminance):** Vivid red semiconductor LED with maroon ghost dies.
-- **Deep Red (Classic 1972):** Traditional deep ruby crystal homage.
+- **Deep Red (Classic 1970):** Traditional deep ruby crystal homage.
 - **Prototype Green (GaP 1975):** Vintage green LED homage.
 - **Amber Gold (HP-01 Style):** Warm golden-yellow space-age calculation watch homage.
 - **Cobalt Blue:** Modern electric blue styling.
 - **Lunar White:** High-contrast crisp white LED dies.
 - **Inverted Paper (Black on White):** Crisp black matrix LEDs on a paper-white background for high-visibility bright outdoor sunlight.
 
-### 4. Health, Progress & Alerts
+### 4. Health, Alerts & Hardware Integration
+- **Capacitive Touchscreen Support:** Native `TouchService` integration for Pebble Time 2 (`emery`) with automatic capability detection.
+- **Automatic Backlight on Wake:** Tapping, flicking, or touching in Stealth Mode engages the backlight timer so the display is clearly legible in total darkness.
+- **Retro Synth Speaker Chimes:** On speaker-equipped hardware, hourly alerts and Bluetooth disconnect warnings play 8-bit square/sawtooth audio chirps alongside vibration pulses.
 - **10-Dot Micro-LED Progress Bar:** Multi-mode indicator above the footer:
   - **Daily Step Progress:** 10 micro-dots showing progress towards your daily step goal (5k to 15k).
   - **Battery Meter:** 1 dot = 10% battery charge level.
   - **Disabled / Off:** Clean minimal bezel.
-- **Stealth Push-to-Wake Mode:** 4-second flick/tap illumination.
+- **Stealth Push-to-Wake Mode:** 4-second flick/tap/touch illumination.
 - **Hourly Vibration Chime:** Configurable silent hourly alert (Off, Single Pulse, Double Pulse).
 - **Bluetooth Disconnect Alert:** Optional double-pulse wrist vibration if phone connection drops.
 - **Status Indicators:** Subtle LED status dots for Bluetooth disconnect and battery low (<20%).
@@ -165,7 +168,13 @@ devenv shell -- pebble install --emulator emery
 devenv shell -- pebble emu-tap --emulator emery --direction x+
 ```
 
-### 3. Direct Watch Installation (Standard WiFi Developer Bridge)
+### 3. Automated Firmware & Parity Test Suite
+Run the test suite verifying font compatibility, Clay/C storage key parity, and cross-platform compilation across all 4 architectures (`aplite`, `basalt`, `diorite`, `emery`):
+```bash
+devenv shell -- python3 tests/test_firmware.py
+```
+
+### 4. Direct Watch Installation (Standard WiFi Developer Bridge)
 To flash the watch directly over the local network:
 1. Ensure the Pebble mobile app is open on your phone with **Developer Connection** enabled (Settings → Developer Connection).
 2. Run the direct installer:
