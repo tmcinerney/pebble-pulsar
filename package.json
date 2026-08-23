@@ -17,6 +17,7 @@
     "assets:timer": "python3 scripts/generate_app_assets.py timer",
     "assets:alarm": "python3 scripts/generate_app_assets.py alarm",
     "assets:all": "python3 scripts/generate_app_assets.py all",
+    "appstore-pack": "python3 scripts/generate_appstore_pack.py all",
     "store-assets": "python3 scripts/generate_store_assets.py"
   }
 }
