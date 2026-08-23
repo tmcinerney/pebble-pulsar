@@ -310,6 +310,10 @@
           {
             "label": "Heart Rate Only (Pebble 2 HR)",
             "value": "5"
+          },
+          {
+            "label": "Disabled / Off (No gesture action)",
+            "value": "6"
           }
         ]
       },

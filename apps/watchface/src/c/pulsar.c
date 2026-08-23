@@ -134,7 +134,8 @@ enum FlickAction {
   FLICK_ACTION_DATE = 2,
   FLICK_ACTION_STEPS = 3,
   FLICK_ACTION_BATTERY = 4,
-  FLICK_ACTION_HEART_RATE = 5
+  FLICK_ACTION_HEART_RATE = 5,
+  FLICK_ACTION_OFF = 6
 };
 
 // Hourly Vibe
@@ -271,6 +272,9 @@ static void trigger_display_change(int mode) {
 }
 
 static void advance_display_mode_dir(int dir) {
+  if (s_flick_action == FLICK_ACTION_OFF || s_flick_sensitivity == FLICK_SENSITIVITY_OFF) {
+    return;
+  }
   if (s_flick_action == FLICK_ACTION_SECONDS) {
     trigger_display_change(DISPLAY_MODE_SECONDS);
     return;
@@ -317,7 +321,6 @@ static void advance_display_mode_dir(int dir) {
   }
 
   if (active_count == 0) {
-    trigger_display_change(DISPLAY_MODE_TIME);
     return;
   }
 
@@ -346,9 +349,10 @@ static void advance_display_mode_dir(int dir) {
 
 static time_t s_last_gesture_time_s = 0;
 static uint16_t s_last_gesture_time_ms = 0;
+static bool s_accel_subscribed = false;
 
 static void execute_gesture_action_dir(int dir) {
-  if (s_flick_sensitivity == FLICK_SENSITIVITY_OFF) {
+  if (s_flick_sensitivity == FLICK_SENSITIVITY_OFF || s_flick_action == FLICK_ACTION_OFF) {
     return;
   }
   light_enable_interaction();
@@ -394,38 +398,23 @@ static void handle_gesture_dir(int dir, int debounce_ms) {
   execute_gesture_action_dir(dir);
 }
 
-static void tap_handler(AccelAxisType axis, int32_t direction) {
-  if (s_flick_sensitivity == FLICK_SENSITIVITY_OFF) {
-    return;
-  }
-
-  // When Taps Only is selected, reject all X and Y axis events (wrist flicks/rotations)
-  // and ONLY accept Z axis impact (physical tapping on crystal or bezel)
-  if (s_flick_sensitivity == FLICK_SENSITIVITY_TAPS_ONLY && axis != ACCEL_AXIS_Z) {
-    return;
-  }
-
-  // In Low sensitivity mode, ignore OS tap triggers on X/Y to let accel_data_handler enforce high jerk threshold
-  if (s_flick_sensitivity == FLICK_SENSITIVITY_LOW && axis != ACCEL_AXIS_Z) {
-    return;
-  }
-
-  int debounce = 800;
-  if (s_flick_sensitivity == FLICK_SENSITIVITY_LOW) {
-    debounce = 1100;
-  } else if (s_flick_sensitivity == FLICK_SENSITIVITY_HIGH) {
-    debounce = 500;
-  } else if (s_flick_sensitivity == FLICK_SENSITIVITY_TAPS_ONLY) {
-    debounce = 650;
-  }
-  int dir = (direction < 0) ? -1 : 1;
-  handle_gesture_dir(dir, debounce);
-}
-
 static void accel_data_handler(AccelData *data, uint32_t num_samples) {
-  if (s_flick_sensitivity == FLICK_SENSITIVITY_TAPS_ONLY ||
-      s_flick_sensitivity == FLICK_SENSITIVITY_OFF) {
-    return; // Ignore wrist rotation completely when in Taps Only or Off modes
+  if (s_flick_sensitivity == FLICK_SENSITIVITY_OFF || s_flick_action == FLICK_ACTION_OFF) {
+    return;
+  }
+
+  // Taps Only: Require sharp Z-axis perpendicular impact with minimal wrist rotation
+  if (s_flick_sensitivity == FLICK_SENSITIVITY_TAPS_ONLY) {
+    for (uint32_t i = 1; i < num_samples; i++) {
+      int dx = abs(data[i].x - data[i - 1].x);
+      int dy = abs(data[i].y - data[i - 1].y);
+      int dz = abs(data[i].z - data[i - 1].z);
+      if (dz > 950 && dx < 350 && dy < 350) {
+        handle_gesture_dir(1, 650);
+        break;
+      }
+    }
+    return;
   }
 
   int threshold_xy = 750;
@@ -433,8 +422,8 @@ static void accel_data_handler(AccelData *data, uint32_t num_samples) {
   int debounce_ms = 850;
 
   if (s_flick_sensitivity == FLICK_SENSITIVITY_LOW) {
-    threshold_xy = 1300;
-    threshold_z = 1400;
+    threshold_xy = 1350;
+    threshold_z = 1450;
     debounce_ms = 1200;
   } else if (s_flick_sensitivity == FLICK_SENSITIVITY_HIGH) {
     threshold_xy = 400;
@@ -450,6 +439,23 @@ static void accel_data_handler(AccelData *data, uint32_t num_samples) {
       int dir = (dx < -250) ? -1 : 1;
       handle_gesture_dir(dir, debounce_ms);
       break;
+    }
+  }
+}
+
+static void update_accel_subscription(void) {
+  bool gestures_enabled = (s_flick_action != FLICK_ACTION_OFF) &&
+                          (s_flick_sensitivity != FLICK_SENSITIVITY_OFF);
+  if (gestures_enabled) {
+    if (!s_accel_subscribed) {
+      accel_data_service_subscribe(5, accel_data_handler);
+      accel_service_set_sampling_rate(ACCEL_SAMPLING_10HZ);
+      s_accel_subscribed = true;
+    }
+  } else {
+    if (s_accel_subscribed) {
+      accel_data_service_unsubscribe();
+      s_accel_subscribed = false;
     }
   }
 }
@@ -831,11 +837,15 @@ static int tuple_to_int(Tuple *tuple, int default_val) {
   if (!tuple) return default_val;
   switch (tuple->type) {
     case TUPLE_INT:
-    case TUPLE_UINT:
       if (tuple->length == 1) return (int)tuple->value->int8;
       if (tuple->length == 2) return (int)tuple->value->int16;
       if (tuple->length == 4) return (int)tuple->value->int32;
       return (int)tuple->value->int32;
+    case TUPLE_UINT:
+      if (tuple->length == 1) return (int)tuple->value->uint8;
+      if (tuple->length == 2) return (int)tuple->value->uint16;
+      if (tuple->length == 4) return (int)tuple->value->uint32;
+      return (int)tuple->value->uint32;
     case TUPLE_CSTRING:
       if (tuple->length > 0) {
         return atoi(tuple->value->cstring);
@@ -968,6 +978,8 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       persist_write_int(STORAGE_KEY_FLICK_SENSITIVITY, s_flick_sensitivity);
     }
   }
+  update_accel_subscription();
+  APP_LOG(APP_LOG_LEVEL_INFO, "Pulsar synced: action=%d, sensitivity=%d, mode=%d", s_flick_action, s_flick_sensitivity, s_operating_mode);
   layer_mark_dirty(s_canvas_layer);
 }
 
@@ -1036,6 +1048,7 @@ static void load_settings(void) {
   if (persist_exists(STORAGE_KEY_FLICK_SENSITIVITY)) {
     s_flick_sensitivity = persist_read_int(STORAGE_KEY_FLICK_SENSITIVITY);
   }
+  update_accel_subscription();
 }
 
 static void main_window_load(Window *window) {
@@ -1068,9 +1081,8 @@ static void init(void) {
   app_message_open(1024, 128);
 
   tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
-  accel_tap_service_subscribe(tap_handler);
-  accel_data_service_subscribe(5, accel_data_handler);
-  accel_service_set_sampling_rate(ACCEL_SAMPLING_10HZ);
+  update_accel_subscription();
+
 #if PBL_API_EXISTS(touch_service_subscribe)
   if (touch_service_is_enabled()) {
     touch_service_subscribe(touch_handler, NULL);
@@ -1106,8 +1118,10 @@ static void deinit(void) {
 #endif
   battery_state_service_unsubscribe();
   connection_service_unsubscribe();
-  accel_data_service_unsubscribe();
-  accel_tap_service_unsubscribe();
+  if (s_accel_subscribed) {
+    accel_data_service_unsubscribe();
+    s_accel_subscribed = false;
+  }
   tick_timer_service_unsubscribe();
   if (s_mode_timer) {
     app_timer_cancel(s_mode_timer);
