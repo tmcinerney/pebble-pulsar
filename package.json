@@ -10,9 +10,13 @@
     "build:chrono": "cd apps/chrono && pebble build",
     "build:timer": "cd apps/timer && pebble build",
     "build:alarm": "cd apps/alarm && pebble build",
-    "test": "python3 -m unittest discover tests",
-    "screenshots": "python3 scripts/capture_all_screenshots.py",
-    "mockups": "python3 scripts/generate_hardware_mockups.py",
+    "test": "python3 tests/test_firmware.py",
+    "validate:pbw": "python3 scripts/validate_pbw.py",
+    "assets:watchface": "python3 scripts/generate_app_assets.py watchface",
+    "assets:chrono": "python3 scripts/generate_app_assets.py chrono",
+    "assets:timer": "python3 scripts/generate_app_assets.py timer",
+    "assets:alarm": "python3 scripts/generate_app_assets.py alarm",
+    "assets:all": "python3 scripts/generate_app_assets.py all",
     "store-assets": "python3 scripts/generate_store_assets.py"
   }
 }
