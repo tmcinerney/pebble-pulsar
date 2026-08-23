@@ -34,16 +34,15 @@ jobs:
         run: |
           devenv shell -- python3 tests/test_firmware.py
 
-      - name: Build Universal Pebble Bundle
+      - name: Build Monorepo Suite Bundles
         run: |
-          devenv shell -- pebble clean
-          devenv shell -- pebble build
-          python3 scripts/validate_pbw.py build/pebble-pulsar.pbw
+          devenv shell -- python3 scripts/build_all.py
+          python3 scripts/validate_pbw.py
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/pebble-pulsar.pbw
+          files: dist/*.pbw
           generate_release_notes: true
           draft: false
           prerelease: false

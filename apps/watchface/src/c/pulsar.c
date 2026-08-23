@@ -35,6 +35,7 @@
 #define STORAGE_KEY_CYCLE_SLOT_3     10017
 #define STORAGE_KEY_CYCLE_SLOT_4     10018
 #define STORAGE_KEY_CYCLE_SLOT_5     10019
+#define STORAGE_KEY_FLICK_SENSITIVITY 10024
 
 #ifndef MESSAGE_KEY_AppKeyOperatingMode
 #define MESSAGE_KEY_AppKeyOperatingMode   10000
@@ -57,12 +58,21 @@
 #define MESSAGE_KEY_AppKeyCycleSlot3     10017
 #define MESSAGE_KEY_AppKeyCycleSlot4     10018
 #define MESSAGE_KEY_AppKeyCycleSlot5     10019
+#define MESSAGE_KEY_AppKeyFlickSensitivity 10024
 #endif
 
 // Operating Modes
 enum OperatingMode {
   MODE_ALWAYS_ON = 0,
   MODE_STEALTH = 1
+};
+
+// Flick Sensitivity
+enum FlickSensitivity {
+  FLICK_SENSITIVITY_BALANCED = 0,
+  FLICK_SENSITIVITY_LOW = 1,
+  FLICK_SENSITIVITY_HIGH = 2,
+  FLICK_SENSITIVITY_TAPS_ONLY = 3
 };
 
 // Charging Styles
@@ -159,6 +169,7 @@ static int s_cycle_slot2 = 2; // Date
 static int s_cycle_slot3 = 3; // Daily Steps
 static int s_cycle_slot4 = 4; // Battery Level
 static int s_cycle_slot5 = 0; // Heart Rate (Disabled by default, opt-in for HR devices)
+static int s_flick_sensitivity = FLICK_SENSITIVITY_BALANCED;
 
 static bool s_bluetooth_connected = true;
 static int s_battery_level = 100;
@@ -258,7 +269,7 @@ static void trigger_display_change(int mode) {
   layer_mark_dirty(s_canvas_layer);
 }
 
-static void advance_display_mode(void) {
+static void advance_display_mode_dir(int dir) {
   if (s_flick_action == FLICK_ACTION_SECONDS) {
     trigger_display_change(DISPLAY_MODE_SECONDS);
     return;
@@ -319,10 +330,10 @@ static void advance_display_mode(void) {
 
   int next_mode;
   if (current_index == -1) {
-    next_mode = active_slots[0];
+    next_mode = (dir >= 0) ? active_slots[0] : active_slots[active_count - 1];
   } else {
-    int next_index = current_index + 1;
-    if (next_index >= active_count) {
+    int next_index = current_index + dir;
+    if (next_index >= active_count || next_index < 0) {
       next_mode = DISPLAY_MODE_TIME;
     } else {
       next_mode = active_slots[next_index];
@@ -335,7 +346,7 @@ static void advance_display_mode(void) {
 static time_t s_last_gesture_time_s = 0;
 static uint16_t s_last_gesture_time_ms = 0;
 
-static void execute_gesture_action(void) {
+static void execute_gesture_action_dir(int dir) {
   light_enable_interaction();
   if (s_operating_mode == MODE_STEALTH) {
     if (!s_stealth_awake) {
@@ -359,37 +370,57 @@ static void execute_gesture_action(void) {
       s_mode_timer = app_timer_register(WAKE_DURATION_MS, mode_timer_callback, NULL);
       layer_mark_dirty(s_canvas_layer);
     } else {
-      advance_display_mode();
+      advance_display_mode_dir(dir);
     }
   } else {
-    advance_display_mode();
+    advance_display_mode_dir(dir);
   }
 }
 
-static void handle_gesture(void) {
+static void handle_gesture_dir(int dir, int debounce_ms) {
   time_t now_s;
   uint16_t now_ms = time_ms(&now_s, NULL);
   int elapsed_ms = (int)((now_s - s_last_gesture_time_s) * 1000 + (now_ms - s_last_gesture_time_ms));
-  if (elapsed_ms < 500 && elapsed_ms >= 0) {
-    return; // 500ms debounce to prevent double-skipping
+  if (elapsed_ms < debounce_ms && elapsed_ms >= 0) {
+    return;
   }
   s_last_gesture_time_s = now_s;
   s_last_gesture_time_ms = now_ms;
 
-  execute_gesture_action();
+  execute_gesture_action_dir(dir);
 }
 
 static void tap_handler(AccelAxisType axis, int32_t direction) {
-  handle_gesture();
+  int dir = (direction < 0) ? -1 : 1;
+  handle_gesture_dir(dir, 650);
 }
 
 static void accel_data_handler(AccelData *data, uint32_t num_samples) {
+  if (s_flick_sensitivity == FLICK_SENSITIVITY_TAPS_ONLY) {
+    return;
+  }
+
+  int threshold_xy = 680;
+  int threshold_z = 780;
+  int debounce_ms = 700;
+
+  if (s_flick_sensitivity == FLICK_SENSITIVITY_LOW) {
+    threshold_xy = 950;
+    threshold_z = 1050;
+    debounce_ms = 850;
+  } else if (s_flick_sensitivity == FLICK_SENSITIVITY_HIGH) {
+    threshold_xy = 450;
+    threshold_z = 550;
+    debounce_ms = 550;
+  }
+
   for (uint32_t i = 1; i < num_samples; i++) {
     int dx = data[i].x - data[i - 1].x;
     int dy = data[i].y - data[i - 1].y;
     int dz = data[i].z - data[i - 1].z;
-    if (abs(dx) > 380 || abs(dy) > 380 || abs(dz) > 480) {
-      handle_gesture();
+    if (abs(dx) > threshold_xy || abs(dy) > threshold_xy || abs(dz) > threshold_z) {
+      int dir = (dx < -250) ? -1 : 1;
+      handle_gesture_dir(dir, debounce_ms);
       break;
     }
   }
@@ -398,7 +429,7 @@ static void accel_data_handler(AccelData *data, uint32_t num_samples) {
 #if PBL_API_EXISTS(touch_service_subscribe)
 static void touch_handler(const TouchEvent *event, void *context) {
   if (event->type == TouchEvent_Touchdown) {
-    handle_gesture();
+    handle_gesture_dir(1, 500);
   }
 }
 #endif
@@ -904,6 +935,9 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     } else if (key == MESSAGE_KEY_AppKeyCycleSlot5) {
       s_cycle_slot5 = tuple_to_int(t, s_cycle_slot5);
       persist_write_int(STORAGE_KEY_CYCLE_SLOT_5, s_cycle_slot5);
+    } else if (key == MESSAGE_KEY_AppKeyFlickSensitivity) {
+      s_flick_sensitivity = tuple_to_int(t, s_flick_sensitivity);
+      persist_write_int(STORAGE_KEY_FLICK_SENSITIVITY, s_flick_sensitivity);
     }
   }
   layer_mark_dirty(s_canvas_layer);
@@ -970,6 +1004,9 @@ static void load_settings(void) {
   }
   if (persist_exists(STORAGE_KEY_CYCLE_SLOT_5)) {
     s_cycle_slot5 = persist_read_int(STORAGE_KEY_CYCLE_SLOT_5);
+  }
+  if (persist_exists(STORAGE_KEY_FLICK_SENSITIVITY)) {
+    s_flick_sensitivity = persist_read_int(STORAGE_KEY_FLICK_SENSITIVITY);
   }
 }
 

@@ -47,7 +47,8 @@
       "AppKeySoundEnabled": 10020,
       "AppKeyHourlyBeep": 10021,
       "AppKeyStepCelebration": 10022,
-      "AppKeyBtSound": 10023
+      "AppKeyBtSound": 10023,
+      "AppKeyFlickSensitivity": 10024
     },
     "targetPlatforms": [
       "emery",

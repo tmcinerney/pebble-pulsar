@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-and-validate:
-    name: Build & Validate PBW
+    name: Build & Validate Suite PBWs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -32,15 +32,14 @@ jobs:
         run: |
           devenv shell -- python3 tests/test_firmware.py
 
-      - name: Build Universal Pebble Bundle
+      - name: Build Monorepo Suite Bundles
         run: |
-          devenv shell -- pebble clean
-          devenv shell -- pebble build
-          python3 scripts/validate_pbw.py build/pebble-pulsar.pbw
+          devenv shell -- python3 scripts/build_all.py
+          python3 scripts/validate_pbw.py
 
-      - name: Upload PBW Artifact
+      - name: Upload PBW Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: pebble-pulsar.pbw
-          path: build/pebble-pulsar.pbw
+          name: pebble-pulsar-suite-pbws
+          path: dist/*.pbw
           retention-days: 14
