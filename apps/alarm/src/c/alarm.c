@@ -333,16 +333,35 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   const Colorway *palette = &active_palette;
   const AlarmSlot *slot = &s_alarms[s_active_slot_idx];
 
-  // 1. Background Fill (Flashing in red when alarm is ringing)
-  if (s_is_ringing && (s_ring_pulse_count % 2 == 1)) {
+  // 1. Background Fill: Maintain dark background so red LED dots stay 100% visible
+  graphics_context_set_fill_color(ctx, palette->outer_bg);
+  graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+
+  bool is_flash_frame = s_is_ringing && (s_ring_pulse_count % 2 == 1);
+
+  // 2. Alert Beacon Frame & Banner fills when ringing
+  int banner_h = bounds.size.w > 180 ? 28 : 22;
+  if (is_flash_frame) {
     graphics_context_set_fill_color(ctx, palette->lit);
-    graphics_fill_rect(ctx, bounds, 0, GCornerNone);
-  } else {
-    graphics_context_set_fill_color(ctx, palette->outer_bg);
-    graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(0, 0, bounds.size.w, banner_h), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(0, bounds.size.h - banner_h, bounds.size.w, banner_h), 0, GCornerNone);
+
+    graphics_context_set_stroke_color(ctx, palette->lit);
+    graphics_context_set_stroke_width(ctx, 2);
+    graphics_draw_rect(ctx, GRect(1, 1, bounds.size.w - 2, bounds.size.h - 2));
   }
 
-  // 2. Header
+  // Determine high-contrast text color for header and footer banners
+  Colorway banner_palette = *palette;
+  if (is_flash_frame) {
+    if (palette->outer_bg.argb == GColorWhite.argb) {
+      banner_palette.text_outer = GColorWhite;
+    } else {
+      banner_palette.text_outer = (palette->lit.argb == GColorWhite.argb || palette->lit.argb == GColorYellow.argb) ? GColorBlack : GColorWhite;
+    }
+  }
+
+  // 3. Header
   static char header_buffer[32];
   if (s_is_ringing) {
     snprintf(header_buffer, sizeof(header_buffer), "*  A L A R M  *");
@@ -351,9 +370,9 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   } else {
     snprintf(header_buffer, sizeof(header_buffer), "A L A R M   %d / %d", s_active_slot_idx + 1, NUM_ALARMS);
   }
-  pulsar_draw_header(ctx, bounds, header_buffer, palette);
+  pulsar_draw_header(ctx, bounds, header_buffer, &banner_palette);
 
-  // 3. Digits calculation
+  // 4. Digits calculation
   int display_hour = slot->hour;
   if (!clock_is_24h_style()) {
     display_hour = display_hour % 12;
@@ -377,7 +396,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   bool is_active = slot->enabled || (s_edit_mode != EDIT_NONE) || s_is_ringing;
   pulsar_draw_4digits(ctx, bounds, d1, d2, d3, d4, true, is_active, palette, is_active, s_italic_slant);
 
-  // 4. Micro-LED Bar: Slots 1-4 indicator or Days
+  // 5. Micro-LED Bar: Slots 1-4 indicator or Days
   bool beads[NUM_MICRO_BEADS] = {false};
   if (s_is_ringing) {
     for (int i = 0; i < NUM_MICRO_BEADS; i++) beads[i] = (s_ring_pulse_count % 2 == 0);
@@ -392,7 +411,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   }
   pulsar_draw_micro_beads(ctx, bounds, palette, is_active, beads);
 
-  // 5. Vintage Space-Age Footer
+  // 6. Vintage Space-Age Footer
   static char footer_buffer[32];
   if (s_is_ringing) {
     snprintf(footer_buffer, sizeof(footer_buffer), "S N O O Z E   ( %d M )", s_snooze_duration_min);
@@ -407,7 +426,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
              REPEAT_NAMES[slot->repeat], 
              slot->enabled ? "[ O N ]" : "[ O F F ]");
   }
-  pulsar_draw_footer(ctx, bounds, footer_buffer, palette);
+  pulsar_draw_footer(ctx, bounds, footer_buffer, &banner_palette);
 }
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {

@@ -299,20 +299,39 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   Colorway active_palette = pulsar_get_palette(s_colorway % NUM_COLORWAYS);
   const Colorway *palette = &active_palette;
 
-  // 1. Background Fill (Flashing in red when alarm firing)
-  if (s_is_alarm_firing && (s_alarm_flash_count % 2 == 1)) {
+  // 1. Background Fill: Maintain dark background so red LED dots stay 100% visible
+  graphics_context_set_fill_color(ctx, palette->outer_bg);
+  graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+
+  bool is_flash_frame = s_is_alarm_firing && (s_alarm_flash_count % 2 == 1);
+
+  // 2. Alert Beacon Frame & Banner fills when alarm firing
+  int banner_h = bounds.size.w > 180 ? 28 : 22;
+  if (is_flash_frame) {
     graphics_context_set_fill_color(ctx, palette->lit);
-    graphics_fill_rect(ctx, bounds, 0, GCornerNone);
-  } else {
-    graphics_context_set_fill_color(ctx, palette->outer_bg);
-    graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(0, 0, bounds.size.w, banner_h), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(0, bounds.size.h - banner_h, bounds.size.w, banner_h), 0, GCornerNone);
+
+    graphics_context_set_stroke_color(ctx, palette->lit);
+    graphics_context_set_stroke_width(ctx, 2);
+    graphics_draw_rect(ctx, GRect(1, 1, bounds.size.w - 2, bounds.size.h - 2));
   }
 
-  // 2. Header
-  const char *header_text = s_is_alarm_firing ? "* T I M E ' S  U P *" : "T I M E R";
-  pulsar_draw_header(ctx, bounds, header_text, palette);
+  // Determine high-contrast text color for header and footer banners
+  Colorway banner_palette = *palette;
+  if (is_flash_frame) {
+    if (palette->outer_bg.argb == GColorWhite.argb) {
+      banner_palette.text_outer = GColorWhite;
+    } else {
+      banner_palette.text_outer = (palette->lit.argb == GColorWhite.argb || palette->lit.argb == GColorYellow.argb) ? GColorBlack : GColorWhite;
+    }
+  }
 
-  // 3. Time calculation
+  // 3. Header
+  const char *header_text = s_is_alarm_firing ? "* T I M E ' S  U P *" : "T I M E R";
+  pulsar_draw_header(ctx, bounds, header_text, &banner_palette);
+
+  // 4. Time calculation
   int total_sec = s_remaining_sec;
   int mins = total_sec / 60;
   int secs = total_sec % 60;
@@ -322,14 +341,14 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   int d3 = secs / 10;
   int d4 = secs % 10;
 
-  // 4. Main 4-Digit Display
+  // 5. Main 4-Digit Display
   bool colon_lit = s_is_running ? (secs % 2 == 0) : true;
   pulsar_draw_4digits(ctx, bounds, d1, d2, d3, d4, true, colon_lit, palette, true, s_italic_slant);
 
-  // 5. 10-Dot Micro-LED Progress Bar
+  // 6. 10-Dot Micro-LED Progress Bar
   pulsar_draw_progress_beads(ctx, bounds, palette, true, s_remaining_sec, s_total_duration_sec);
 
-  // 6. Vintage Space-Age Footer
+  // 7. Vintage Space-Age Footer
   static char footer_buffer[32];
   if (s_is_alarm_firing) {
     snprintf(footer_buffer, sizeof(footer_buffer), "★  A L E R T  ★");
@@ -340,7 +359,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   } else {
     snprintf(footer_buffer, sizeof(footer_buffer), "%s", PRESETS[s_preset_index].name);
   }
-  pulsar_draw_footer(ctx, bounds, footer_buffer, palette);
+  pulsar_draw_footer(ctx, bounds, footer_buffer, &banner_palette);
 }
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
