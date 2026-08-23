@@ -1308,6 +1308,10 @@ static void main_window_load(Window *window) {
   s_canvas_layer = layer_create(bounds);
   layer_set_update_proc(s_canvas_layer, canvas_update_proc);
   layer_add_child(window_layer, s_canvas_layer);
+
+#if PBL_API_EXISTS(window_set_touch_bridge_disabled)
+  window_set_touch_bridge_disabled(window, true);
+#endif
 }
 
 static void main_window_unload(Window *window) {
@@ -1335,9 +1339,7 @@ static void init(void) {
   tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
   accel_tap_service_subscribe(tap_handler);
 #if PBL_API_EXISTS(touch_service_subscribe)
-  if (touch_service_is_enabled()) {
-    touch_service_subscribe(touch_handler, NULL);
-  }
+  touch_service_subscribe(touch_handler, NULL);
 #endif
   connection_service_subscribe((ConnectionHandlers) {
     .pebble_app_connection_handler = bluetooth_callback
@@ -1364,9 +1366,7 @@ static void deinit(void) {
   health_service_events_unsubscribe();
 #endif
 #if PBL_API_EXISTS(touch_service_subscribe)
-  if (touch_service_is_enabled()) {
-    touch_service_unsubscribe();
-  }
+  touch_service_unsubscribe();
 #endif
   battery_state_service_unsubscribe();
   connection_service_unsubscribe();
