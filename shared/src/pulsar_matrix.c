@@ -75,7 +75,7 @@ void pulsar_draw_digit_custom(GContext *ctx, int x_offset, int y_offset, int dig
                              int spacing_x, int spacing_y, int dot_radius, bool italic_slant) {
   if (digit_index < 0 || digit_index >= NUM_GLYPHS) digit_index = GLYPH_BLANK;
   
-  int slant_scale = (bounds_w > 180) ? 7 : 5;
+  int slant_scale = italic_slant ? spacing_x : 0;
   
   for (int r = 0; r < DIGIT_HEIGHT; r++) {
     uint8_t row_bits = FONT_5X7[digit_index][r];
@@ -91,9 +91,15 @@ void pulsar_draw_digit_custom(GContext *ctx, int x_offset, int y_offset, int dig
         graphics_fill_circle(ctx, GPoint(dot_x, dot_y), dot_radius);
       } else {
 #if defined(PBL_COLOR)
-        // Subtle ghost die beneath dark crystal on 64-color displays
-        graphics_context_set_fill_color(ctx, palette->ghost);
-        graphics_fill_circle(ctx, GPoint(dot_x, dot_y), 1);
+        if (palette->outer_bg.argb != GColorWhite.argb) {
+          graphics_context_set_stroke_color(ctx, palette->ghost);
+          if (dot_radius > 1) {
+            graphics_context_set_fill_color(ctx, palette->ghost);
+            graphics_fill_circle(ctx, GPoint(dot_x, dot_y), 1);
+          } else {
+            graphics_draw_pixel(ctx, GPoint(dot_x, dot_y));
+          }
+        }
 #else
         // Pure black / white on 1-bit monochrome (no dither noise)
 #endif
@@ -133,11 +139,10 @@ void pulsar_draw_colon(GContext *ctx, int colon_base_x, int start_y,
 #endif
 }
 
-void pulsar_draw_4digits(GContext *ctx, GRect bounds, int d1, int d2, int d3, int d4, 
-                         bool show_colon, bool colon_lit, const Colorway *palette, 
-                         bool is_active, bool italic_slant) {
+void pulsar_draw_4digits_at_y(GContext *ctx, GRect bounds, int start_y, int d1, int d2, int d3, int d4, 
+                             bool show_colon, bool colon_lit, const Colorway *palette, 
+                             bool is_active, bool italic_slant) {
   int digit_span_x = (DIGIT_WIDTH - 1) * DOT_SPACING_X;
-  int start_y = TOP_MARGIN;
   int slant_scale = (bounds.size.w > 180) ? 7 : 5;
   int max_slant = italic_slant ? slant_scale : 0;
 
@@ -148,17 +153,21 @@ void pulsar_draw_4digits(GContext *ctx, GRect bounds, int d1, int d2, int d3, in
   int d2_x = d1_x + digit_span_x + DIGIT_GAP;
   int d3_x = d2_x + digit_span_x + COLON_GAP;
   int d4_x = d3_x + digit_span_x + DIGIT_GAP;
-  
+
   pulsar_draw_digit(ctx, d1_x, start_y, d1, palette, is_active, bounds.size.w, italic_slant);
   pulsar_draw_digit(ctx, d2_x, start_y, d2, palette, is_active, bounds.size.w, italic_slant);
-  pulsar_draw_digit(ctx, d3_x, start_y, d3, palette, is_active, bounds.size.w, italic_slant);
-  pulsar_draw_digit(ctx, d4_x, start_y, d4, palette, is_active, bounds.size.w, italic_slant);
-  
   if (show_colon) {
-    int d2_right = d2_x + digit_span_x;
-    int colon_base_x = d2_right + (COLON_GAP / 2);
+    int colon_base_x = d2_x + digit_span_x + (COLON_GAP / 2) - 1;
     pulsar_draw_colon(ctx, colon_base_x, start_y, palette, is_active, colon_lit, bounds.size.w, italic_slant);
   }
+  pulsar_draw_digit(ctx, d3_x, start_y, d3, palette, is_active, bounds.size.w, italic_slant);
+  pulsar_draw_digit(ctx, d4_x, start_y, d4, palette, is_active, bounds.size.w, italic_slant);
+}
+
+void pulsar_draw_4digits(GContext *ctx, GRect bounds, int d1, int d2, int d3, int d4, 
+                         bool show_colon, bool colon_lit, const Colorway *palette, 
+                         bool is_active, bool italic_slant) {
+  pulsar_draw_4digits_at_y(ctx, bounds, TOP_MARGIN, d1, d2, d3, d4, show_colon, colon_lit, palette, is_active, italic_slant);
 }
 
 void pulsar_draw_5digits(GContext *ctx, GRect bounds, const int digits[5], 

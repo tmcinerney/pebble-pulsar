@@ -44,6 +44,10 @@ void pulsar_draw_colon(GContext *ctx, int colon_base_x, int start_y,
                        const Colorway *palette, bool is_active, bool colon_lit, 
                        int bounds_w, bool italic_slant);
 
+void pulsar_draw_4digits_at_y(GContext *ctx, GRect bounds, int start_y, int d1, int d2, int d3, int d4, 
+                             bool show_colon, bool colon_lit, const Colorway *palette, 
+                             bool is_active, bool italic_slant);
+
 void pulsar_draw_4digits(GContext *ctx, GRect bounds, int d1, int d2, int d3, int d4, 
                          bool show_colon, bool colon_lit, const Colorway *palette, 
                          bool is_active, bool italic_slant);

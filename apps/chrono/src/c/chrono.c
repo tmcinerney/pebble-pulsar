@@ -199,36 +199,42 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   int d3 = secs / 10;
   int d4 = secs % 10;
 
-  // 4. Main MM:SS Digits
+  // 4. Main MM:SS Digits (Shifted up to give breathing room for sub-seconds)
+  int main_y = bounds.size.w > 180 ? 44 : 30;
   bool colon_lit = s_is_running ? ((elapsed_ms % 1000) < 500) : true;
-  pulsar_draw_4digits(ctx, bounds, d1, d2, d3, d4, true, colon_lit, palette, true, s_italic_slant);
+  pulsar_draw_4digits_at_y(ctx, bounds, main_y, d1, d2, d3, d4, true, colon_lit, palette, true, s_italic_slant);
 
-  // 5. Centiseconds Sub-Display (Right aligned / beneath)
+  // 5. Centiseconds Sub-Display (Centered beneath main digits)
   int sub_c1 = centis / 10;
   int sub_c2 = centis % 10;
   int sub_spacing_x = bounds.size.w > 180 ? 4 : 3;
   int sub_spacing_y = bounds.size.w > 180 ? 5 : 4;
   int sub_dot_radius = 1;
-  int sub_gap = bounds.size.w > 180 ? 8 : 6;
+  int sub_gap = bounds.size.w > 180 ? 6 : 4;
+  int dot_gap = bounds.size.w > 180 ? 6 : 4;
   int sub_span = (DIGIT_WIDTH - 1) * sub_spacing_x;
-  int sub_y = bounds.size.w > 180 ? 122 : 88;
-  int sub_total_w = (sub_span * 2) + sub_gap + 8;
+  int sub_y = bounds.size.w > 180 ? 104 : 74;
+  int sub_slant = s_italic_slant ? sub_spacing_x : 0;
+  int sub_total_w = (sub_span * 2) + sub_gap + dot_gap + sub_slant;
   int sub_start_x = (bounds.size.w - sub_total_w) / 2;
 
   // Decimal dot
+  int dot_x = sub_start_x;
+  int dot_y = sub_y + (DIGIT_HEIGHT - 1) * sub_spacing_y;
   graphics_context_set_fill_color(ctx, palette->lit);
-  graphics_fill_circle(ctx, GPoint(sub_start_x, sub_y + (DIGIT_HEIGHT * sub_spacing_y) - 2), sub_dot_radius);
+  graphics_fill_circle(ctx, GPoint(dot_x, dot_y), sub_dot_radius);
 
   // Sub digits
-  int c1_x = sub_start_x + 8;
+  int c1_x = sub_start_x + dot_gap;
   int c2_x = c1_x + sub_span + sub_gap;
   pulsar_draw_digit_custom(ctx, c1_x, sub_y, sub_c1, palette, true, bounds.size.w, 
                            sub_spacing_x, sub_spacing_y, sub_dot_radius, s_italic_slant);
   pulsar_draw_digit_custom(ctx, c2_x, sub_y, sub_c2, palette, true, bounds.size.w, 
                            sub_spacing_x, sub_spacing_y, sub_dot_radius, s_italic_slant);
 
-  // 6. Tachymeter Micro-LED Chaser
-  pulsar_draw_tachymeter_beads(ctx, bounds, palette, true, elapsed_ms, s_is_running);
+  // 6. Tachymeter Micro-LED Chaser (Placed cleanly below centiseconds)
+  int bead_y = bounds.size.w > 180 ? 152 : 114;
+  pulsar_draw_tachymeter_beads_at_y(ctx, bounds, bead_y, palette, true, elapsed_ms, s_is_running);
 
   // 7. Footer Status
   static char footer_buffer[32];

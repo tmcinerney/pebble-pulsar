@@ -1,13 +1,12 @@
 #include "pulsar_micro_bar.h"
 
-void pulsar_draw_micro_beads(GContext *ctx, GRect bounds, const Colorway *palette, 
-                             bool is_active, const bool beads_lit[NUM_MICRO_BEADS]) {
+void pulsar_draw_micro_beads_at_y(GContext *ctx, GRect bounds, int bead_y, const Colorway *palette, 
+                                 bool is_active, const bool beads_lit[NUM_MICRO_BEADS]) {
   int num_beads = NUM_MICRO_BEADS;
   int bead_spacing = bounds.size.w > 180 ? 10 : 7;
   int bead_radius = bounds.size.w > 180 ? 2 : 1;
   int total_bead_width = (num_beads - 1) * bead_spacing;
   int start_x = (bounds.size.w - total_bead_width) / 2;
-  int bead_y = bounds.size.w > 180 ? 148 : 108;
 
   for (int i = 0; i < num_beads; i++) {
     bool lit = is_active && beads_lit[i];
@@ -34,8 +33,14 @@ void pulsar_draw_micro_beads(GContext *ctx, GRect bounds, const Colorway *palett
   }
 }
 
-void pulsar_draw_tachymeter_beads(GContext *ctx, GRect bounds, const Colorway *palette, 
-                                  bool is_active, uint32_t elapsed_ms, bool is_running) {
+void pulsar_draw_micro_beads(GContext *ctx, GRect bounds, const Colorway *palette, 
+                             bool is_active, const bool beads_lit[NUM_MICRO_BEADS]) {
+  int bead_y = bounds.size.w > 180 ? 148 : 108;
+  pulsar_draw_micro_beads_at_y(ctx, bounds, bead_y, palette, is_active, beads_lit);
+}
+
+void pulsar_draw_tachymeter_beads_at_y(GContext *ctx, GRect bounds, int bead_y, const Colorway *palette, 
+                                      bool is_active, uint32_t elapsed_ms, bool is_running) {
   bool beads[NUM_MICRO_BEADS] = {false};
   if (is_running) {
     // 1970s LED Chaser / Tachymeter sweep (1-second full sweep across 10 beads)
@@ -43,7 +48,13 @@ void pulsar_draw_tachymeter_beads(GContext *ctx, GRect bounds, const Colorway *p
     beads[phase] = true;
     if (phase > 0) beads[phase - 1] = true;
   }
-  pulsar_draw_micro_beads(ctx, bounds, palette, is_active, beads);
+  pulsar_draw_micro_beads_at_y(ctx, bounds, bead_y, palette, is_active, beads);
+}
+
+void pulsar_draw_tachymeter_beads(GContext *ctx, GRect bounds, const Colorway *palette, 
+                                  bool is_active, uint32_t elapsed_ms, bool is_running) {
+  int bead_y = bounds.size.w > 180 ? 148 : 108;
+  pulsar_draw_tachymeter_beads_at_y(ctx, bounds, bead_y, palette, is_active, elapsed_ms, is_running);
 }
 
 void pulsar_draw_progress_beads(GContext *ctx, GRect bounds, const Colorway *palette, 

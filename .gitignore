@@ -17,6 +17,7 @@ apps/*/package-lock.json
 # Nix / Devenv
 .devenv/
 .devenv.flake.nix
+screenshot.png
 
 # OS & Editor Files
 .DS_Store
