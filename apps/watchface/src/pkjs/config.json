@@ -335,6 +335,10 @@
           {
             "label": "Taps Only (Physical bezel/glass taps, no wrist rotation)",
             "value": "3"
+          },
+          {
+            "label": "Disabled / Off (No gesture screen switching)",
+            "value": "4"
           }
         ]
       },

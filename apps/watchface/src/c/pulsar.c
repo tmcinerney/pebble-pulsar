@@ -72,7 +72,8 @@ enum FlickSensitivity {
   FLICK_SENSITIVITY_BALANCED = 0,
   FLICK_SENSITIVITY_LOW = 1,
   FLICK_SENSITIVITY_HIGH = 2,
-  FLICK_SENSITIVITY_TAPS_ONLY = 3
+  FLICK_SENSITIVITY_TAPS_ONLY = 3,
+  FLICK_SENSITIVITY_OFF = 4
 };
 
 // Charging Styles
@@ -347,6 +348,9 @@ static time_t s_last_gesture_time_s = 0;
 static uint16_t s_last_gesture_time_ms = 0;
 
 static void execute_gesture_action_dir(int dir) {
+  if (s_flick_sensitivity == FLICK_SENSITIVITY_OFF) {
+    return;
+  }
   light_enable_interaction();
   if (s_operating_mode == MODE_STEALTH) {
     if (!s_stealth_awake) {
@@ -391,34 +395,50 @@ static void handle_gesture_dir(int dir, int debounce_ms) {
 }
 
 static void tap_handler(AccelAxisType axis, int32_t direction) {
+  if (s_flick_sensitivity == FLICK_SENSITIVITY_OFF) {
+    return;
+  }
+
+  // When Taps Only is selected, reject all X and Y axis events (wrist flicks/rotations)
+  // and ONLY accept Z axis impact (physical tapping on crystal or bezel)
+  if (s_flick_sensitivity == FLICK_SENSITIVITY_TAPS_ONLY && axis != ACCEL_AXIS_Z) {
+    return;
+  }
+
+  // In Low sensitivity mode, ignore OS tap triggers on X/Y to let accel_data_handler enforce high jerk threshold
+  if (s_flick_sensitivity == FLICK_SENSITIVITY_LOW && axis != ACCEL_AXIS_Z) {
+    return;
+  }
+
   int debounce = 800;
   if (s_flick_sensitivity == FLICK_SENSITIVITY_LOW) {
     debounce = 1100;
   } else if (s_flick_sensitivity == FLICK_SENSITIVITY_HIGH) {
     debounce = 500;
   } else if (s_flick_sensitivity == FLICK_SENSITIVITY_TAPS_ONLY) {
-    debounce = 700;
+    debounce = 650;
   }
   int dir = (direction < 0) ? -1 : 1;
   handle_gesture_dir(dir, debounce);
 }
 
 static void accel_data_handler(AccelData *data, uint32_t num_samples) {
-  if (s_flick_sensitivity == FLICK_SENSITIVITY_TAPS_ONLY) {
-    return; // Ignore wrist rotation completely when in Taps Only mode
+  if (s_flick_sensitivity == FLICK_SENSITIVITY_TAPS_ONLY ||
+      s_flick_sensitivity == FLICK_SENSITIVITY_OFF) {
+    return; // Ignore wrist rotation completely when in Taps Only or Off modes
   }
 
-  int threshold_xy = 680;
-  int threshold_z = 780;
-  int debounce_ms = 800;
+  int threshold_xy = 750;
+  int threshold_z = 850;
+  int debounce_ms = 850;
 
   if (s_flick_sensitivity == FLICK_SENSITIVITY_LOW) {
-    threshold_xy = 1100;
-    threshold_z = 1200;
-    debounce_ms = 1100;
+    threshold_xy = 1300;
+    threshold_z = 1400;
+    debounce_ms = 1200;
   } else if (s_flick_sensitivity == FLICK_SENSITIVITY_HIGH) {
-    threshold_xy = 380;
-    threshold_z = 480;
+    threshold_xy = 400;
+    threshold_z = 500;
     debounce_ms = 500;
   }
 
