@@ -391,27 +391,35 @@ static void handle_gesture_dir(int dir, int debounce_ms) {
 }
 
 static void tap_handler(AccelAxisType axis, int32_t direction) {
+  int debounce = 800;
+  if (s_flick_sensitivity == FLICK_SENSITIVITY_LOW) {
+    debounce = 1100;
+  } else if (s_flick_sensitivity == FLICK_SENSITIVITY_HIGH) {
+    debounce = 500;
+  } else if (s_flick_sensitivity == FLICK_SENSITIVITY_TAPS_ONLY) {
+    debounce = 700;
+  }
   int dir = (direction < 0) ? -1 : 1;
-  handle_gesture_dir(dir, 650);
+  handle_gesture_dir(dir, debounce);
 }
 
 static void accel_data_handler(AccelData *data, uint32_t num_samples) {
   if (s_flick_sensitivity == FLICK_SENSITIVITY_TAPS_ONLY) {
-    return;
+    return; // Ignore wrist rotation completely when in Taps Only mode
   }
 
   int threshold_xy = 680;
   int threshold_z = 780;
-  int debounce_ms = 700;
+  int debounce_ms = 800;
 
   if (s_flick_sensitivity == FLICK_SENSITIVITY_LOW) {
-    threshold_xy = 950;
-    threshold_z = 1050;
-    debounce_ms = 850;
+    threshold_xy = 1100;
+    threshold_z = 1200;
+    debounce_ms = 1100;
   } else if (s_flick_sensitivity == FLICK_SENSITIVITY_HIGH) {
-    threshold_xy = 450;
-    threshold_z = 550;
-    debounce_ms = 550;
+    threshold_xy = 380;
+    threshold_z = 480;
+    debounce_ms = 500;
   }
 
   for (uint32_t i = 1; i < num_samples; i++) {
