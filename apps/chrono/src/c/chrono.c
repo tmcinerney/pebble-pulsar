@@ -114,9 +114,7 @@ static void start_stopwatch(void) {
     s_freeze_timer = NULL;
   }
   update_backlight();
-  if (s_audio_enabled || s_vibe_enabled) {
-    pulsar_sound_start();
-  }
+  pulsar_sound_start(s_audio_enabled, s_vibe_enabled);
   if (!s_refresh_timer) {
     s_refresh_timer = app_timer_register(REFRESH_RATE_MS, refresh_timer_callback, NULL);
   }
@@ -137,9 +135,7 @@ static void stop_stopwatch(void) {
     app_timer_cancel(s_refresh_timer);
     s_refresh_timer = NULL;
   }
-  if (s_audio_enabled || s_vibe_enabled) {
-    pulsar_sound_stop();
-  }
+  pulsar_sound_stop(s_audio_enabled, s_vibe_enabled);
   layer_mark_dirty(s_canvas_layer);
 }
 
@@ -151,9 +147,7 @@ static void record_lap(void) {
     s_frozen_lap_idx = s_lap_count;
     s_lap_count++;
     s_is_frozen = true;
-    if (s_audio_enabled || s_vibe_enabled) {
-      pulsar_sound_lap();
-    }
+    pulsar_sound_lap(s_audio_enabled, s_vibe_enabled);
     if (s_freeze_timer) {
       app_timer_cancel(s_freeze_timer);
     }
@@ -168,9 +162,7 @@ static void reset_stopwatch(void) {
   s_browse_lap_idx = -1;
   s_is_frozen = false;
   s_frozen_lap_idx = -1;
-  if (s_audio_enabled || s_vibe_enabled) {
-    pulsar_sound_reset();
-  }
+  pulsar_sound_reset(s_audio_enabled, s_vibe_enabled);
   layer_mark_dirty(s_canvas_layer);
 }
 
@@ -181,9 +173,7 @@ static void clear_all_laps(void) {
   s_accumulated_ms = 0;
   s_is_frozen = false;
   s_frozen_lap_idx = -1;
-  if (s_audio_enabled || s_vibe_enabled) {
-    pulsar_sound_reset();
-  }
+  pulsar_sound_reset(s_audio_enabled, s_vibe_enabled);
   layer_mark_dirty(s_canvas_layer);
 }
 
@@ -193,9 +183,7 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   } else {
     if (s_browse_lap_idx >= 0) {
       s_browse_lap_idx = -1; // exit browse mode back to live total view
-      if (s_audio_enabled || s_vibe_enabled) {
-        pulsar_sound_start();
-      }
+      pulsar_sound_start(s_audio_enabled, s_vibe_enabled);
       layer_mark_dirty(s_canvas_layer);
     } else {
       start_stopwatch();
@@ -216,9 +204,7 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
       } else {
         s_browse_lap_idx = -1; // wrap back to total view
       }
-      if (s_audio_enabled || s_vibe_enabled) {
-        pulsar_sound_lap();
-      }
+      pulsar_sound_lap(s_audio_enabled, s_vibe_enabled);
       layer_mark_dirty(s_canvas_layer);
     }
   }
@@ -238,15 +224,11 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   } else {
     if (s_browse_lap_idx > 0) {
       s_browse_lap_idx--;
-      if (s_audio_enabled || s_vibe_enabled) {
-        pulsar_sound_lap();
-      }
+      pulsar_sound_lap(s_audio_enabled, s_vibe_enabled);
       layer_mark_dirty(s_canvas_layer);
     } else if (s_browse_lap_idx == 0) {
       s_browse_lap_idx = -1;
-      if (s_audio_enabled || s_vibe_enabled) {
-        pulsar_sound_lap();
-      }
+      pulsar_sound_lap(s_audio_enabled, s_vibe_enabled);
       layer_mark_dirty(s_canvas_layer);
     } else {
       reset_stopwatch();

@@ -2,9 +2,9 @@
 #include <pebble.h>
 
 void pulsar_audio_init(void);
-void pulsar_sound_start(void);
-void pulsar_sound_stop(void);
-void pulsar_sound_lap(void);
-void pulsar_sound_reset(void);
-void pulsar_sound_countdown_tick(int sec_remaining);
-void pulsar_sound_alarm_pulse(void);
+void pulsar_sound_start(bool audio, bool vibe);
+void pulsar_sound_stop(bool audio, bool vibe);
+void pulsar_sound_lap(bool audio, bool vibe);
+void pulsar_sound_reset(bool audio, bool vibe);
+void pulsar_sound_countdown_tick(int sec_remaining, bool audio, bool vibe);
+void pulsar_sound_alarm_pulse(bool audio, bool vibe);

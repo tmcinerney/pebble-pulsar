@@ -148,9 +148,7 @@ static void ring_pulse_callback(void *data) {
   s_ring_timer = NULL;
   if (s_is_ringing) {
     s_ring_pulse_count++;
-    if (s_audio_enabled || s_vibe_enabled) {
-      pulsar_sound_alarm_pulse();
-    }
+    pulsar_sound_alarm_pulse(s_audio_enabled, s_vibe_enabled);
     layer_mark_dirty(s_canvas_layer);
     // Limit continuous ringing to 60 pulses (30 seconds)
     if (s_ring_pulse_count < 60) {
@@ -194,9 +192,7 @@ static void snooze_alarm(void) {
   }
   s_scheduled_wakeup_id = wakeup_schedule(snooze_target, WAKEUP_COOKIE_ALARM, true);
   
-  if (s_audio_enabled || s_vibe_enabled) {
-    pulsar_sound_lap();
-  }
+  pulsar_sound_lap(s_audio_enabled, s_vibe_enabled);
   layer_mark_dirty(s_canvas_layer);
 }
 
@@ -233,24 +229,24 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
     // Toggle active alarm ON / OFF
     s_alarms[s_active_slot_idx].enabled = !s_alarms[s_active_slot_idx].enabled;
     if (s_alarms[s_active_slot_idx].enabled) {
-      pulsar_sound_start();
+      pulsar_sound_start(s_audio_enabled, s_vibe_enabled);
     } else {
-      pulsar_sound_stop();
+      pulsar_sound_stop(s_audio_enabled, s_vibe_enabled);
     }
     schedule_earliest_alarm();
     layer_mark_dirty(s_canvas_layer);
   } else if (s_edit_mode == EDIT_HOUR) {
     s_edit_mode = EDIT_MINUTE;
-    pulsar_sound_start();
+    pulsar_sound_start(s_audio_enabled, s_vibe_enabled);
     layer_mark_dirty(s_canvas_layer);
   } else if (s_edit_mode == EDIT_MINUTE) {
     s_edit_mode = EDIT_REPEAT;
-    pulsar_sound_start();
+    pulsar_sound_start(s_audio_enabled, s_vibe_enabled);
     layer_mark_dirty(s_canvas_layer);
   } else if (s_edit_mode == EDIT_REPEAT) {
     s_edit_mode = EDIT_NONE;
     s_alarms[s_active_slot_idx].enabled = true; // Auto-enable edited alarm
-    pulsar_sound_lap();
+    pulsar_sound_lap(s_audio_enabled, s_vibe_enabled);
     update_blink_loop();
     schedule_earliest_alarm();
     layer_mark_dirty(s_canvas_layer);
@@ -266,7 +262,7 @@ static void select_long_click_handler(ClickRecognizerRef recognizer, void *conte
   if (s_edit_mode == EDIT_NONE) {
     s_edit_mode = EDIT_HOUR;
     s_blink_state = true;
-    pulsar_sound_lap();
+    pulsar_sound_lap(s_audio_enabled, s_vibe_enabled);
     update_blink_loop();
     layer_mark_dirty(s_canvas_layer);
   }
@@ -282,7 +278,7 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
     // Switch to previous alarm slot
     s_active_slot_idx--;
     if (s_active_slot_idx < 0) s_active_slot_idx = NUM_ALARMS - 1;
-    pulsar_sound_start();
+    pulsar_sound_start(s_audio_enabled, s_vibe_enabled);
     layer_mark_dirty(s_canvas_layer);
   } else if (s_edit_mode == EDIT_HOUR) {
     s_alarms[s_active_slot_idx].hour = (s_alarms[s_active_slot_idx].hour + 1) % 24;
@@ -306,7 +302,7 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
     // Switch to next alarm slot
     s_active_slot_idx++;
     if (s_active_slot_idx >= NUM_ALARMS) s_active_slot_idx = 0;
-    pulsar_sound_start();
+    pulsar_sound_start(s_audio_enabled, s_vibe_enabled);
     layer_mark_dirty(s_canvas_layer);
   } else if (s_edit_mode == EDIT_HOUR) {
     s_alarms[s_active_slot_idx].hour = (s_alarms[s_active_slot_idx].hour + 23) % 24;

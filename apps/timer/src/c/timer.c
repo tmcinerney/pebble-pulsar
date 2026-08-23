@@ -83,9 +83,7 @@ static void timer_tick_callback(void *data) {
   if (s_is_running) {
     update_remaining_from_clock();
     if (s_remaining_sec <= 3 && s_remaining_sec > 0) {
-      if (s_audio_enabled || s_vibe_enabled) {
-        pulsar_sound_countdown_tick(s_remaining_sec);
-      }
+      pulsar_sound_countdown_tick(s_remaining_sec, s_audio_enabled, s_vibe_enabled);
     }
     
     if (s_remaining_sec <= 0) {
@@ -102,9 +100,7 @@ static void alarm_pulse_callback(void *data) {
   s_alarm_pulse_timer = NULL;
   if (s_is_alarm_firing) {
     s_alarm_flash_count++;
-    if (s_audio_enabled || s_vibe_enabled) {
-      pulsar_sound_alarm_pulse();
-    }
+    pulsar_sound_alarm_pulse(s_audio_enabled, s_vibe_enabled);
     layer_mark_dirty(s_canvas_layer);
     // Limit alarm ringing to 60 pulses (30 seconds)
     if (s_alarm_flash_count < 60) {
@@ -163,9 +159,7 @@ static void start_timer(void) {
   }
   s_wakeup_id = wakeup_schedule(s_target_epoch, WAKEUP_COOKIE_TIMER, true);
 
-  if (s_audio_enabled || s_vibe_enabled) {
-    pulsar_sound_start();
-  }
+  pulsar_sound_start(s_audio_enabled, s_vibe_enabled);
 
   if (s_tick_timer) {
     app_timer_cancel(s_tick_timer);
@@ -191,9 +185,7 @@ static void pause_timer(void) {
     s_tick_timer = NULL;
   }
 
-  if (s_audio_enabled || s_vibe_enabled) {
-    pulsar_sound_stop();
-  }
+  pulsar_sound_stop(s_audio_enabled, s_vibe_enabled);
   layer_mark_dirty(s_canvas_layer);
 }
 
@@ -219,9 +211,7 @@ static void reset_timer(void) {
   s_total_duration_sec = PRESETS[s_preset_index].seconds;
   s_remaining_sec = s_total_duration_sec;
   
-  if (s_audio_enabled || s_vibe_enabled) {
-    pulsar_sound_reset();
-  }
+  pulsar_sound_reset(s_audio_enabled, s_vibe_enabled);
   layer_mark_dirty(s_canvas_layer);
 }
 
@@ -250,9 +240,7 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
       wakeup_cancel(s_wakeup_id);
       s_wakeup_id = wakeup_schedule(s_target_epoch, WAKEUP_COOKIE_TIMER, true);
     }
-    if (s_audio_enabled || s_vibe_enabled) {
-      pulsar_sound_lap();
-    }
+    pulsar_sound_lap(s_audio_enabled, s_vibe_enabled);
     layer_mark_dirty(s_canvas_layer);
   } else if (!s_is_paused) {
     // Cycle preset up
@@ -260,9 +248,7 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
     if (s_preset_index < 0) s_preset_index = NUM_PRESETS - 1;
     s_total_duration_sec = PRESETS[s_preset_index].seconds;
     s_remaining_sec = s_total_duration_sec;
-    if (s_audio_enabled || s_vibe_enabled) {
-      pulsar_sound_start();
-    }
+    pulsar_sound_start(s_audio_enabled, s_vibe_enabled);
     layer_mark_dirty(s_canvas_layer);
   }
 }
@@ -282,9 +268,7 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
         wakeup_cancel(s_wakeup_id);
         s_wakeup_id = wakeup_schedule(s_target_epoch, WAKEUP_COOKIE_TIMER, true);
       }
-      if (s_audio_enabled || s_vibe_enabled) {
-        pulsar_sound_stop();
-      }
+      pulsar_sound_stop(s_audio_enabled, s_vibe_enabled);
       layer_mark_dirty(s_canvas_layer);
     }
   } else if (s_is_paused) {
@@ -295,9 +279,7 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
     if (s_preset_index >= NUM_PRESETS) s_preset_index = 0;
     s_total_duration_sec = PRESETS[s_preset_index].seconds;
     s_remaining_sec = s_total_duration_sec;
-    if (s_audio_enabled || s_vibe_enabled) {
-      pulsar_sound_start();
-    }
+    pulsar_sound_start(s_audio_enabled, s_vibe_enabled);
     layer_mark_dirty(s_canvas_layer);
   }
 }
