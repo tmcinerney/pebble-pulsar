@@ -1155,27 +1155,33 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       persist_write_int(STORAGE_KEY_STEP_GOAL, s_step_goal);
       APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyStepGoal: %d", s_step_goal);
     } else if (key == MESSAGE_KEY_AppKeyChargingStyle) {
-      s_charging_style = tuple_to_int(t, s_charging_style);
+      int new_style = tuple_to_int(t, s_charging_style);
+      bool changed = (new_style != s_charging_style);
+      s_charging_style = new_style;
       persist_write_int(STORAGE_KEY_CHARGING_STYLE, s_charging_style);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyChargingStyle: %d", s_charging_style);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyChargingStyle: %d (changed: %d)", s_charging_style, (int)changed);
       
-      // Trigger 12-second high-speed live preview on watch
-      s_charging_preview = true;
-      s_anim_frame = 0;
-      if (s_preview_timer) {
-        app_timer_cancel(s_preview_timer);
+      if (changed && (s_charging_style != CHARGING_STYLE_OFF)) {
+        // Trigger 12-second live preview only when the user actively changes the style
+        s_charging_preview = true;
+        s_anim_frame = 0;
+        if (s_preview_timer) {
+          app_timer_cancel(s_preview_timer);
+        }
+        s_preview_timer = app_timer_register(12000, preview_timer_callback, NULL);
       }
-      s_preview_timer = app_timer_register(12000, preview_timer_callback, NULL);
       update_charging_animation();
     } else if (key == MESSAGE_KEY_AppKeyNightlight) {
-      s_nightlight = tuple_to_bool(t, s_nightlight);
+      bool new_nightlight = tuple_to_bool(t, s_nightlight);
+      bool changed = (new_nightlight != s_nightlight);
+      s_nightlight = new_nightlight;
       persist_write_bool(STORAGE_KEY_NIGHTLIGHT, s_nightlight);
-      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyNightlight: %d", (int)s_nightlight);
+      APP_LOG(APP_LOG_LEVEL_INFO, "AppKeyNightlight: %d (changed: %d)", (int)s_nightlight, (int)changed);
       
-      if (s_nightlight) {
+      if (changed && s_nightlight) {
         light_enable(true);
         if (!s_battery_charging && !s_battery_plugged) {
-          // 5-second preview of backlight when saving setting off dock
+          // 5-second preview of backlight only when user actively toggles it on
           if (s_preview_timer) app_timer_cancel(s_preview_timer);
           s_preview_timer = app_timer_register(5000, preview_timer_callback, NULL);
         }
