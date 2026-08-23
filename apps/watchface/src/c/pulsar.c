@@ -332,7 +332,10 @@ static void advance_display_mode(void) {
   trigger_display_change(next_mode);
 }
 
-static void tap_handler(AccelAxisType axis, int32_t direction) {
+static time_t s_last_gesture_time_s = 0;
+static uint16_t s_last_gesture_time_ms = 0;
+
+static void execute_gesture_action(void) {
   light_enable_interaction();
   if (s_operating_mode == MODE_STEALTH) {
     if (!s_stealth_awake) {
@@ -363,10 +366,39 @@ static void tap_handler(AccelAxisType axis, int32_t direction) {
   }
 }
 
+static void handle_gesture(void) {
+  time_t now_s;
+  uint16_t now_ms = time_ms(&now_s, NULL);
+  int elapsed_ms = (int)((now_s - s_last_gesture_time_s) * 1000 + (now_ms - s_last_gesture_time_ms));
+  if (elapsed_ms < 500 && elapsed_ms >= 0) {
+    return; // 500ms debounce to prevent double-skipping
+  }
+  s_last_gesture_time_s = now_s;
+  s_last_gesture_time_ms = now_ms;
+
+  execute_gesture_action();
+}
+
+static void tap_handler(AccelAxisType axis, int32_t direction) {
+  handle_gesture();
+}
+
+static void accel_data_handler(AccelData *data, uint32_t num_samples) {
+  for (uint32_t i = 1; i < num_samples; i++) {
+    int dx = data[i].x - data[i - 1].x;
+    int dy = data[i].y - data[i - 1].y;
+    int dz = data[i].z - data[i - 1].z;
+    if (abs(dx) > 380 || abs(dy) > 380 || abs(dz) > 480) {
+      handle_gesture();
+      break;
+    }
+  }
+}
+
 #if PBL_API_EXISTS(touch_service_subscribe)
 static void touch_handler(const TouchEvent *event, void *context) {
   if (event->type == TouchEvent_Touchdown) {
-    tap_handler(ACCEL_AXIS_Z, 1);
+    handle_gesture();
   }
 }
 #endif
@@ -972,6 +1004,8 @@ static void init(void) {
 
   tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
   accel_tap_service_subscribe(tap_handler);
+  accel_data_service_subscribe(5, accel_data_handler);
+  accel_service_set_sampling_rate(ACCEL_SAMPLING_10HZ);
 #if PBL_API_EXISTS(touch_service_subscribe)
   if (touch_service_is_enabled()) {
     touch_service_subscribe(touch_handler, NULL);
@@ -1007,6 +1041,7 @@ static void deinit(void) {
 #endif
   battery_state_service_unsubscribe();
   connection_service_unsubscribe();
+  accel_data_service_unsubscribe();
   accel_tap_service_unsubscribe();
   tick_timer_service_unsubscribe();
   if (s_mode_timer) {
