@@ -38,6 +38,12 @@
         "messageKey": "AppKeyVibeEnabled",
         "defaultValue": true,
         "label": "Haptic Vibe Feedback"
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyBacklightAlwaysOn",
+        "defaultValue": true,
+        "label": "Always-On Backlight (Running)"
       }
     ]
   },

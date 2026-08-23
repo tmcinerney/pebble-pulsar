@@ -27,7 +27,8 @@
       "AppKeyColorway": 10001,
       "AppKeyItalicSlant": 10005,
       "AppKeyAudioEnabled": 10020,
-      "AppKeyVibeEnabled": 10021
+      "AppKeyVibeEnabled": 10021,
+      "AppKeyBacklightAlwaysOn": 10022
     },
     "targetPlatforms": [
       "emery",
