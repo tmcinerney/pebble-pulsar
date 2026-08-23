@@ -302,7 +302,7 @@ static void charge_anim_timer_callback(void *data) {
   if (is_animating) {
     s_anim_frame++;
     layer_mark_dirty(s_canvas_layer);
-    s_charge_anim_timer = app_timer_register(120, charge_anim_timer_callback, NULL);
+    s_charge_anim_timer = app_timer_register(60, charge_anim_timer_callback, NULL);
   }
 }
 
@@ -312,7 +312,7 @@ static void update_charging_animation(void) {
                       (s_charging_style != CHARGING_STYLE_SOLID);
   if (is_animating) {
     if (!s_charge_anim_timer) {
-      s_charge_anim_timer = app_timer_register(120, charge_anim_timer_callback, NULL);
+      s_charge_anim_timer = app_timer_register(60, charge_anim_timer_callback, NULL);
     }
   } else {
     if (s_charge_anim_timer) {
@@ -566,7 +566,7 @@ static void draw_matrix_digit(GContext *ctx, int x_offset, int y_offset, int dig
   draw_matrix_digit_custom(ctx, x_offset, y_offset, digit_index, palette, is_active, bounds_w, DOT_SPACING_X, DOT_SPACING_Y, DOT_RADIUS);
 }
 
-static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette, int steps, int sec) {
+static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette, int steps, int sec, uint16_t now_ms) {
   bool is_charging_active = (s_battery_charging || s_battery_plugged || s_charging_preview) && (s_charging_style != CHARGING_STYLE_OFF);
   if (s_bead_mode == BEAD_MODE_OFF && !is_charging_active) return;
   
@@ -584,39 +584,41 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
     bool lit = false;
     
     if (is_charging_active) {
-      // High-speed smooth charging animations (~120ms frame cycle)
+      // Clock-Synchronized Charging Animations (locked to master second & millisecond crystal)
       if (s_charging_style == CHARGING_STYLE_CHASER) {
         // 1970s Cylon / Knight Rider 3-Dot Comet Ping-Pong Sweep across all 10 beads
-        int period = 18;
-        int step = s_anim_frame % period;
-        int active_idx = (step < 10) ? step : (period - step);
+        // Full 18-step ping-pong cycle tuned to exactly 2.0 seconds (locked to whole seconds)
+        int total_ms = ((sec % 2) * 1000) + now_ms;
+        int step = (total_ms * 18) / 2000;
+        if (step > 17) step = 17;
+        int active_idx = (step < 10) ? step : (18 - step);
         bool is_head = (i == active_idx);
         bool is_tail = (i == active_idx - 1) || (i == active_idx + 1);
         lit = is_active && (is_head || is_tail);
       } else if (s_charging_style == CHARGING_STYLE_PULSE) {
-        // Breathing / Heartbeat Pulse: Active charge level pulses in a lub-dub rhythm
+        // Breathing / Heartbeat Pulse: Active charge level pulses in synchrony with the second clock
+        // Dual-beat heartbeat (lub-dub) at 0ms and 300ms, resting at 500-1000ms
         int current_beads = (s_battery_level + 9) / 10;
         if (current_beads > num_beads) current_beads = num_beads;
         if (current_beads < 1) current_beads = 1;
-        int beat_frame = s_anim_frame % 16;
-        bool pulse_on = (beat_frame >= 0 && beat_frame <= 2) || (beat_frame >= 5 && beat_frame <= 7);
+        bool pulse_on = (now_ms < 180) || (now_ms >= 300 && now_ms < 480);
         lit = is_active && (i < current_beads) && pulse_on;
       } else if (s_charging_style == CHARGING_STYLE_MARQUEE) {
-        // 1970s Theater Marquee Alternator (odd / even alternating LEDs)
-        bool phase = ((s_anim_frame / 3) % 2) == 0;
+        // 1970s Theater Marquee Alternator (odd / even alternating LEDs in sync with half-seconds)
+        bool phase = (now_ms < 500);
         lit = is_active && ((i % 2 == 0) == phase);
       } else if (s_charging_style == CHARGING_STYLE_FLOW) {
-        // Progressive Flow: Solid up to current charge level + flowing cascade to 100%
+        // Progressive Flow: Solid up to current charge level + flowing cascade resetting on the second mark
         int current_beads = s_battery_level / 10;
         if (current_beads >= num_beads) {
-          int wave_idx = s_anim_frame % num_beads;
+          int wave_idx = (now_ms * num_beads) / 1000;
           lit = is_active && (i != wave_idx);
         } else {
           if (i < current_beads) {
             lit = is_active;
           } else {
             int remaining = num_beads - current_beads;
-            int cycle_pos = (remaining > 0) ? (s_anim_frame % (remaining + 2)) : 0;
+            int cycle_pos = (remaining > 0) ? ((now_ms * (remaining + 2)) / 1000) : 0;
             lit = is_active && (i == (current_beads + cycle_pos));
           }
         }
@@ -710,8 +712,10 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   }
 
   // 3. Status Annunciator Dots (Top Left: BT Disconnect, Top Right: Battery Low / Charging)
-  time_t temp = time(NULL);
-  struct tm *tick_time = localtime(&temp);
+  time_t now;
+  uint16_t now_ms = 0;
+  time_ms(&now, &now_ms);
+  struct tm *tick_time = localtime(&now);
   int steps = get_step_count();
 
   int ind_y = bounds.size.w > 180 ? 20 : 12;
@@ -721,8 +725,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     graphics_fill_circle(ctx, GPoint(ind_margin, ind_y), INDICATOR_RADIUS);
   }
   if (s_battery_charging || s_battery_plugged) {
-    // Charging Indicator Dot (pulses while charging, solid when full)
-    bool ind_lit = s_battery_charging ? (tick_time->tm_sec % 2 == 0) : true;
+    // Charging Indicator Dot (pulses in sync with second clock)
+    bool ind_lit = s_battery_charging ? (now_ms < 500) : true;
     if (ind_lit) {
       graphics_context_set_fill_color(ctx, palette->lit);
       graphics_fill_circle(ctx, GPoint(bounds.size.w - ind_margin, ind_y), INDICATOR_RADIUS);
@@ -953,7 +957,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   }
 
   // 5. 10-Dot Micro-LED Progress Bar
-  draw_step_beads(ctx, bounds, palette, steps, tick_time->tm_sec);
+  draw_step_beads(ctx, bounds, palette, steps, tick_time->tm_sec, now_ms);
 
   // 6. Vintage Space-Age Footer
   if (s_footer_style != FOOTER_STYLE_NONE) {
