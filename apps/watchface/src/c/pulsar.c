@@ -410,6 +410,7 @@ static void accel_data_handler(AccelData *data, uint32_t num_samples) {
       int dy = abs(data[i].y - data[i - 1].y);
       int dz = abs(data[i].z - data[i - 1].z);
       if (dz > 950 && dx < 350 && dy < 350) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "Tap detected: dz=%d, dx=%d, dy=%d", dz, dx, dy);
         handle_gesture_dir(1, 650);
         break;
       }
@@ -417,18 +418,18 @@ static void accel_data_handler(AccelData *data, uint32_t num_samples) {
     return;
   }
 
-  int threshold_xy = 750;
-  int threshold_z = 850;
-  int debounce_ms = 850;
+  int threshold_xy = 1100;
+  int threshold_z = 1200;
+  int debounce_ms = 1000;
 
   if (s_flick_sensitivity == FLICK_SENSITIVITY_LOW) {
-    threshold_xy = 1350;
-    threshold_z = 1450;
-    debounce_ms = 1200;
+    threshold_xy = 1600;
+    threshold_z = 1700;
+    debounce_ms = 1350;
   } else if (s_flick_sensitivity == FLICK_SENSITIVITY_HIGH) {
-    threshold_xy = 400;
-    threshold_z = 500;
-    debounce_ms = 500;
+    threshold_xy = 700;
+    threshold_z = 800;
+    debounce_ms = 650;
   }
 
   for (uint32_t i = 1; i < num_samples; i++) {
@@ -436,7 +437,8 @@ static void accel_data_handler(AccelData *data, uint32_t num_samples) {
     int dy = data[i].y - data[i - 1].y;
     int dz = data[i].z - data[i - 1].z;
     if (abs(dx) > threshold_xy || abs(dy) > threshold_xy || abs(dz) > threshold_z) {
-      int dir = (dx < -250) ? -1 : 1;
+      int dir = (dx < -300) ? -1 : 1;
+      APP_LOG(APP_LOG_LEVEL_INFO, "Flick detected: dir=%d, dx=%d, dy=%d, dz=%d (sens=%d)", dir, dx, dy, dz, s_flick_sensitivity);
       handle_gesture_dir(dir, debounce_ms);
       break;
     }
