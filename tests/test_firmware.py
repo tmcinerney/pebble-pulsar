@@ -73,7 +73,7 @@ class TestFirmwareIntegrity(unittest.TestCase):
         with open(c_file, "r") as f:
             c_code = f.read()
 
-        storage_keys = dict(re.findall(r"#define\s+(STORAGE_KEY_[A-Z_]+)\s+(\d+)", c_code))
+        storage_keys = dict(re.findall(r"#define\s+(STORAGE_KEY_[A-Z0-9_]+)\s+(\d+)", c_code))
 
         key_mapping = {
             "AppKeyOperatingMode": "STORAGE_KEY_OPERATING_MODE",
@@ -89,6 +89,13 @@ class TestFirmwareIntegrity(unittest.TestCase):
             "AppKeyLeadingZero": "STORAGE_KEY_LEADING_ZERO",
             "AppKeyBtVibe": "STORAGE_KEY_BT_VIBE",
             "AppKeyBeadMode": "STORAGE_KEY_BEAD_MODE",
+            "AppKeyChargingStyle": "STORAGE_KEY_CHARGING_STYLE",
+            "AppKeyNightlight": "STORAGE_KEY_NIGHTLIGHT",
+            "AppKeyCycleSlot1": "STORAGE_KEY_CYCLE_SLOT_1",
+            "AppKeyCycleSlot2": "STORAGE_KEY_CYCLE_SLOT_2",
+            "AppKeyCycleSlot3": "STORAGE_KEY_CYCLE_SLOT_3",
+            "AppKeyCycleSlot4": "STORAGE_KEY_CYCLE_SLOT_4",
+            "AppKeyCycleSlot5": "STORAGE_KEY_CYCLE_SLOT_5",
         }
 
         for app_key, storage_key in key_mapping.items():

@@ -195,6 +195,42 @@
             "value": "15000"
           }
         ]
+      },
+      {
+        "type": "select",
+        "messageKey": "AppKeyChargingStyle",
+        "label": "Charging Animation Style",
+        "description": "Live animated pattern on the 10 micro-LEDs when connected to power.",
+        "defaultValue": "0",
+        "options": [
+          {
+            "label": "Progressive Flow / Fill (Default)",
+            "value": "0"
+          },
+          {
+            "label": "1970s Knight Rider / Marquee Chaser",
+            "value": "1"
+          },
+          {
+            "label": "Breathing / Pulsing Glow",
+            "value": "2"
+          },
+          {
+            "label": "Solid Battery Level (No Animation)",
+            "value": "3"
+          },
+          {
+            "label": "Disabled (Normal Display)",
+            "value": "4"
+          }
+        ]
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyNightlight",
+        "label": "Charging Nightlight (Bedside Clock)",
+        "description": "Keeps the screen backlight continuously illuminated while connected to power on your nightstand or charging dock.",
+        "defaultValue": false
       }
     ]
   },
@@ -244,29 +280,111 @@
       {
         "type": "select",
         "messageKey": "AppKeyFlickAction",
-        "label": "Wrist Flick / Tap / Touch Action",
+        "label": "Wrist Flick / Tap / Touch Mode",
         "defaultValue": "0",
         "options": [
           {
-            "label": "Cycle All (Time -> Sec -> Date -> Steps -> Battery)",
+            "label": "Custom Cycle Sequence (Slots 1-5 Below)",
             "value": "0"
           },
           {
-            "label": "Live Seconds Counter (:SS)",
+            "label": "Live Seconds Counter Only (:SS)",
             "value": "1"
           },
           {
-            "label": "Date Display",
+            "label": "Date Display Only",
             "value": "2"
           },
           {
-            "label": "Daily Step Count",
+            "label": "Daily Step Count Only",
             "value": "3"
           },
           {
-            "label": "Battery Percentage",
+            "label": "Battery Percentage Only",
             "value": "4"
+          },
+          {
+            "label": "Heart Rate Only (Pebble 2 HR)",
+            "value": "5"
           }
+        ]
+      },
+      {
+        "type": "heading",
+        "defaultValue": "Custom Tap Cycle Sequence & Ordering"
+      },
+      {
+        "type": "text",
+        "defaultValue": "Customize which screens appear when tapping/flicking and their exact cycle order. Set any slot to <b>Disabled</b> to skip it."
+      },
+      {
+        "type": "select",
+        "messageKey": "AppKeyCycleSlot1",
+        "label": "Slot 1 (1st Tap Screen)",
+        "defaultValue": "1",
+        "options": [
+          { "label": "Disabled / None", "value": "0" },
+          { "label": "Live Seconds Counter (:SS)", "value": "1" },
+          { "label": "Date Display", "value": "2" },
+          { "label": "Daily Step Count", "value": "3" },
+          { "label": "Battery Percentage", "value": "4" },
+          { "label": "Heart Rate (Pebble 2 HR)", "value": "5" }
+        ]
+      },
+      {
+        "type": "select",
+        "messageKey": "AppKeyCycleSlot2",
+        "label": "Slot 2 (2nd Tap Screen)",
+        "defaultValue": "2",
+        "options": [
+          { "label": "Disabled / None", "value": "0" },
+          { "label": "Live Seconds Counter (:SS)", "value": "1" },
+          { "label": "Date Display", "value": "2" },
+          { "label": "Daily Step Count", "value": "3" },
+          { "label": "Battery Percentage", "value": "4" },
+          { "label": "Heart Rate (Pebble 2 HR)", "value": "5" }
+        ]
+      },
+      {
+        "type": "select",
+        "messageKey": "AppKeyCycleSlot3",
+        "label": "Slot 3 (3rd Tap Screen)",
+        "defaultValue": "3",
+        "options": [
+          { "label": "Disabled / None", "value": "0" },
+          { "label": "Live Seconds Counter (:SS)", "value": "1" },
+          { "label": "Date Display", "value": "2" },
+          { "label": "Daily Step Count", "value": "3" },
+          { "label": "Battery Percentage", "value": "4" },
+          { "label": "Heart Rate (Pebble 2 HR)", "value": "5" }
+        ]
+      },
+      {
+        "type": "select",
+        "messageKey": "AppKeyCycleSlot4",
+        "label": "Slot 4 (4th Tap Screen)",
+        "defaultValue": "4",
+        "options": [
+          { "label": "Disabled / None", "value": "0" },
+          { "label": "Live Seconds Counter (:SS)", "value": "1" },
+          { "label": "Date Display", "value": "2" },
+          { "label": "Daily Step Count", "value": "3" },
+          { "label": "Battery Percentage", "value": "4" },
+          { "label": "Heart Rate (Pebble 2 HR)", "value": "5" }
+        ]
+      },
+      {
+        "type": "select",
+        "messageKey": "AppKeyCycleSlot5",
+        "label": "Slot 5 (5th Tap Screen)",
+        "defaultValue": "5",
+        "options": [
+          { "label": "Disabled / None", "value": "0" },
+          { "label": "Live Seconds Counter (:SS)", "value": "1" },
+          { "label": "Date Display", "value": "2" },
+          { "label": "Daily Step Count", "value": "3" },
+          { "label": "Battery Percentage", "value": "4" },
+          { "label": "Heart Rate (Pebble 2 HR)", "value": "5" }
         ]
       }
     ]

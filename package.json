@@ -36,7 +36,14 @@
       "AppKeyDateFormat": 10009,
       "AppKeyLeadingZero": 10010,
       "AppKeyBtVibe": 10011,
-      "AppKeyBeadMode": 10012
+      "AppKeyBeadMode": 10012,
+      "AppKeyChargingStyle": 10013,
+      "AppKeyNightlight": 10014,
+      "AppKeyCycleSlot1": 10015,
+      "AppKeyCycleSlot2": 10016,
+      "AppKeyCycleSlot3": 10017,
+      "AppKeyCycleSlot4": 10018,
+      "AppKeyCycleSlot5": 10019
     },
     "targetPlatforms": [
       "emery",
