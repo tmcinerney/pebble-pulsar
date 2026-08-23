@@ -25,3 +25,6 @@ typedef struct {
 } Colorway;
 
 Colorway pulsar_get_palette(int colorway_index);
+
+int pulsar_tuple_to_int(Tuple *tuple, int default_val);
+bool pulsar_tuple_to_bool(Tuple *tuple, bool default_val);

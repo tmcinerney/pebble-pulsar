@@ -260,16 +260,17 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   for (Tuple *t = dict_read_first(iterator); t != NULL; t = dict_read_next(iterator)) {
     uint32_t key = t->key;
     if (key == MESSAGE_KEY_AppKeyColorway) {
-      s_colorway = (int)t->value->int32;
+      s_colorway = pulsar_tuple_to_int(t, s_colorway);
+      if (s_colorway < 0 || s_colorway >= NUM_COLORWAYS) s_colorway = 0;
       persist_write_int(STORAGE_KEY_COLORWAY, s_colorway);
     } else if (key == MESSAGE_KEY_AppKeyItalicSlant) {
-      s_italic_slant = (t->value->int32 != 0);
+      s_italic_slant = pulsar_tuple_to_bool(t, s_italic_slant);
       persist_write_bool(STORAGE_KEY_ITALIC_SLANT, s_italic_slant);
     } else if (key == MESSAGE_KEY_AppKeyAudioEnabled) {
-      s_audio_enabled = (t->value->int32 != 0);
+      s_audio_enabled = pulsar_tuple_to_bool(t, s_audio_enabled);
       persist_write_bool(STORAGE_KEY_AUDIO_ENABLED, s_audio_enabled);
     } else if (key == MESSAGE_KEY_AppKeyVibeEnabled) {
-      s_vibe_enabled = (t->value->int32 != 0);
+      s_vibe_enabled = pulsar_tuple_to_bool(t, s_vibe_enabled);
       persist_write_bool(STORAGE_KEY_VIBE_ENABLED, s_vibe_enabled);
     }
   }
@@ -279,6 +280,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 static void load_state(void) {
   if (persist_exists(STORAGE_KEY_COLORWAY)) {
     s_colorway = persist_read_int(STORAGE_KEY_COLORWAY);
+    if (s_colorway < 0 || s_colorway >= NUM_COLORWAYS) s_colorway = 0;
   }
   if (persist_exists(STORAGE_KEY_ITALIC_SLANT)) {
     s_italic_slant = persist_read_bool(STORAGE_KEY_ITALIC_SLANT);

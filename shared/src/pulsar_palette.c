@@ -74,3 +74,46 @@ Colorway pulsar_get_palette(int colorway_index) {
 #endif
   return p;
 }
+
+int pulsar_tuple_to_int(Tuple *tuple, int default_val) {
+  if (!tuple) return default_val;
+  switch (tuple->type) {
+    case TUPLE_INT:
+      if (tuple->length == 1) return (int)tuple->value->int8;
+      if (tuple->length == 2) return (int)tuple->value->int16;
+      if (tuple->length == 4) return (int)tuple->value->int32;
+      return (int)tuple->value->int32;
+    case TUPLE_UINT:
+      if (tuple->length == 1) return (int)tuple->value->uint8;
+      if (tuple->length == 2) return (int)tuple->value->uint16;
+      if (tuple->length == 4) return (int)tuple->value->uint32;
+      return (int)tuple->value->uint32;
+    case TUPLE_CSTRING:
+      if (tuple->length > 0) {
+        return atoi(tuple->value->cstring);
+      }
+      break;
+    default:
+      break;
+  }
+  return default_val;
+}
+
+bool pulsar_tuple_to_bool(Tuple *tuple, bool default_val) {
+  if (!tuple) return default_val;
+  switch (tuple->type) {
+    case TUPLE_INT:
+    case TUPLE_UINT:
+      return pulsar_tuple_to_int(tuple, default_val ? 1 : 0) != 0;
+    case TUPLE_CSTRING:
+      if (tuple->length > 0) {
+        return (strcmp(tuple->value->cstring, "true") == 0 ||
+                strcmp(tuple->value->cstring, "1") == 0 ||
+                strcmp(tuple->value->cstring, "yes") == 0);
+      }
+      break;
+    default:
+      break;
+  }
+  return default_val;
+}
