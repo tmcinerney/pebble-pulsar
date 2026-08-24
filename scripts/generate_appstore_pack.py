@@ -150,16 +150,15 @@ def draw_app_banner(app_key, app_info, out_path):
 
 def draw_app_icon(app_key, app_info, size, out_path):
     icon_w, icon_h = size, size
-    icon = Image.new('RGBA', (icon_w, icon_h), (0, 0, 0, 0))
+    icon = Image.new('RGB', (icon_w, icon_h), (12, 12, 15))
     icon_draw = ImageDraw.Draw(icon)
     
-    # Rounded dark squircle container
-    r = int(icon_w * 0.22)
-    icon_draw.rounded_rectangle([0, 0, icon_w - 1, icon_h - 1], radius=r, fill=(16, 16, 20, 255), outline=(48, 48, 56, 255), width=max(1, int(icon_w / 72)))
+    # Outer border
+    icon_draw.rectangle([0, 0, icon_w - 1, icon_h - 1], outline=(40, 40, 48), width=max(1, int(icon_w / 72)))
 
     # Red accent stripe at top
     stripe_h = max(2, int(icon_h * 0.04))
-    icon_draw.rounded_rectangle([int(icon_w * 0.2), int(icon_h * 0.1), int(icon_w * 0.8), int(icon_h * 0.1) + stripe_h], radius=1, fill=(220, 20, 20, 255))
+    icon_draw.rectangle([int(icon_w * 0.15), int(icon_h * 0.08), int(icon_w * 0.85), int(icon_h * 0.08) + stripe_h], fill=(220, 20, 20))
 
     # Center device / screen render
     t2_shot = f"screenshots/{app_key}/emery-{app_info['shot_prefix']}.png"
@@ -168,21 +167,21 @@ def draw_app_icon(app_key, app_info, size, out_path):
 
     if os.path.exists(t2_shot):
         with Image.open(t2_shot) as scr:
-            scr = scr.convert('RGBA')
+            scr = scr.convert('RGB')
             # Scale screen to fit inside icon nicely
-            target_h = int(icon_h * 0.62)
+            target_h = int(icon_h * 0.65)
             target_w = int(scr.width * (target_h / float(scr.height)))
             scr_scaled = scr.resize((target_w, target_h), Image.Resampling.LANCZOS)
             
             # Draw bezel around screen
             bx = (icon_w - target_w) // 2
-            by = int(icon_h * 0.24)
+            by = int(icon_h * 0.22)
             pad = max(1, int(icon_w / 48))
-            icon_draw.rounded_rectangle([bx - pad, by - pad, bx + target_w + pad - 1, by + target_h + pad - 1], radius=max(2, int(icon_w / 32)), fill=(8, 8, 10, 255), outline=(60, 60, 70, 255), width=1)
-            icon.paste(scr_scaled, (bx, by), scr_scaled)
+            icon_draw.rectangle([bx - pad, by - pad, bx + target_w + pad - 1, by + target_h + pad - 1], fill=(5, 5, 7), outline=(55, 55, 65), width=1)
+            icon.paste(scr_scaled, (bx, by))
 
     icon.save(out_path, 'PNG')
-    print(f"  ✓ Created Icon ({icon_w}x{icon_h}): {out_path}")
+    print(f"  ✓ Created Solid RGB Icon ({icon_w}x{icon_h}): {out_path}")
 
 
 def organize_platform_screenshots(app_key, app_info, pack_dir):
@@ -207,16 +206,16 @@ def organize_platform_screenshots(app_key, app_info, pack_dir):
         "timer": [
             ("timer-preset", "1-preset-picker"),
             ("timer-running", "2-countdown-running"),
-            ("timer-preset", "3-pomodoro-focus"),
-            ("timer-running", "4-depletion-gauge"),
-            ("timer-running", "5-alarm-alert")
+            ("timer-pomodoro", "3-pomodoro-focus"),
+            ("timer-custom-edit", "4-custom-duration-dial"),
+            ("timer-alert", "5-alarm-firing-alert")
         ],
         "alarm": [
-            ("alarm-view", "1-alarm-slot1-daily"),
-            ("alarm-view", "2-multi-alarm-slots"),
-            ("alarm-view", "3-repeat-schedules"),
-            ("alarm-view", "4-bedside-mode"),
-            ("alarm-view", "5-vintage-snooze")
+            ("alarm-slot1", "1-alarm-slot1-daily"),
+            ("alarm-slot2", "2-alarm-slot2-weekdays"),
+            ("alarm-slot3", "3-alarm-slot3-weekends"),
+            ("alarm-edit", "4-dial-in-edit-mode"),
+            ("alarm-slot4", "5-multi-alarm-schedules")
         ]
     }
 

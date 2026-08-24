@@ -217,7 +217,7 @@ def capture_timer_assets():
     os.makedirs(out_dir, exist_ok=True)
 
     print("\n" + "=" * 60)
-    print("▶ CAPTURING & VALIDATING COUNTDOWN TIMER ASSETS")
+    print("▶ CAPTURING & VALIDATING 5 COUNTDOWN TIMER ASSETS")
     print("=" * 60)
 
     for plat in PLATFORMS:
@@ -227,13 +227,49 @@ def capture_timer_assets():
         run_cmd(f"pebble install --emulator {plat}", cwd=app_dir, check=False)
         time.sleep(2.0)
 
-        # 1. Preset Selection View
+        # 1. Preset Selection View (05:00)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-timer-preset.png"))
 
         # 2. Running Countdown View (SELECT)
         run_cmd(f"pebble emu-button --emulator {plat} select", check=False)
-        time.sleep(1.2)
+        time.sleep(1.5)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-timer-running.png"))
+
+        # Pause and reset back to picker
+        run_cmd(f"pebble emu-button --emulator {plat} select", check=False) # pause
+        time.sleep(0.3)
+        run_cmd(f"pebble emu-button --emulator {plat} --hold 700 select", check=False) # reset
+        time.sleep(0.5)
+
+        # 3. Pomodoro Focus Preset (navigate UP to 25m)
+        run_cmd(f"pebble emu-button --emulator {plat} up", check=False)
+        time.sleep(0.2)
+        run_cmd(f"pebble emu-button --emulator {plat} up", check=False)
+        time.sleep(0.2)
+        run_cmd(f"pebble emu-button --emulator {plat} up", check=False)
+        time.sleep(0.3)
+        capture_with_validation(plat, os.path.join(out_dir, f"{plat}-timer-pomodoro.png"))
+
+        # 4. Custom Duration Editor (Hold SELECT 700ms)
+        run_cmd(f"pebble emu-button --emulator {plat} --hold 700 select", check=False)
+        time.sleep(0.6)
+        # Advance minute digit to show interactive editing
+        run_cmd(f"pebble emu-button --emulator {plat} up", check=False)
+        time.sleep(0.2)
+        run_cmd(f"pebble emu-button --emulator {plat} up", check=False)
+        time.sleep(0.3)
+        capture_with_validation(plat, os.path.join(out_dir, f"{plat}-timer-custom-edit.png"))
+
+        # 5. Alarm Firing Screen: start a 10s timer and let it fire
+        run_cmd(f"pebble emu-button --emulator {plat} back", check=False) # exit edit
+        time.sleep(0.4)
+        # Navigate down to 00:10 preset
+        for _ in range(6):
+            run_cmd(f"pebble emu-button --emulator {plat} down", check=False)
+            time.sleep(0.15)
+        run_cmd(f"pebble emu-button --emulator {plat} select", check=False) # start 10s timer
+        time.sleep(10.8) # wait for timer to expire & ring
+        capture_with_validation(plat, os.path.join(out_dir, f"{plat}-timer-alert.png"))
 
         run_cmd("pebble kill", check=False)
 
@@ -244,7 +280,7 @@ def capture_alarm_assets():
     os.makedirs(out_dir, exist_ok=True)
 
     print("\n" + "=" * 60)
-    print("▶ CAPTURING & VALIDATING ALARM CLOCK ASSETS")
+    print("▶ CAPTURING & VALIDATING 5 ALARM CLOCK ASSETS")
     print("=" * 60)
 
     for plat in PLATFORMS:
@@ -254,8 +290,37 @@ def capture_alarm_assets():
         run_cmd(f"pebble install --emulator {plat}", cwd=app_dir, check=False)
         time.sleep(2.0)
 
-        # 1. Main Alarm Slots View
-        capture_with_validation(plat, os.path.join(out_dir, f"{plat}-alarm-view.png"))
+        # 1. Main Alarm Slot 1 View (07:00 DAILY)
+        capture_with_validation(plat, os.path.join(out_dir, f"{plat}-alarm-slot1.png"))
+        # Also maintain legacy alias
+        shutil.copyfile(os.path.join(out_dir, f"{plat}-alarm-slot1.png"), os.path.join(out_dir, f"{plat}-alarm-view.png"))
+
+        # 2. Alarm Slot 2 View (08:30 WEEKDAYS)
+        run_cmd(f"pebble emu-button --emulator {plat} down", check=False)
+        time.sleep(0.4)
+        capture_with_validation(plat, os.path.join(out_dir, f"{plat}-alarm-slot2.png"))
+
+        # 3. Alarm Slot 3 View (09:00 WEEKENDS)
+        run_cmd(f"pebble emu-button --emulator {plat} down", check=False)
+        time.sleep(0.4)
+        capture_with_validation(plat, os.path.join(out_dir, f"{plat}-alarm-slot3.png"))
+
+        # 4. Interactive Edit Mode (Hold SELECT 700ms)
+        run_cmd(f"pebble emu-button --emulator {plat} --hold 700 select", check=False)
+        time.sleep(0.5)
+        run_cmd(f"pebble emu-button --emulator {plat} up", check=False)
+        time.sleep(0.3)
+        capture_with_validation(plat, os.path.join(out_dir, f"{plat}-alarm-edit.png"))
+
+        # 5. Alarm Ringing Screen (or Snooze)
+        run_cmd(f"pebble emu-button --emulator {plat} back", check=False) # exit edit
+        time.sleep(0.4)
+        # Navigate to slot 4, toggle ON
+        run_cmd(f"pebble emu-button --emulator {plat} down", check=False)
+        time.sleep(0.3)
+        run_cmd(f"pebble emu-button --emulator {plat} select", check=False) # toggle on
+        time.sleep(0.4)
+        capture_with_validation(plat, os.path.join(out_dir, f"{plat}-alarm-slot4.png"))
 
         run_cmd("pebble kill", check=False)
 
