@@ -180,19 +180,21 @@ Vintage 1970s solid-state LED countdown timer and Pomodoro focus tool with backg
 **Pulsar Timer** brings the tactile retro charm of 1970s digital LED instrumentation to interval timing and focus management.
 
 ### ⚡ Features
-- **10 Quick Duration Presets:** Rapidly start timers for 1m, 3m, 5m, 10m, 15m, 20m, 25m (Pomodoro), 30m, 45m, and 60m.
+- **15 Quick Duration Presets:** Sub-minute intervals (`00:10`, `00:30`, `00:45`), standard intervals (1m to 90m), and Pomodoro (25m).
+- **Interactive Custom Duration Editor:** Long-press SELECT (500ms) to dial in exact custom minutes (0–99) and seconds (0–59) with blinking LED digits.
 - **10-Dot Micro-LED Depletion Gauge:** Progressive optical bead gauge visually displaying remaining time proportion.
+- **Continuous 30-Second Bedside Alarm Loop:** Flashing strobe banners, illuminated backlight, buzzer piezo synth chimes, and repeating vibration.
 - **Pebble Wakeup API:** Reliable background alarms wake the watch and fire alerts even if you switch apps or turn off the screen.
 - **Ascending 3-2-1 Audio Warnings:** Warning buzzer beeps at 3s, 2s, 1s leading into timer expiration.
-- **Escalating Ruby Alert Screen:** Flashing red LED alarm screen with buzzer synth chimes and haptic pulse patterns.
-- **Quick Time Adjustment:** Add or subtract 1 minute during active countdowns with the UP and DOWN buttons.
+- **Live Time Adjustment:** Add or subtract time (+15s / +1m) during active countdowns.
 
 ### 🎮 Hardware Controls
-- **UP / DOWN (Preset Selection):** Choose duration (1m to 60m).
+- **UP / DOWN (Preset Selection):** Choose preset duration.
 - **SELECT (Preset Selection):** Start countdown timer.
-- **UP / DOWN (Running):** Quick adjust remaining time (+1m / -1m).
+- **SELECT (Hold from Preset Picker):** Enter Custom Duration Editor (dial in exact MM:SS).
+- **UP / DOWN (Running):** Quick adjust remaining time (+1m / -1m or +15s / -15s).
 - **SELECT (Running):** Pause / Resume countdown.
-- **SELECT (Hold):** Reset timer to preset picker.
+- **SELECT (Hold while Paused):** Reset timer to preset picker.
 - **ANY BUTTON (Alarm Firing):** Dismiss alarm alert.
 ```
 
@@ -201,8 +203,10 @@ Vintage 1970s solid-state LED countdown timer and Pomodoro focus tool with backg
 ### 🚀 Release Notes (What's New in v1.0.0)
 ```markdown
 - Initial release of Pulsar Timer for Pebble OS.
-- 10 Quick duration presets from 1m to 60m including 25m Pomodoro.
+- 15 Quick duration presets including sub-minute intervals (10s, 30s, 45s) and 25m Pomodoro.
+- Interactive Custom Duration Editor for exact minute and second settings.
 - 10-Dot micro-LED progress depletion gauge.
+- Continuous 30-second alarm firing loop with glowing backlight, piezo tones, and repeating haptics.
 - Pebble Wakeup API background scheduler integration.
 - Ascending 3-2-1 audio warning ticks and ruby alarm alert screen.
 - 7 Vintage LED colorways and 12° Italic slant support.
@@ -243,7 +247,7 @@ Vintage 1970s solid-state LED countdown timer and Pomodoro focus tool with backg
 
 ### 📝 Short Subtitle / Teaser
 ```
-Vintage multi-schedule digital LED alarm clock with 4 independent alarm slots, flexible repeat rules, and 9-minute snooze.
+Vintage multi-schedule digital LED alarm clock with 4 independent alarm slots, flexible repeat rules, bedside strobe mode, and 9-minute snooze.
 ```
 
 ---
@@ -255,6 +259,7 @@ Vintage multi-schedule digital LED alarm clock with 4 independent alarm slots, f
 ### ⚡ Features
 - **4 Independent Alarm Slots:** Configure up to 4 discrete alarms with individual wake times and schedules.
 - **4 Flexible Repeat Schedules:** Choose between `DAILY`, `WEEKDAYS` (Mon-Fri), `WEEKENDS` (Sat-Sun), and `ONCE`.
+- **Bedside Clock Alarm Mode:** Leave open on your nightstand for continuous 30-second repeating vibration pulses, retro piezo chimes, illuminated backlight, and flashing alert banners.
 - **Pebble Wakeup API Engine:** Reliable background execution wakes the watch and sounds alarms even from deep standby.
 - **Authentic 9-Minute Snooze:** Traditional mechanical snooze duration (customizable to 5m, 9m, 10m, or 15m via Clay).
 - **Interactive Dial-In Edit Mode:** Dial in hours, minutes, and repeat rules directly on your wrist with blinking cursor feedback.
@@ -277,6 +282,7 @@ Vintage multi-schedule digital LED alarm clock with 4 independent alarm slots, f
 - Initial release of Pulsar Alarm for Pebble OS.
 - 4 Independent multi-alarm configuration slots.
 - Flexible repeat schedules (Daily, Weekdays, Weekends, Once).
+- Continuous Bedside Alarm Mode with illuminated backlight, piezo synth chimes, and strobe banners.
 - Pebble Wakeup API background scheduler integration.
 - Vintage 9-minute snooze and in-app dial-in edit mode.
 - 7 Vintage LED colorways and 12° Italic slant support.
