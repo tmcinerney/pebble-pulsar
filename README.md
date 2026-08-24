@@ -21,12 +21,12 @@
 
 Every application in the **Pebble Pulsar Suite** is an independently versioned and releasable Pebble package with its own dedicated documentation, changelog, and asset pipeline:
 
-| Application | Path | Current Version | Changelog | Documentation | Tag Pattern |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **[Pulsar 1970 Watchface](apps/watchface)** | `apps/watchface/` | `v2.2.0` | [`CHANGELOG.md`](apps/watchface/CHANGELOG.md) | [`README.md`](apps/watchface/README.md) | `watchface-v*` |
-| **[Pulsar Chronograph](apps/chrono)** | `apps/chrono/` | `v1.1.0` | [`CHANGELOG.md`](apps/chrono/CHANGELOG.md) | [`README.md`](apps/chrono/README.md) | `chrono-v*` |
-| **[Pulsar Countdown Timer](apps/timer)** | `apps/timer/` | `v1.0.0` | [`CHANGELOG.md`](apps/timer/CHANGELOG.md) | [`README.md`](apps/timer/README.md) | `timer-v*` |
-| **[Pulsar Multi-Alarm Clock](apps/alarm)** | `apps/alarm/` | `v1.0.0` | [`CHANGELOG.md`](apps/alarm/CHANGELOG.md) | [`README.md`](apps/alarm/README.md) | `alarm-v*` |
+| Application | Path | Version | Rebble Store | Changelog | Documentation | Tag Pattern |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **[Pulsar 1970 Watchface](apps/watchface)** | `apps/watchface/` | `v2.2.0` | [Rebble Store](https://apps.rebble.io/) | [`CHANGELOG.md`](apps/watchface/CHANGELOG.md) | [`README.md`](apps/watchface/README.md) | `watchface-v*` |
+| **[Pulsar Chronograph](apps/chrono)** | `apps/chrono/` | `v1.1.0` | [**Pulsar Chrono on Rebble**](https://apps.rebble.io/en_US/application/6a8bc61f06d13300097edc49) | [`CHANGELOG.md`](apps/chrono/CHANGELOG.md) | [`README.md`](apps/chrono/README.md) | `chrono-v*` |
+| **[Pulsar Countdown Timer](apps/timer)** | `apps/timer/` | `v1.0.0` | [Rebble Store](https://apps.rebble.io/) | [`CHANGELOG.md`](apps/timer/CHANGELOG.md) | [`README.md`](apps/timer/README.md) | `timer-v*` |
+| **[Pulsar Multi-Alarm Clock](apps/alarm)** | `apps/alarm/` | `v1.0.0` | [Rebble Store](https://apps.rebble.io/) | [`CHANGELOG.md`](apps/alarm/CHANGELOG.md) | [`README.md`](apps/alarm/README.md) | `alarm-v*` |
 
 ---
 

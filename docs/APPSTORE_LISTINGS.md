@@ -89,6 +89,7 @@ Powered by a lightweight procedural C graphics engine (`libpulsar`), Pulsar rend
 | **Author / Developer** | `Travers McInerney` |
 | **Version** | `1.1.0` |
 | **Source Code URL** | `https://github.com/tmcinerney/pebble-pulsar` |
+| **Rebble Store URL** | [**`apps.rebble.io/application/6a8bc61f06d13300097edc49`**](https://apps.rebble.io/en_US/application/6a8bc61f06d13300097edc49) |
 | **Target Architectures** | `Emery`, `Basalt`, `Diorite`, `Aplite` |
 
 ---

@@ -238,9 +238,6 @@ def organize_platform_screenshots(app_key, app_info, pack_dir):
             if os.path.exists(src_shot):
                 dst_shot = os.path.join(plat_dir, f"{idx}-{label}.png")
                 shutil.copyfile(src_shot, dst_shot)
-                # Also keep a top-level single screenshot for quick upload
-                if idx == 1:
-                    shutil.copyfile(src_shot, os.path.join(pack_dir, f"screenshot-{p}.png"))
                 print(f"    ✓ [{p.upper()}] Screenshot {idx}: {os.path.basename(dst_shot)}")
 
 
