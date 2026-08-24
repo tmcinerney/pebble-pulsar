@@ -3,6 +3,11 @@ name: Release
 on:
   push:
     tags:
+      - 'watchface-v*'
+      - 'chrono-v*'
+      - 'timer-v*'
+      - 'alarm-v*'
+      - 'suite-v*'
       - 'v*'
 
 permissions:
@@ -15,6 +20,35 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Parse App & Version from Tag
+        id: meta
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          if [[ "$TAG" == suite-v* ]] || [[ "$TAG" == v* ]]; then
+            echo "app=suite" >> $GITHUB_OUTPUT
+            if [[ "$TAG" == suite-v* ]]; then
+              echo "version=${TAG#suite-v}" >> $GITHUB_OUTPUT
+            else
+              echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+            fi
+            echo "display_name=Pebble Pulsar Suite" >> $GITHUB_OUTPUT
+          else
+            APP="${TAG%%-v*}"
+            VERSION="${TAG#*-v}"
+            echo "app=$APP" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            case "$APP" in
+              watchface) echo "display_name=Pulsar 1970 Watchface" >> $GITHUB_OUTPUT ;;
+              chrono)    echo "display_name=Pulsar Chronograph" >> $GITHUB_OUTPUT ;;
+              timer)     echo "display_name=Pulsar Countdown Timer" >> $GITHUB_OUTPUT ;;
+              alarm)     echo "display_name=Pulsar Multi-Alarm Clock" >> $GITHUB_OUTPUT ;;
+              *)         echo "display_name=Pebble Pulsar App" >> $GITHUB_OUTPUT ;;
+            esac
+          fi
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
@@ -34,16 +68,24 @@ jobs:
         run: |
           devenv shell -- python3 tests/test_firmware.py
 
-      - name: Build Universal Pebble Bundle
+      - name: Build Target App PBW
         run: |
-          devenv shell -- pebble clean
-          devenv shell -- pebble build
-          python3 scripts/validate_pbw.py build/pebble-pulsar.pbw
+          mkdir -p dist
+          if [ "${{ steps.meta.outputs.app }}" = "suite" ]; then
+            devenv shell -- python3 scripts/build_all.py
+          else
+            cd apps/${{ steps.meta.outputs.app }}
+            devenv shell -- pebble build
+            cd ../..
+            cp apps/${{ steps.meta.outputs.app }}/build/${{ steps.meta.outputs.app }}.pbw dist/pebble-pulsar-${{ steps.meta.outputs.app }}.pbw
+          fi
+          python3 scripts/validate_pbw.py
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/pebble-pulsar.pbw
+          name: "${{ steps.meta.outputs.display_name }} v${{ steps.meta.outputs.version }}"
+          files: dist/*.pbw
           generate_release_notes: true
           draft: false
           prerelease: false

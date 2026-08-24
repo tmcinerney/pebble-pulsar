@@ -310,6 +310,39 @@
           {
             "label": "Heart Rate Only (Pebble 2 HR)",
             "value": "5"
+          },
+          {
+            "label": "Disabled / Off (No gesture action)",
+            "value": "6"
+          }
+        ]
+      },
+      {
+        "type": "select",
+        "messageKey": "AppKeyFlickSensitivity",
+        "label": "Gesture & Flick Sensitivity",
+        "description": "Adjust how easily wrist flicks trigger screen changes.",
+        "defaultValue": "0",
+        "options": [
+          {
+            "label": "Balanced (Natural wrist turn / casing tap - Default)",
+            "value": "0"
+          },
+          {
+            "label": "Low Sensitivity (Deliberate snap only)",
+            "value": "1"
+          },
+          {
+            "label": "High Sensitivity (Light motion)",
+            "value": "2"
+          },
+          {
+            "label": "Taps Only (Physical bezel/glass taps, no wrist rotation)",
+            "value": "3"
+          },
+          {
+            "label": "Disabled / Off (No gesture screen switching)",
+            "value": "4"
           }
         ]
       },

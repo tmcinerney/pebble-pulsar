@@ -1,0 +1,67 @@
+{
+  "name": "pebble-pulsar-watchface",
+  "author": "Travers McInerney",
+  "version": "2.2.0",
+  "versionLabel": "2.2.0",
+  "keywords": [
+    "watchface",
+    "pulsar",
+    "retro",
+    "1970s",
+    "led",
+    "hamilton",
+    "vintage"
+  ],
+  "pebble": {
+    "uuid": "8b5f3a12-9c4e-4f71-8b23-6e4d7a8c9b01",
+    "displayName": "Pulsar 1970",
+    "capabilities": [
+      "configurable",
+      "health"
+    ],
+    "watchapp": {
+      "watchface": true
+    },
+    "enableMultiJS": true,
+    "messageKeys": {
+      "AppKeyOperatingMode": 10000,
+      "AppKeyColorway": 10001,
+      "AppKeyFlickAction": 10002,
+      "AppKeyHourlyVibe": 10003,
+      "AppKeyShowStepBeads": 10004,
+      "AppKeyItalicSlant": 10005,
+      "AppKeyFooterStyle": 10006,
+      "AppKeyStepGoal": 10007,
+      "AppKeyHeaderStyle": 10008,
+      "AppKeyDateFormat": 10009,
+      "AppKeyLeadingZero": 10010,
+      "AppKeyBtVibe": 10011,
+      "AppKeyBeadMode": 10012,
+      "AppKeyChargingStyle": 10013,
+      "AppKeyNightlight": 10014,
+      "AppKeyCycleSlot1": 10015,
+      "AppKeyCycleSlot2": 10016,
+      "AppKeyCycleSlot3": 10017,
+      "AppKeyCycleSlot4": 10018,
+      "AppKeyCycleSlot5": 10019,
+      "AppKeySoundEnabled": 10020,
+      "AppKeyHourlyBeep": 10021,
+      "AppKeyStepCelebration": 10022,
+      "AppKeyBtSound": 10023,
+      "AppKeyFlickSensitivity": 10024
+    },
+    "targetPlatforms": [
+      "emery",
+      "basalt",
+      "diorite",
+      "aplite"
+    ],
+    "sdkVersion": "3",
+    "resources": {
+      "media": []
+    }
+  },
+  "dependencies": {
+    "pebble-clay": "file:../../packages/pebble-clay"
+  }
+}

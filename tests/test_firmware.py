@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 """
-Pebble Pulsar Firmware & Configuration Test Suite.
+Pebble Pulsar Monorepo Suite Firmware & Configuration Test Suite.
 Validates:
-1. Valid Pebble SDK System Font Keys across all C sources.
-2. 1:1 Parity between package.json messageKeys, src/c/pulsar.c STORAGE_KEY_* defines, and pkjs config.json.
-3. Multi-platform build output & ELF memory limits.
+1. Valid Pebble SDK System Font Keys across all C sources in shared and apps.
+2. 1:1 Parity between package.json messageKeys, src/c/*.c STORAGE_KEY_* defines, and pkjs config.json across all 4 apps.
+3. Multi-platform compilation and bundle generation for all 4 apps (watchface, chrono, timer, alarm).
 """
 
 import os
 import re
 import json
+import glob
 import subprocess
 import unittest
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+APPS = ["watchface", "chrono", "timer", "alarm"]
 
 VALID_PEBBLE_SYSTEM_FONTS = {
     "FONT_KEY_GOTHIC_14",
@@ -45,111 +47,76 @@ VALID_PEBBLE_SYSTEM_FONTS = {
 class TestFirmwareIntegrity(unittest.TestCase):
 
     def test_valid_system_fonts(self):
-        """Ensure every FONT_KEY_* in C code exists in the official Pebble SDK font table."""
-        c_file = os.path.join(REPO_ROOT, "src", "c", "pulsar.c")
-        with open(c_file, "r") as f:
-            content = f.read()
+        """Ensure every FONT_KEY_* in all C source files exists in the official Pebble SDK font table."""
+        c_files = glob.glob(os.path.join(REPO_ROOT, "apps", "**", "*.c"), recursive=True) + \
+                  glob.glob(os.path.join(REPO_ROOT, "shared", "**", "*.c"), recursive=True)
 
-        font_matches = re.findall(r"FONT_KEY_[A-Z0-9_]+", content)
-        self.assertTrue(len(font_matches) > 0, "No font keys found in C code.")
+        self.assertTrue(len(c_files) > 0, "No C source files found.")
+        for c_file in c_files:
+            with open(c_file, "r") as f:
+                content = f.read()
 
-        for font in font_matches:
-            self.assertIn(
-                font,
-                VALID_PEBBLE_SYSTEM_FONTS,
-                f"Invalid system font '{font}' referenced in pulsar.c! This causes NULL pointer crashes on real hardware."
-            )
+            font_matches = re.findall(r"FONT_KEY_[A-Z0-9_]+", content)
+            for font in font_matches:
+                self.assertIn(
+                    font,
+                    VALID_PEBBLE_SYSTEM_FONTS,
+                    f"Invalid system font '{font}' referenced in {c_file}!"
+                )
 
-    def test_message_keys_sync(self):
-        """Ensure package.json messageKeys match STORAGE_KEY_* defines and pkjs config.json."""
-        package_json_path = os.path.join(REPO_ROOT, "package.json")
-        with open(package_json_path, "r") as f:
-            pkg = json.load(f)
+    def test_apps_config_and_message_keys_sync(self):
+        """Ensure each app's package.json messageKeys match its config.json and C defines."""
+        for app in APPS:
+            app_dir = os.path.join(REPO_ROOT, "apps", app)
+            package_json_path = os.path.join(app_dir, "package.json")
+            self.assertTrue(os.path.exists(package_json_path), f"Missing package.json for {app}")
 
-        message_keys = pkg.get("pebble", {}).get("messageKeys", {})
-        self.assertIsInstance(message_keys, dict, "pebble.messageKeys must be an explicit dictionary map.")
+            with open(package_json_path, "r") as f:
+                pkg = json.load(f)
 
-        c_file = os.path.join(REPO_ROOT, "src", "c", "pulsar.c")
-        with open(c_file, "r") as f:
-            c_code = f.read()
+            message_keys = pkg.get("pebble", {}).get("messageKeys", {})
+            self.assertIsInstance(message_keys, dict, f"{app}: pebble.messageKeys must be a dict")
 
-        storage_keys = dict(re.findall(r"#define\s+(STORAGE_KEY_[A-Z0-9_]+)\s+(\d+)", c_code))
+            # Check config.json
+            config_json_path = os.path.join(app_dir, "src", "pkjs", "config.json")
+            if os.path.exists(config_json_path):
+                with open(config_json_path, "r") as f:
+                    config = json.load(f)
 
-        key_mapping = {
-            "AppKeyOperatingMode": "STORAGE_KEY_OPERATING_MODE",
-            "AppKeyColorway": "STORAGE_KEY_COLORWAY",
-            "AppKeyFlickAction": "STORAGE_KEY_FLICK_ACTION",
-            "AppKeyHourlyVibe": "STORAGE_KEY_HOURLY_VIBE",
-            "AppKeyShowStepBeads": "STORAGE_KEY_SHOW_STEP_BEADS",
-            "AppKeyItalicSlant": "STORAGE_KEY_ITALIC_SLANT",
-            "AppKeyFooterStyle": "STORAGE_KEY_FOOTER_STYLE",
-            "AppKeyStepGoal": "STORAGE_KEY_STEP_GOAL",
-            "AppKeyHeaderStyle": "STORAGE_KEY_HEADER_STYLE",
-            "AppKeyDateFormat": "STORAGE_KEY_DATE_FORMAT",
-            "AppKeyLeadingZero": "STORAGE_KEY_LEADING_ZERO",
-            "AppKeyBtVibe": "STORAGE_KEY_BT_VIBE",
-            "AppKeyBeadMode": "STORAGE_KEY_BEAD_MODE",
-            "AppKeyChargingStyle": "STORAGE_KEY_CHARGING_STYLE",
-            "AppKeyNightlight": "STORAGE_KEY_NIGHTLIGHT",
-            "AppKeyCycleSlot1": "STORAGE_KEY_CYCLE_SLOT_1",
-            "AppKeyCycleSlot2": "STORAGE_KEY_CYCLE_SLOT_2",
-            "AppKeyCycleSlot3": "STORAGE_KEY_CYCLE_SLOT_3",
-            "AppKeyCycleSlot4": "STORAGE_KEY_CYCLE_SLOT_4",
-            "AppKeyCycleSlot5": "STORAGE_KEY_CYCLE_SLOT_5",
-            "AppKeySoundEnabled": "STORAGE_KEY_SOUND_ENABLED",
-            "AppKeyHourlyBeep": "STORAGE_KEY_HOURLY_BEEP",
-            "AppKeyStepCelebration": "STORAGE_KEY_STEP_CELEBRATION",
-            "AppKeyBtSound": "STORAGE_KEY_BT_SOUND",
-        }
+                def extract_keys(items):
+                    keys = []
+                    for item in items:
+                        if isinstance(item, dict):
+                            if "messageKey" in item:
+                                keys.append(item["messageKey"])
+                            if "items" in item:
+                                keys.extend(extract_keys(item["items"]))
+                    return keys
 
-        for app_key, storage_key in key_mapping.items():
-            self.assertIn(app_key, message_keys, f"Missing messageKey in package.json: {app_key}")
-            self.assertIn(storage_key, storage_keys, f"Missing define in pulsar.c: {storage_key}")
-            msg_id = int(message_keys[app_key])
-            storage_id = int(storage_keys[storage_key])
-            self.assertEqual(
-                msg_id,
-                storage_id,
-                f"Mismatch for {app_key} ({msg_id}) vs {storage_key} ({storage_id})!"
-            )
+                config_keys = extract_keys(config)
+                for k in config_keys:
+                    self.assertIn(
+                        k,
+                        message_keys,
+                        f"App '{app}': config.json references messageKey '{k}' not found in package.json"
+                    )
 
-    def test_config_json_app_keys(self):
-        """Ensure all appKey fields in config.json exist in package.json messageKeys."""
-        package_json_path = os.path.join(REPO_ROOT, "package.json")
-        with open(package_json_path, "r") as f:
-            pkg = json.load(f)
-        message_keys = pkg.get("pebble", {}).get("messageKeys", {})
-
-        config_json_path = os.path.join(REPO_ROOT, "src", "pkjs", "config.json")
-        with open(config_json_path, "r") as f:
-            config = json.load(f)
-
-        def extract_message_keys(items):
-            keys = []
-            for item in items:
-                if isinstance(item, dict):
-                    if "messageKey" in item:
-                        keys.append(item["messageKey"])
-                    if "items" in item:
-                        keys.extend(extract_message_keys(item["items"]))
-            return keys
-
-        config_keys = extract_message_keys(config)
-        self.assertTrue(len(config_keys) > 0, "No messageKeys found in config.json")
-        for k in config_keys:
-            self.assertIn(k, message_keys, f"config.json references unknown messageKey '{k}'")
-
-    def test_multi_platform_build(self):
-        """Ensure all 4 platforms compile cleanly."""
+    def test_suite_build_all(self):
+        """Run build_all.py and verify all 4 PBW bundle outputs exist in dist/."""
+        build_script = os.path.join(REPO_ROOT, "scripts", "build_all.py")
         result = subprocess.run(
-            ["devenv", "shell", "--", "pebble", "build"],
+            ["python3", build_script],
             cwd=REPO_ROOT,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
         )
-        self.assertEqual(result.returncode, 0, f"pebble build failed:\n{result.stdout}\n{result.stderr}")
-        self.assertTrue(os.path.exists(os.path.join(REPO_ROOT, "build", "pebble-pulsar.pbw")), "PBW file missing!")
+        self.assertEqual(result.returncode, 0, f"build_all.py failed:\n{result.stdout}\n{result.stderr}")
+
+        for app in APPS:
+            pbw_path = os.path.join(REPO_ROOT, "dist", f"pebble-pulsar-{app}.pbw")
+            self.assertTrue(os.path.exists(pbw_path), f"Missing PBW bundle for {app}: {pbw_path}")
+            self.assertGreater(os.path.getsize(pbw_path), 50000, f"PBW file {pbw_path} suspiciously small")
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,54 @@
+[
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Pulsar Chrono Settings"
+      },
+      {
+        "type": "select",
+        "messageKey": "AppKeyColorway",
+        "defaultValue": "0",
+        "label": "LED Colorway",
+        "options": [
+          { "label": "GaAsP Ruby Red (1972)", "value": "0" },
+          { "label": "Hot Lava Orange", "value": "1" },
+          { "label": "GaP Phosphor Green (1975)", "value": "2" },
+          { "label": "Amber Gold (HP-01)", "value": "3" },
+          { "label": "Cobalt Blue", "value": "4" },
+          { "label": "Lunar White", "value": "5" },
+          { "label": "Inverted E-Paper", "value": "6" }
+        ]
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyItalicSlant",
+        "defaultValue": true,
+        "label": "12° Italic LED Slant"
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyAudioEnabled",
+        "defaultValue": true,
+        "label": "Retro Synth Audio (PT2)"
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyVibeEnabled",
+        "defaultValue": true,
+        "label": "Haptic Vibe Feedback"
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyBacklightAlwaysOn",
+        "defaultValue": true,
+        "label": "Always-On Backlight (Running)"
+      }
+    ]
+  },
+  {
+    "type": "submit",
+    "defaultValue": "Save Settings"
+  }
+]

@@ -1,14 +1,23 @@
 # Pebble & WAF Build Artifacts
 build/
+apps/*/build/
 .waf*
 .lock-waf*
 *.pbw
 *.elf
 *.bin
+dist/
+
+# Node & Package Managers
+node_modules/
+apps/*/node_modules/
+package-lock.json
+apps/*/package-lock.json
 
 # Nix / Devenv
 .devenv/
 .devenv.flake.nix
+screenshot.png
 
 # OS & Editor Files
 .DS_Store

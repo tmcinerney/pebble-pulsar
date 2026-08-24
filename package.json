@@ -1,67 +1,23 @@
 {
-  "name": "pebble-pulsar",
+  "name": "pebble-pulsar-suite",
   "author": "Travers McInerney",
-  "description": "The world's first digital LED wristwatch (1972 Hamilton Pulsar), recreated for Pebble with authentic 5x7 GaAsP dot-matrix LEDs, 6 display modes, customizable tap cycle sequencing, retro charging animations, and nightlight mode.",
-  "version": "2.1.0",
-  "versionLabel": "2.1.0",
-  "keywords": [
-    "watchface",
-    "pulsar",
-    "retro",
-    "1970s",
-    "led",
-    "hamilton",
-    "vintage"
-  ],
-  "pebble": {
-    "uuid": "8b5f3a12-9c4e-4f71-8b23-6e4d7a8c9b01",
-    "displayName": "Pulsar 1970",
-    "capabilities": [
-      "configurable",
-      "health"
-    ],
-    "watchapp": {
-      "watchface": true
-    },
-    "enableMultiJS": true,
-    "messageKeys": {
-      "AppKeyOperatingMode": 10000,
-      "AppKeyColorway": 10001,
-      "AppKeyFlickAction": 10002,
-      "AppKeyHourlyVibe": 10003,
-      "AppKeyShowStepBeads": 10004,
-      "AppKeyItalicSlant": 10005,
-      "AppKeyFooterStyle": 10006,
-      "AppKeyStepGoal": 10007,
-      "AppKeyHeaderStyle": 10008,
-      "AppKeyDateFormat": 10009,
-      "AppKeyLeadingZero": 10010,
-      "AppKeyBtVibe": 10011,
-      "AppKeyBeadMode": 10012,
-      "AppKeyChargingStyle": 10013,
-      "AppKeyNightlight": 10014,
-      "AppKeyCycleSlot1": 10015,
-      "AppKeyCycleSlot2": 10016,
-      "AppKeyCycleSlot3": 10017,
-      "AppKeyCycleSlot4": 10018,
-      "AppKeyCycleSlot5": 10019,
-      "AppKeySoundEnabled": 10020,
-      "AppKeyHourlyBeep": 10021,
-      "AppKeyStepCelebration": 10022,
-      "AppKeyBtSound": 10023
-    },
-    "targetPlatforms": [
-      "emery",
-      "basalt",
-      "diorite",
-      "aplite"
-    ],
-    "sdkVersion": "3",
-    "resources": {
-      "media": []
-    }
-  },
-  "dependencies": {
-    "pebble-clay": "file:packages/pebble-clay"
+  "description": "Hamilton Pulsar 1970s Time Computer Suite for Pebble OS — Watchface, Chronograph, Countdown Timer, and Alarm.",
+  "version": "2.2.0",
+  "private": true,
+  "scripts": {
+    "build": "python3 scripts/build_all.py",
+    "build:watchface": "cd apps/watchface && pebble build",
+    "build:chrono": "cd apps/chrono && pebble build",
+    "build:timer": "cd apps/timer && pebble build",
+    "build:alarm": "cd apps/alarm && pebble build",
+    "test": "python3 tests/test_firmware.py",
+    "validate:pbw": "python3 scripts/validate_pbw.py",
+    "assets:watchface": "python3 scripts/generate_app_assets.py watchface",
+    "assets:chrono": "python3 scripts/generate_app_assets.py chrono",
+    "assets:timer": "python3 scripts/generate_app_assets.py timer",
+    "assets:alarm": "python3 scripts/generate_app_assets.py alarm",
+    "assets:all": "python3 scripts/generate_app_assets.py all",
+    "appstore-pack": "python3 scripts/generate_appstore_pack.py all",
+    "store-assets": "python3 scripts/generate_store_assets.py"
   }
 }

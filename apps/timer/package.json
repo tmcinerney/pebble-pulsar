@@ -1,0 +1,46 @@
+{
+  "name": "pebble-pulsar-timer",
+  "author": "Travers McInerney",
+  "version": "1.0.0",
+  "versionLabel": "1.0.0",
+  "keywords": [
+    "timer",
+    "countdown",
+    "pomodoro",
+    "pulsar",
+    "retro",
+    "1970s",
+    "led",
+    "hamilton"
+  ],
+  "pebble": {
+    "uuid": "8b5f3a12-9c4e-4f71-8b23-6e4d7a8c9b03",
+    "displayName": "Pulsar Timer",
+    "capabilities": [
+      "configurable"
+    ],
+    "watchapp": {
+      "watchface": false
+    },
+    "enableMultiJS": true,
+    "messageKeys": {
+      "AppKeyColorway": 10001,
+      "AppKeyItalicSlant": 10005,
+      "AppKeyAudioEnabled": 10020,
+      "AppKeyVibeEnabled": 10021
+    },
+    "targetPlatforms": [
+      "emery",
+      "basalt",
+      "diorite",
+      "aplite"
+    ],
+    "sdkVersion": "3",
+    "resources": {
+      "media": []
+    }
+  },
+  "dependencies": {
+    "pebble-clay": "file:../../packages/pebble-clay"
+  }
+}
