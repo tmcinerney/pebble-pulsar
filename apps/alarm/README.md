@@ -17,8 +17,16 @@ A multi-schedule vintage LED alarm clock for Pebble OS styled after the 1970s Ha
 - **Vintage 9-Minute Snooze:** Authentic mechanical snooze duration, configurable via Clay (5m, 9m, 10m, 15m).
 - **In-App Dial Edit Mode:** Interactive hour/minute editing with blinking cursor feedback.
 - **Escalating Synth & Haptic Curve:** Gentle initial tone pulse escalating to urgent wake alerts.
+- **Continuous Bedside Alarm Loop:** 30-second repeating strobe alert with backlight illumination and continuous haptics when open in foreground.
 
 ---
+
+## 💡 Background Wakeup Behavior & Bedside Mode
+
+Pebble OS treats 3rd-party background alarms differently than built-in system alarms:
+
+- **Bedside Clock Mode (Recommended for Wake-Up)**: Leave **Pulsar Alarm** open when you go to sleep. When the alarm fires, it immediately activates the **full 30-second continuous alarm loop** with vibrating pulses, retro piezo chimes, glowing backlight, and flashing banners.
+- **Background Wakeup Mode**: If you exit to your watchface, Pebble OS displays a **system wakeup notification card** with an initial tone/buzz. Pressing **SELECT** launches into the full 30-second Pulsar alarm sequence.
 
 ## 🎮 Hardware Controls
 

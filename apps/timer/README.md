@@ -11,14 +11,20 @@ A vintage LED countdown timer and Pomodoro focus tool for Pebble OS styled after
 
 ## ⚡ Features
 
-- **10 Quick Duration Presets:** Instant selection between 1m, 3m, 5m, 10m, 15m, 20m, 25m (Pomodoro), 30m, 45m, and 60m.
+- **15 Quick Duration Presets:** Instant selection for short intervals (`00:10`, `00:30`, `00:45`), standard intervals (1m, 2m, 3m, 5m, 10m, 15m, 20m, 30m, 45m, 60m, 90m), and Pomodoro (25m).
+- **Interactive Custom Duration Editor:** Long-press SELECT (500ms) to dial in exact minutes (0–99) and seconds (0–59) with blinking LED digits.
 - **10-Dot Micro-LED Depletion Gauge:** Progressive optical bead depletion visualizing remaining countdown proportion.
-- **Pebble Wakeup API Integration:** Safely fires alarm notifications and wakes the watch even if you exit the app or the screen turns off.
+- **Pebble Wakeup API Integration:** Safely schedules hardware wakeups and alerts when time is up even if you exit the app.
 - **Ascending 3-2-1 Audio Warning:** Warning audio beeps at 3s, 2s, 1s leading into timer completion.
-- **Escalating Ruby Alarm Pulse:** Pulsing red LED display alert with buzzer synth tones and haptic vibration pattern.
-- **Quick Time Adjust:** Add or subtract 1 minute on the fly during active countdowns.
+- **Escalating Ruby Alarm Pulse:** Pulsing red LED display alert with buzzer synth tones, backlight illumination, and repeating haptic vibration pattern.
+- **Quick Time Adjust:** Add or subtract +15s / +1m on the fly during active countdowns.
 
 ---
+
+## 💡 Background Wakeup Behavior & Foreground Mode
+
+- **Foreground / Desk Timer Mode**: Keep Pulsar Timer open while cooking, working out, or focusing. When time is up, it immediately triggers the **full 30-second continuous alarm loop** with vibrating pulses, audio chimes, glowing backlight, and flashing banners.
+- **Background Wakeup Mode**: If you switch back to your watchface while a timer is running, Pebble OS displays a **system wakeup notification card** with an alert tone/buzz when time expires. Pressing **SELECT** launches into the full 30-second Pulsar alarm sequence.
 
 ## 🎮 Hardware Controls
 
