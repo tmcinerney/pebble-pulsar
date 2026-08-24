@@ -157,6 +157,8 @@ static void alarm_pulse_callback(void *data) {
     // Limit alarm ringing to 60 pulses (30 seconds)
     if (s_alarm_flash_count < 60) {
       s_alarm_pulse_timer = app_timer_register(500, alarm_pulse_callback, NULL);
+    } else {
+      light_enable(false);
     }
   }
 }
@@ -167,6 +169,7 @@ static void trigger_alarm_firing(void) {
   s_is_alarm_firing = true;
   s_remaining_sec = 0;
   s_alarm_flash_count = 0;
+  light_enable(true);
   
   if (s_tick_timer) {
     app_timer_cancel(s_tick_timer);
@@ -203,7 +206,7 @@ static void start_timer(void) {
   s_is_running = true;
   s_is_paused = false;
   s_is_alarm_firing = false;
-  light_enable(true);
+  light_enable_interaction();
 
   // Schedule background wakeup
   if (s_wakeup_id >= 0) {

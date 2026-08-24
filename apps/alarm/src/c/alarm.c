@@ -153,6 +153,8 @@ static void ring_pulse_callback(void *data) {
     // Limit continuous ringing to 60 pulses (30 seconds)
     if (s_ring_pulse_count < 60) {
       s_ring_timer = app_timer_register(500, ring_pulse_callback, NULL);
+    } else {
+      light_enable(false);
     }
   }
 }
@@ -161,11 +163,13 @@ static void start_alarm_ringing(void) {
   s_is_ringing = true;
   s_edit_mode = EDIT_NONE;
   s_ring_pulse_count = 0;
+  light_enable(true);
   ring_pulse_callback(NULL);
 }
 
 static void dismiss_alarm(void) {
   s_is_ringing = false;
+  light_enable(false);
   if (s_ring_timer) {
     app_timer_cancel(s_ring_timer);
     s_ring_timer = NULL;
@@ -180,6 +184,7 @@ static void dismiss_alarm(void) {
 
 static void snooze_alarm(void) {
   s_is_ringing = false;
+  light_enable(false);
   if (s_ring_timer) {
     app_timer_cancel(s_ring_timer);
     s_ring_timer = NULL;
@@ -513,6 +518,7 @@ static void init(void) {
 }
 
 static void deinit(void) {
+  light_enable(false);
   save_state();
   if (s_ring_timer) {
     app_timer_cancel(s_ring_timer);
