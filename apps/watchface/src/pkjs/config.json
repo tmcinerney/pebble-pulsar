@@ -536,18 +536,6 @@
             "value": "3"
           }
         ]
-      },
-      {
-        "type": "toggle",
-        "messageKey": "AppKeyBtVibe",
-        "label": "Bluetooth Lost: Vibrate",
-        "defaultValue": false
-      },
-      {
-        "type": "toggle",
-        "messageKey": "AppKeyBtSound",
-        "label": "Bluetooth Lost: Beep",
-        "defaultValue": false
       }
     ]
   },

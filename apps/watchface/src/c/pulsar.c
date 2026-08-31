@@ -25,7 +25,6 @@
 #define STORAGE_KEY_HEADER_STYLE     10008
 #define STORAGE_KEY_DATE_FORMAT      10009
 #define STORAGE_KEY_LEADING_ZERO     10010
-#define STORAGE_KEY_BT_VIBE          10011
 #define STORAGE_KEY_BEAD_MODE        10012
 #define STORAGE_KEY_CHARGING_STYLE   10013
 #define STORAGE_KEY_NIGHTLIGHT       10014
@@ -38,6 +37,10 @@
 #define STORAGE_KEY_LED_BRIGHTNESS   10026
 #define STORAGE_KEY_LED_GLOW         10028
 #define STORAGE_KEY_BACKLIGHT_TINT   10029
+#define STORAGE_KEY_SOUND_ENABLED    10020
+#define STORAGE_KEY_HOURLY_BEEP      10021
+#define STORAGE_KEY_STEP_CELEBRATION 10022
+#define STORAGE_KEY_CELEBRATED_DAY   10023
 
 #ifndef MESSAGE_KEY_AppKeyOperatingMode
 #define MESSAGE_KEY_AppKeyOperatingMode   10000
@@ -50,7 +53,6 @@
 #define MESSAGE_KEY_AppKeyHeaderStyle    10008
 #define MESSAGE_KEY_AppKeyDateFormat     10009
 #define MESSAGE_KEY_AppKeyLeadingZero    10010
-#define MESSAGE_KEY_AppKeyBtVibe         10011
 #define MESSAGE_KEY_AppKeyBeadMode       10012
 #define MESSAGE_KEY_AppKeyChargingStyle  10013
 #define MESSAGE_KEY_AppKeyNightlight     10014
@@ -59,6 +61,9 @@
 #define MESSAGE_KEY_AppKeyCycleSlot3     10017
 #define MESSAGE_KEY_AppKeyCycleSlot4     10018
 #define MESSAGE_KEY_AppKeyCycleSlot5     10019
+#define MESSAGE_KEY_AppKeySoundEnabled    10020
+#define MESSAGE_KEY_AppKeyHourlyBeep      10021
+#define MESSAGE_KEY_AppKeyStepCelebration 10022
 #endif
 
 // Operating Modes
@@ -135,7 +140,16 @@ static bool s_stealth_awake = false;
 static int s_operating_mode = MODE_ALWAYS_ON;
 static int s_colorway = COLORWAY_VIBRANT_RUBY;
 static int s_hourly_vibe = HOURLY_VIBE_OFF;
-static bool s_bt_vibe = false;
+// AIDEV-NOTE: These four were shipped as config UI with no C implementation -- audio was hardcoded to
+// fire whenever the matching VIBRATION setting was on, so "Hourly Beep: off" still beeped. s_sound_enabled
+// is the master gate every tone must pass.
+static bool s_sound_enabled = true;
+static bool s_hourly_beep = false;
+// AIDEV-NOTE: Bitmask matching the config values -- bit 0 vibrates, bit 1 chimes, so 3 does both.
+static int s_step_celebration = 1;
+// Day we last celebrated on, as year*1000+yday. Persisted so a restart (or the watchface being
+// re-selected) cannot fire a second celebration for a goal already met today.
+static int s_celebrated_day = -1;
 static int s_bead_mode = BEAD_MODE_STEPS;
 static bool s_italic_slant = true;
 static int s_header_style = HEADER_STYLE_PULSAR;
@@ -394,13 +408,9 @@ static void touch_handler(const TouchEvent *event, void *context) {
 }
 #endif
 
+// AIDEV-NOTE: No disconnect alert here. The firmware already vibrates on Bluetooth loss according to the
+// wearer's own notification settings; duplicating it gave them two buzzes for one event.
 static void bluetooth_callback(bool connected) {
-  if (s_bt_vibe && !connected && s_bluetooth_connected) {
-    vibes_double_pulse();
-#if PBL_API_EXISTS(speaker_play_tone)
-    speaker_play_tone(880, 120, 70, SpeakerWaveformSawtooth);
-#endif
-  }
   s_bluetooth_connected = connected;
   layer_mark_dirty(s_canvas_layer);
 }
@@ -414,8 +424,38 @@ static void battery_callback(BatteryChargeState state) {
 }
 
 #if defined(PBL_HEALTH)
+// AIDEV-NOTE: Fires once when the daily step goal is first crossed. Movement updates arrive continuously
+// once you are past the goal, so the day guard -- not a simple "did we already fire" bool -- is what stops
+// it repeating; persisting it means relaunching the watchface mid-afternoon does not celebrate again.
+static void maybe_celebrate_steps(void) {
+  if (s_step_celebration == 0) return;
+
+  int goal = s_step_goal > 0 ? s_step_goal : 10000;
+  if (get_step_count() < goal) return;
+
+  time_t now = time(NULL);
+  struct tm *local = localtime(&now);
+  int today = (local->tm_year * 1000) + local->tm_yday;
+  if (s_celebrated_day == today) return;
+
+  s_celebrated_day = today;
+  persist_write_int(STORAGE_KEY_CELEBRATED_DAY, s_celebrated_day);
+
+  if (s_step_celebration & 1) {
+    vibes_double_pulse();
+  }
+#if PBL_API_EXISTS(speaker_play_tone)
+  if (s_sound_enabled && (s_step_celebration & 2)) {
+    speaker_play_tone(2093, 140, 70, SpeakerWaveformSquare);
+  }
+#endif
+}
+
 static void health_handler(HealthEventType event, void *context) {
   if (event == HealthEventMovementUpdate || event == HealthEventHeartRateUpdate) {
+    if (event == HealthEventMovementUpdate) {
+      maybe_celebrate_steps();
+    }
     layer_mark_dirty(s_canvas_layer);
   }
 }
@@ -730,19 +770,20 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   if (units_changed & HOUR_UNIT) {
-    if (s_hourly_vibe != HOURLY_VIBE_OFF && tick_time->tm_hour != s_last_vibe_hour) {
+    bool chime = (s_hourly_vibe != HOURLY_VIBE_OFF) || (s_sound_enabled && s_hourly_beep);
+    if (chime && tick_time->tm_hour != s_last_vibe_hour) {
       s_last_vibe_hour = tick_time->tm_hour;
       if (s_hourly_vibe == HOURLY_VIBE_SINGLE) {
         vibes_short_pulse();
-#if PBL_API_EXISTS(speaker_play_tone)
-        speaker_play_tone(1760, 80, 50, SpeakerWaveformSquare);
-#endif
       } else if (s_hourly_vibe == HOURLY_VIBE_DOUBLE) {
         vibes_double_pulse();
-#if PBL_API_EXISTS(speaker_play_tone)
-        speaker_play_tone(2093, 100, 50, SpeakerWaveformSquare);
-#endif
       }
+#if PBL_API_EXISTS(speaker_play_tone)
+      if (s_sound_enabled && s_hourly_beep) {
+        speaker_play_tone(s_hourly_vibe == HOURLY_VIBE_DOUBLE ? 2093 : 1760, 80, 50,
+                          SpeakerWaveformSquare);
+      }
+#endif
     }
   }
 
@@ -815,12 +856,18 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       if (s_colorway < 0 || s_colorway >= NUM_COLORWAYS) s_colorway = 0;
       persist_write_int(STORAGE_KEY_COLORWAY, s_colorway);
       update_backlight_tint();
+    } else if (key == MESSAGE_KEY_AppKeySoundEnabled) {
+      s_sound_enabled = tuple_to_bool(t, s_sound_enabled);
+      persist_write_bool(STORAGE_KEY_SOUND_ENABLED, s_sound_enabled);
+    } else if (key == MESSAGE_KEY_AppKeyHourlyBeep) {
+      s_hourly_beep = tuple_to_bool(t, s_hourly_beep);
+      persist_write_bool(STORAGE_KEY_HOURLY_BEEP, s_hourly_beep);
+    } else if (key == MESSAGE_KEY_AppKeyStepCelebration) {
+      s_step_celebration = tuple_to_int(t, s_step_celebration);
+      persist_write_int(STORAGE_KEY_STEP_CELEBRATION, s_step_celebration);
     } else if (key == MESSAGE_KEY_AppKeyHourlyVibe) {
       s_hourly_vibe = tuple_to_int(t, s_hourly_vibe);
       persist_write_int(STORAGE_KEY_HOURLY_VIBE, s_hourly_vibe);
-    } else if (key == MESSAGE_KEY_AppKeyBtVibe) {
-      s_bt_vibe = tuple_to_bool(t, s_bt_vibe);
-      persist_write_bool(STORAGE_KEY_BT_VIBE, s_bt_vibe);
     } else if (key == MESSAGE_KEY_AppKeyBeadMode) {
       s_bead_mode = tuple_to_int(t, s_bead_mode);
       persist_write_int(STORAGE_KEY_BEAD_MODE, s_bead_mode);
@@ -929,11 +976,20 @@ static void load_settings(void) {
     s_colorway = persist_read_int(STORAGE_KEY_COLORWAY);
     if (s_colorway < 0 || s_colorway >= NUM_COLORWAYS) s_colorway = 0;
   }
+  if (persist_exists(STORAGE_KEY_SOUND_ENABLED)) {
+    s_sound_enabled = persist_read_bool(STORAGE_KEY_SOUND_ENABLED);
+  }
+  if (persist_exists(STORAGE_KEY_HOURLY_BEEP)) {
+    s_hourly_beep = persist_read_bool(STORAGE_KEY_HOURLY_BEEP);
+  }
+  if (persist_exists(STORAGE_KEY_STEP_CELEBRATION)) {
+    s_step_celebration = persist_read_int(STORAGE_KEY_STEP_CELEBRATION);
+  }
+  if (persist_exists(STORAGE_KEY_CELEBRATED_DAY)) {
+    s_celebrated_day = persist_read_int(STORAGE_KEY_CELEBRATED_DAY);
+  }
   if (persist_exists(STORAGE_KEY_HOURLY_VIBE)) {
     s_hourly_vibe = persist_read_int(STORAGE_KEY_HOURLY_VIBE);
-  }
-  if (persist_exists(STORAGE_KEY_BT_VIBE)) {
-    s_bt_vibe = persist_read_bool(STORAGE_KEY_BT_VIBE);
   }
   if (persist_exists(STORAGE_KEY_BEAD_MODE)) {
     s_bead_mode = persist_read_int(STORAGE_KEY_BEAD_MODE);
