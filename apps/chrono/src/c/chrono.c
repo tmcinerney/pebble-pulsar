@@ -452,6 +452,13 @@ static void load_state(void) {
       }
       s_is_running = true;
       time_ms(&s_start_sec, &s_start_ms);
+
+      // AIDEV-NOTE: Fold the away-time into the stored total straight away. save_state() only runs from
+      // deinit(), and deinit does not run when the system kills the app rather than exiting it -- so
+      // without this the next launch reads the SAME stale start and adds the same gap a second time,
+      // compounding on every relaunch. Re-persisting here makes the restore idempotent.
+      persist_write_int(STORAGE_KEY_SAVED_ELAPSED, (int)s_accumulated_ms);
+      persist_write_int(STORAGE_KEY_SAVED_START, (int)now);
     }
   }
 }
