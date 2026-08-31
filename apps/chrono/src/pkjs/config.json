@@ -1,10 +1,14 @@
 [
   {
+    "type": "heading",
+    "defaultValue": "Pulsar Chronograph"
+  },
+  {
     "type": "section",
     "items": [
       {
         "type": "heading",
-        "defaultValue": "Pulsar Chrono Settings"
+        "defaultValue": "LED Appearance"
       },
       {
         "type": "select",
@@ -68,6 +72,15 @@
         "messageKey": "AppKeyItalicSlant",
         "defaultValue": true,
         "label": "Italic Slant"
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Alerts"
       },
       {
         "type": "toggle",
@@ -81,6 +94,21 @@
         "messageKey": "AppKeyVibeEnabled",
         "defaultValue": true,
         "label": "Vibration"
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Reset"
+      },
+      {
+        "type": "button",
+        "id": "resetDefaults",
+        "defaultValue": "Reset to Defaults",
+        "description": "Restores every setting on this page. Press Save afterwards to apply it to the watch."
       }
     ]
   },

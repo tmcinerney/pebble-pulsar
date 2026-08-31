@@ -1,32 +1,7 @@
 [
   {
     "type": "heading",
-    "defaultValue": "Pulsar 1970 Configuration"
-  },
-  {
-    "type": "section",
-    "items": [
-      {
-        "type": "heading",
-        "defaultValue": "Display"
-      },
-      {
-        "type": "radiogroup",
-        "messageKey": "AppKeyOperatingMode",
-        "label": "Display Mode",
-        "defaultValue": "0",
-        "options": [
-          {
-            "label": "Always-On",
-            "value": "0"
-          },
-          {
-            "label": "Stealth (Flick/Tap/Touch to Wake 4s)",
-            "value": "1"
-          }
-        ]
-      }
-    ]
+    "defaultValue": "Pulsar 1970"
   },
   {
     "type": "section",
@@ -104,6 +79,15 @@
         "messageKey": "AppKeyItalicSlant",
         "label": "Italic Slant",
         "defaultValue": true
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Face Text"
       },
       {
         "type": "select",
@@ -168,7 +152,70 @@
     "items": [
       {
         "type": "heading",
-        "defaultValue": "Dot Meter"
+        "defaultValue": "Display"
+      },
+      {
+        "type": "radiogroup",
+        "messageKey": "AppKeyOperatingMode",
+        "label": "Display Mode",
+        "defaultValue": "0",
+        "options": [
+          {
+            "label": "Always-On",
+            "value": "0"
+          },
+          {
+            "label": "Stealth (Flick/Tap/Touch to Wake 4s)",
+            "value": "1"
+          }
+        ]
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyNightlight",
+        "label": "Stay Lit While Charging",
+        "description": "Keeps the display active on a dock.",
+        "defaultValue": false
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Time & Date"
+      },
+      {
+        "type": "select",
+        "messageKey": "AppKeyDateFormat",
+        "label": "Date Format",
+        "defaultValue": "0",
+        "options": [
+          {
+            "label": "Month Day (MM DD)",
+            "value": "0"
+          },
+          {
+            "label": "Day Month (DD MM)",
+            "value": "1"
+          }
+        ]
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyLeadingZero",
+        "label": "Leading Zero on Hours",
+        "defaultValue": false
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Steps"
       },
       {
         "type": "select",
@@ -220,6 +267,30 @@
       },
       {
         "type": "select",
+        "messageKey": "AppKeyStepCelebration",
+        "label": "Step Goal Alert",
+        "defaultValue": "1",
+        "options": [
+          {
+            "label": "Off",
+            "value": "0"
+          },
+          {
+            "label": "Vibration Only",
+            "value": "1"
+          },
+          {
+            "label": "Audio Chime Only",
+            "value": "2"
+          },
+          {
+            "label": "Vibration & Audio Chime",
+            "value": "3"
+          }
+        ]
+      },
+      {
+        "type": "select",
         "messageKey": "AppKeyChargingStyle",
         "label": "Charging Animation",
         "defaultValue": "0",
@@ -249,44 +320,6 @@
             "value": "5"
           }
         ]
-      },
-      {
-        "type": "toggle",
-        "messageKey": "AppKeyNightlight",
-        "label": "Stay Lit While Charging",
-        "description": "Keeps the display active on a dock.",
-        "defaultValue": false
-      }
-    ]
-  },
-  {
-    "type": "section",
-    "items": [
-      {
-        "type": "heading",
-        "defaultValue": "Time & Date"
-      },
-      {
-        "type": "select",
-        "messageKey": "AppKeyDateFormat",
-        "label": "Date Format",
-        "defaultValue": "0",
-        "options": [
-          {
-            "label": "Month Day (MM DD)",
-            "value": "0"
-          },
-          {
-            "label": "Day Month (DD MM)",
-            "value": "1"
-          }
-        ]
-      },
-      {
-        "type": "toggle",
-        "messageKey": "AppKeyLeadingZero",
-        "label": "Leading Zero on Hours",
-        "defaultValue": false
       }
     ]
   },
@@ -498,30 +531,21 @@
         "messageKey": "AppKeyHourlyBeep",
         "label": "Hourly Beep",
         "defaultValue": false
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Reset"
       },
       {
-        "type": "select",
-        "messageKey": "AppKeyStepCelebration",
-        "label": "Step Goal Alert",
-        "defaultValue": "1",
-        "options": [
-          {
-            "label": "Off",
-            "value": "0"
-          },
-          {
-            "label": "Vibration Only",
-            "value": "1"
-          },
-          {
-            "label": "Audio Chime Only",
-            "value": "2"
-          },
-          {
-            "label": "Vibration & Audio Chime",
-            "value": "3"
-          }
-        ]
+        "type": "button",
+        "id": "resetDefaults",
+        "defaultValue": "Reset to Defaults",
+        "description": "Restores every setting on this page. Press Save afterwards to apply it to the watch."
       }
     ]
   },
