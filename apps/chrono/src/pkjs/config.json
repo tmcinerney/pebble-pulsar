@@ -60,7 +60,7 @@
         "type": "toggle",
         "messageKey": "AppKeyShowGhost",
         "label": "Ghost Dots",
-        "defaultValue": true,
+        "defaultValue": false,
         "description": "Show the unlit dots of the matrix."
       },
       {

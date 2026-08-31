@@ -39,7 +39,9 @@ static AppTimer *s_refresh_timer = NULL;
 static AppTimer *s_freeze_timer = NULL;
 
 static int s_colorway = COLORWAY_VIBRANT_RUBY;
-static bool s_show_ghost = true;
+// Ghost dots off by default across the suite: they grey out the gaps between lit dots and
+// flatten the glow. Matches the watchface so a fresh install looks consistent.
+static bool s_show_ghost = false;
 static bool s_bright_leds = false;
 static bool s_led_glow = true;
 static bool s_italic_slant = true;
