@@ -355,12 +355,36 @@ static void handle_gesture_dir(int dir, int debounce_ms) {
 // inherit their preference for free and hold no accel subscription -- previously a permanent 10Hz wakeup
 // and the single largest non-display battery draw. Only fires on the off->on edge, one event per wake.
 // Stubbed to a no-op on aplite/basalt/chalk/diorite; see the MODE_STEALTH guard in load_settings().
+// AIDEV-NOTE: The backlight coming on means "the wearer is looking at the watch", which is a request to
+// see the TIME -- not to page past it. Wiring this to advance_display_mode made every wrist raise land on
+// the seconds screen. So the backlight edge only WAKES (and returns to Time); paging is the tap's job.
 #if PBL_API_EXISTS(backlight_service_subscribe)
 static void backlight_handler(bool on) {
   if (!on) return;
-  handle_gesture_dir(1, 400);
+
+  if (s_operating_mode == MODE_STEALTH && !s_stealth_awake) {
+    s_stealth_awake = true;
+  } else if (s_display_mode == DISPLAY_MODE_TIME) {
+    return;   // already showing what they want; don't restart the timer
+  }
+
+  s_display_mode = DISPLAY_MODE_TIME;
+  if (s_mode_timer) {
+    app_timer_cancel(s_mode_timer);
+  }
+  s_mode_timer = app_timer_register(WAKE_DURATION_MS, mode_timer_callback, NULL);
+  layer_mark_dirty(s_canvas_layer);
 }
 #endif
+
+// AIDEV-NOTE: The backlight event fires once per off->on edge, so on its own it advances the display
+// exactly once and then goes quiet until the backlight times out. accel_tap_service supplies the repeat:
+// it is the firmware's own tap detector, so it carries no app-level sensitivity knob to duplicate a
+// system setting, and it fires per tap. handle_gesture_dir's debounce absorbs the overlap when one wrist
+// raise trips both sources.
+static void tap_handler(AccelAxisType axis, int32_t direction) {
+  handle_gesture_dir(1, 400);
+}
 
 #if PBL_API_EXISTS(touch_service_subscribe)
 static void touch_handler(const TouchEvent *event, void *context) {
@@ -1009,6 +1033,7 @@ static void init(void) {
 #if PBL_API_EXISTS(backlight_service_subscribe)
   backlight_service_subscribe(backlight_handler);
 #endif
+  accel_tap_service_subscribe(tap_handler);
 
   // did_focus, not will_focus: restore the system colour only once the covering window is actually up,
   // and re-tint only once we are genuinely back, so the LED never changes mid-animation.
@@ -1041,6 +1066,7 @@ static void deinit(void) {
   // reset when a notification preempts the app, and that demonstrably does not happen on FW 4.36.2.
   pulsar_apply_backlight_tint(s_colorway % NUM_COLORWAYS, false);
   app_focus_service_unsubscribe();
+  accel_tap_service_unsubscribe();
 #if defined(PBL_HEALTH)
   health_service_events_unsubscribe();
 #endif
