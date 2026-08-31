@@ -93,26 +93,6 @@
         ]
       },
       {
-        "type": "select",
-        "messageKey": "AppKeyDotSize",
-        "label": "Dot Size",
-        "defaultValue": "1",
-        "options": [
-          {
-            "label": "Standard",
-            "value": "0"
-          },
-          {
-            "label": "Large (+1px)",
-            "value": "1"
-          },
-          {
-            "label": "Huge (+2px)",
-            "value": "2"
-          }
-        ]
-      },
-      {
         "type": "toggle",
         "messageKey": "AppKeyLedGlow",
         "label": "Glow",

@@ -36,7 +36,6 @@
 #define STORAGE_KEY_CYCLE_SLOT_5     10019
 #define STORAGE_KEY_SHOW_GHOST       10025
 #define STORAGE_KEY_LED_BRIGHTNESS   10026
-#define STORAGE_KEY_DOT_SIZE         10027
 #define STORAGE_KEY_LED_GLOW         10028
 #define STORAGE_KEY_BACKLIGHT_TINT   10029
 
@@ -146,12 +145,11 @@ static bool s_leading_zero = false;
 static int s_step_goal = 10000;
 static int s_charging_style = CHARGING_STYLE_FLOW;
 static bool s_nightlight = false;
-// AIDEV-NOTE: Defaults tuned for the "glowing neon red" look: bloom on, ghost dots off (they grey out the
-// gaps and kill the glow), Classic brightness (the panel's reddest reproduction) and one step of extra
-// dot coverage. Coverage is the only brightness lever that does not desaturate -- see pulsar_matrix.c.
+// AIDEV-NOTE: Defaults tuned for the "glowing neon red" look: bloom on, ghost dots off (they grey out
+// the gaps and kill the glow), Classic brightness -- the panel's reddest reproduction, measured at
+// ~#E35462. There is no brighter red available; the ramp above it only trades saturation for luminance.
 static bool s_show_ghost = false;
 static int s_led_brightness = LED_BRIGHTNESS_CLASSIC;
-static int s_dot_size = 1;
 static bool s_led_glow = true;
 static bool s_backlight_tint = false;
 static int s_cycle_slot1 = 1; // Live Seconds
@@ -817,11 +815,6 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   if (persist_exists(STORAGE_KEY_BACKLIGHT_TINT)) {
     s_backlight_tint = persist_read_bool(STORAGE_KEY_BACKLIGHT_TINT);
   }
-    } else if (key == MESSAGE_KEY_AppKeyDotSize) {
-      s_dot_size = tuple_to_int(t, s_dot_size);
-      if (s_dot_size < 0 || s_dot_size > 2) s_dot_size = 0;
-      persist_write_int(STORAGE_KEY_DOT_SIZE, s_dot_size);
-      pulsar_set_dot_boost(s_dot_size);
     } else if (key == MESSAGE_KEY_AppKeyLedBrightness) {
       s_led_brightness = tuple_to_int(t, s_led_brightness);
       if (s_led_brightness < 0 || s_led_brightness >= NUM_LED_BRIGHTNESS) s_led_brightness = LED_BRIGHTNESS_CLASSIC;
@@ -938,10 +931,6 @@ static void load_settings(void) {
     s_led_brightness = persist_read_int(STORAGE_KEY_LED_BRIGHTNESS);
   }
   pulsar_set_brightness(s_led_brightness);
-  if (persist_exists(STORAGE_KEY_DOT_SIZE)) {
-    s_dot_size = persist_read_int(STORAGE_KEY_DOT_SIZE);
-  }
-  pulsar_set_dot_boost(s_dot_size);
   if (persist_exists(STORAGE_KEY_LED_GLOW)) {
     s_led_glow = persist_read_bool(STORAGE_KEY_LED_GLOW);
   }

@@ -49,7 +49,6 @@
       "AppKeyBtSound": 10023,
       "AppKeyShowGhost": 10025,
       "AppKeyLedBrightness": 10026,
-      "AppKeyDotSize": 10027,
       "AppKeyLedGlow": 10028,
       "AppKeyBacklightTint": 10029
     },

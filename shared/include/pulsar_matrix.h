@@ -37,14 +37,6 @@ int pulsar_char_to_glyph(char c);
 void pulsar_set_ghost_enabled(bool enabled);
 bool pulsar_ghost_enabled(void);
 
-// LED size level 0-2. Scales dot pitch AND radius together so bigger dots never merge.
-void pulsar_set_dot_boost(int boost);
-int pulsar_spacing_x(void);
-int pulsar_spacing_y(void);
-int pulsar_dot_radius(void);
-int pulsar_digit_gap(void);
-int pulsar_colon_gap(void);
-
 // LED bloom halo around each lit dot. Default true.
 void pulsar_set_glow_enabled(bool enabled);
 
