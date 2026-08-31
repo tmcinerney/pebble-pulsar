@@ -996,6 +996,11 @@ static void main_window_unload(Window *window) {
 
 static void init(void) {
   load_settings();
+  // AIDEV-NOTE: Apply on EVERY launch, including when the tint is off -- that branch calls
+  // light_set_system_color(), so a tint stranded by a previous run is cleared here. deinit() is not
+  // sufficient on its own: switching watchfaces can kill the app without running it, which left the
+  // wearer's backlight stuck on our colour with nothing to restore it.
+  update_backlight_tint();
 
   s_main_window = window_create();
   window_set_background_color(s_main_window, GColorBlack);
