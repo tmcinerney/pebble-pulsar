@@ -26,7 +26,6 @@
     "messageKeys": {
       "AppKeyOperatingMode": 10000,
       "AppKeyColorway": 10001,
-      "AppKeyFlickAction": 10002,
       "AppKeyHourlyVibe": 10003,
       "AppKeyShowStepBeads": 10004,
       "AppKeyItalicSlant": 10005,
@@ -48,7 +47,11 @@
       "AppKeyHourlyBeep": 10021,
       "AppKeyStepCelebration": 10022,
       "AppKeyBtSound": 10023,
-      "AppKeyFlickSensitivity": 10024
+      "AppKeyShowGhost": 10025,
+      "AppKeyLedBrightness": 10026,
+      "AppKeyDotSize": 10027,
+      "AppKeyLedGlow": 10028,
+      "AppKeyBacklightTint": 10029
     },
     "targetPlatforms": [
       "emery",

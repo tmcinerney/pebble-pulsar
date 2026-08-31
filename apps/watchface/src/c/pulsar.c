@@ -17,7 +17,6 @@
 // Storage & Message Keys
 #define STORAGE_KEY_OPERATING_MODE   10000
 #define STORAGE_KEY_COLORWAY         10001
-#define STORAGE_KEY_FLICK_ACTION     10002
 #define STORAGE_KEY_HOURLY_VIBE      10003
 #define STORAGE_KEY_SHOW_STEP_BEADS  10004
 #define STORAGE_KEY_ITALIC_SLANT     10005
@@ -35,12 +34,15 @@
 #define STORAGE_KEY_CYCLE_SLOT_3     10017
 #define STORAGE_KEY_CYCLE_SLOT_4     10018
 #define STORAGE_KEY_CYCLE_SLOT_5     10019
-#define STORAGE_KEY_FLICK_SENSITIVITY 10024
+#define STORAGE_KEY_SHOW_GHOST       10025
+#define STORAGE_KEY_LED_BRIGHTNESS   10026
+#define STORAGE_KEY_DOT_SIZE         10027
+#define STORAGE_KEY_LED_GLOW         10028
+#define STORAGE_KEY_BACKLIGHT_TINT   10029
 
 #ifndef MESSAGE_KEY_AppKeyOperatingMode
 #define MESSAGE_KEY_AppKeyOperatingMode   10000
 #define MESSAGE_KEY_AppKeyColorway       10001
-#define MESSAGE_KEY_AppKeyFlickAction     10002
 #define MESSAGE_KEY_AppKeyHourlyVibe      10003
 #define MESSAGE_KEY_AppKeyShowStepBeads  10004
 #define MESSAGE_KEY_AppKeyItalicSlant    10005
@@ -58,22 +60,12 @@
 #define MESSAGE_KEY_AppKeyCycleSlot3     10017
 #define MESSAGE_KEY_AppKeyCycleSlot4     10018
 #define MESSAGE_KEY_AppKeyCycleSlot5     10019
-#define MESSAGE_KEY_AppKeyFlickSensitivity 10024
 #endif
 
 // Operating Modes
 enum OperatingMode {
   MODE_ALWAYS_ON = 0,
   MODE_STEALTH = 1
-};
-
-// Flick Sensitivity
-enum FlickSensitivity {
-  FLICK_SENSITIVITY_BALANCED = 0,
-  FLICK_SENSITIVITY_LOW = 1,
-  FLICK_SENSITIVITY_HIGH = 2,
-  FLICK_SENSITIVITY_TAPS_ONLY = 3,
-  FLICK_SENSITIVITY_OFF = 4
 };
 
 // Charging Styles
@@ -127,17 +119,6 @@ enum DisplayMode {
   DISPLAY_MODE_HEART_RATE = 5
 };
 
-// Flick Actions
-enum FlickAction {
-  FLICK_ACTION_CYCLE = 0,
-  FLICK_ACTION_SECONDS = 1,
-  FLICK_ACTION_DATE = 2,
-  FLICK_ACTION_STEPS = 3,
-  FLICK_ACTION_BATTERY = 4,
-  FLICK_ACTION_HEART_RATE = 5,
-  FLICK_ACTION_OFF = 6
-};
-
 // Hourly Vibe
 enum HourlyVibe {
   HOURLY_VIBE_OFF = 0,
@@ -154,7 +135,6 @@ static bool s_stealth_awake = false;
 
 static int s_operating_mode = MODE_ALWAYS_ON;
 static int s_colorway = COLORWAY_VIBRANT_RUBY;
-static int s_flick_action = FLICK_ACTION_CYCLE;
 static int s_hourly_vibe = HOURLY_VIBE_OFF;
 static bool s_bt_vibe = false;
 static int s_bead_mode = BEAD_MODE_STEPS;
@@ -166,12 +146,19 @@ static bool s_leading_zero = false;
 static int s_step_goal = 10000;
 static int s_charging_style = CHARGING_STYLE_FLOW;
 static bool s_nightlight = false;
+// AIDEV-NOTE: Defaults tuned for the "glowing neon red" look: bloom on, ghost dots off (they grey out the
+// gaps and kill the glow), Classic brightness (the panel's reddest reproduction) and one step of extra
+// dot coverage. Coverage is the only brightness lever that does not desaturate -- see pulsar_matrix.c.
+static bool s_show_ghost = false;
+static int s_led_brightness = LED_BRIGHTNESS_CLASSIC;
+static int s_dot_size = 1;
+static bool s_led_glow = true;
+static bool s_backlight_tint = false;
 static int s_cycle_slot1 = 1; // Live Seconds
 static int s_cycle_slot2 = 2; // Date
 static int s_cycle_slot3 = 3; // Daily Steps
 static int s_cycle_slot4 = 4; // Battery Level
 static int s_cycle_slot5 = 0; // Heart Rate (Disabled by default, opt-in for HR devices)
-static int s_flick_sensitivity = FLICK_SENSITIVITY_BALANCED;
 
 static bool s_bluetooth_connected = true;
 static int s_battery_level = 100;
@@ -183,11 +170,22 @@ static AppTimer *s_charge_anim_timer = NULL;
 static int s_anim_frame = 0;
 static int s_last_vibe_hour = -1;
 
-static void update_nightlight(void) {
-  bool should_light = s_nightlight && (s_battery_charging || s_battery_plugged);
-  light_enable(should_light);
+// AIDEV-NOTE: We never control WHETHER the backlight lights -- motion trigger, ambient threshold and
+// timeout are system preferences, and pinning it would stomp all three and wreck battery life. We only
+// SUBSCRIBE to the backlight event as a wake signal, which inherits the wearer's Motion Sensitivity for
+// free. Backlight COLOUR is also a system setting, so tinting is opt-in and defaults off.
+static void update_backlight_tint(void) {
+  pulsar_apply_backlight_tint(s_colorway % NUM_COLORWAYS, s_backlight_tint);
 }
 
+// AIDEV-NOTE: light_set_color() is documented to reset when the app "is preempted by a system
+// notification", but on firmware 4.36.2 the tint survives into the notification and system UI -- our
+// colour leaks outside our own window. Drop back to the wearer's system colour whenever we lose focus
+// and re-apply on regain, so the tint is confined to the watchface itself.
+static void focus_handler(bool in_focus) {
+  if (!s_backlight_tint) return;
+  pulsar_apply_backlight_tint(s_colorway % NUM_COLORWAYS, in_focus);
+}
 static void charge_anim_timer_callback(void *data) {
   s_charge_anim_timer = NULL;
   bool is_animating = (s_battery_charging || s_battery_plugged || s_charging_preview) && 
@@ -249,7 +247,6 @@ static int get_heart_rate(void) {
 static void preview_timer_callback(void *data) {
   s_preview_timer = NULL;
   s_charging_preview = false;
-  update_nightlight();
   update_charging_animation();
   layer_mark_dirty(s_canvas_layer);
 }
@@ -272,30 +269,6 @@ static void trigger_display_change(int mode) {
 }
 
 static void advance_display_mode_dir(int dir) {
-  if (s_flick_action == FLICK_ACTION_OFF || s_flick_sensitivity == FLICK_SENSITIVITY_OFF) {
-    return;
-  }
-  if (s_flick_action == FLICK_ACTION_SECONDS) {
-    trigger_display_change(DISPLAY_MODE_SECONDS);
-    return;
-  } else if (s_flick_action == FLICK_ACTION_DATE) {
-    trigger_display_change(DISPLAY_MODE_DATE);
-    return;
-  } else if (s_flick_action == FLICK_ACTION_STEPS) {
-    trigger_display_change(DISPLAY_MODE_STEPS);
-    return;
-  } else if (s_flick_action == FLICK_ACTION_BATTERY) {
-    trigger_display_change(DISPLAY_MODE_BATTERY);
-    return;
-  } else if (s_flick_action == FLICK_ACTION_HEART_RATE) {
-#if defined(PBL_HEALTH)
-    trigger_display_change(DISPLAY_MODE_HEART_RATE);
-#else
-    trigger_display_change(DISPLAY_MODE_TIME);
-#endif
-    return;
-  }
-
   int active_slots[5];
   int active_count = 0;
   int raw_slots[5] = {s_cycle_slot1, s_cycle_slot2, s_cycle_slot3, s_cycle_slot4, s_cycle_slot5};
@@ -349,40 +322,21 @@ static void advance_display_mode_dir(int dir) {
 
 static time_t s_last_gesture_time_s = 0;
 static uint16_t s_last_gesture_time_ms = 0;
-static bool s_accel_subscribed = false;
 
 static void execute_gesture_action_dir(int dir) {
-  if (s_flick_sensitivity == FLICK_SENSITIVITY_OFF || s_flick_action == FLICK_ACTION_OFF) {
-    return;
-  }
-  light_enable_interaction();
   if (s_operating_mode == MODE_STEALTH) {
     if (!s_stealth_awake) {
       s_stealth_awake = true;
-      if (s_flick_action == FLICK_ACTION_SECONDS) {
-        s_display_mode = DISPLAY_MODE_SECONDS;
-      } else if (s_flick_action == FLICK_ACTION_DATE) {
-        s_display_mode = DISPLAY_MODE_DATE;
-      } else if (s_flick_action == FLICK_ACTION_STEPS) {
-        s_display_mode = DISPLAY_MODE_STEPS;
-      } else if (s_flick_action == FLICK_ACTION_BATTERY) {
-        s_display_mode = DISPLAY_MODE_BATTERY;
-      } else if (s_flick_action == FLICK_ACTION_HEART_RATE) {
-        s_display_mode = DISPLAY_MODE_HEART_RATE;
-      } else {
-        s_display_mode = DISPLAY_MODE_TIME;
-      }
+      s_display_mode = DISPLAY_MODE_TIME;
       if (s_mode_timer) {
         app_timer_cancel(s_mode_timer);
       }
       s_mode_timer = app_timer_register(WAKE_DURATION_MS, mode_timer_callback, NULL);
       layer_mark_dirty(s_canvas_layer);
-    } else {
-      advance_display_mode_dir(dir);
+      return;
     }
-  } else {
-    advance_display_mode_dir(dir);
   }
+  advance_display_mode_dir(dir);
 }
 
 static void handle_gesture_dir(int dir, int debounce_ms) {
@@ -398,69 +352,17 @@ static void handle_gesture_dir(int dir, int debounce_ms) {
   execute_gesture_action_dir(dir);
 }
 
-static void accel_data_handler(AccelData *data, uint32_t num_samples) {
-  if (s_flick_sensitivity == FLICK_SENSITIVITY_OFF || s_flick_action == FLICK_ACTION_OFF) {
-    return;
-  }
-
-  // Taps Only: Require sharp Z-axis perpendicular impact with minimal wrist rotation
-  if (s_flick_sensitivity == FLICK_SENSITIVITY_TAPS_ONLY) {
-    for (uint32_t i = 1; i < num_samples; i++) {
-      int dx = abs(data[i].x - data[i - 1].x);
-      int dy = abs(data[i].y - data[i - 1].y);
-      int dz = abs(data[i].z - data[i - 1].z);
-      if (dz > 950 && dx < 350 && dy < 350) {
-        APP_LOG(APP_LOG_LEVEL_INFO, "Tap detected: dz=%d, dx=%d, dy=%d", dz, dx, dy);
-        handle_gesture_dir(1, 650);
-        break;
-      }
-    }
-    return;
-  }
-
-  int threshold_xy = 1100;
-  int threshold_z = 1200;
-  int debounce_ms = 1000;
-
-  if (s_flick_sensitivity == FLICK_SENSITIVITY_LOW) {
-    threshold_xy = 1600;
-    threshold_z = 1700;
-    debounce_ms = 1350;
-  } else if (s_flick_sensitivity == FLICK_SENSITIVITY_HIGH) {
-    threshold_xy = 700;
-    threshold_z = 800;
-    debounce_ms = 650;
-  }
-
-  for (uint32_t i = 1; i < num_samples; i++) {
-    int dx = data[i].x - data[i - 1].x;
-    int dy = data[i].y - data[i - 1].y;
-    int dz = data[i].z - data[i - 1].z;
-    if (abs(dx) > threshold_xy || abs(dy) > threshold_xy || abs(dz) > threshold_z) {
-      int dir = (dx < -300) ? -1 : 1;
-      APP_LOG(APP_LOG_LEVEL_INFO, "Flick detected: dir=%d, dx=%d, dy=%d, dz=%d (sens=%d)", dir, dx, dy, dz, s_flick_sensitivity);
-      handle_gesture_dir(dir, debounce_ms);
-      break;
-    }
-  }
+// AIDEV-NOTE: Wake/advance is driven by the SYSTEM backlight event rather than our own accelerometer.
+// The firmware raises this using the wearer's configured Motion Sensitivity (Pebble app > Display), so we
+// inherit their preference for free and hold no accel subscription -- previously a permanent 10Hz wakeup
+// and the single largest non-display battery draw. Only fires on the off->on edge, one event per wake.
+// Stubbed to a no-op on aplite/basalt/chalk/diorite; see the MODE_STEALTH guard in load_settings().
+#if PBL_API_EXISTS(backlight_service_subscribe)
+static void backlight_handler(bool on) {
+  if (!on) return;
+  handle_gesture_dir(1, 400);
 }
-
-static void update_accel_subscription(void) {
-  bool gestures_enabled = (s_flick_action != FLICK_ACTION_OFF) &&
-                          (s_flick_sensitivity != FLICK_SENSITIVITY_OFF);
-  if (gestures_enabled) {
-    if (!s_accel_subscribed) {
-      accel_data_service_subscribe(5, accel_data_handler);
-      accel_service_set_sampling_rate(ACCEL_SAMPLING_10HZ);
-      s_accel_subscribed = true;
-    }
-  } else {
-    if (s_accel_subscribed) {
-      accel_data_service_unsubscribe();
-      s_accel_subscribed = false;
-    }
-  }
-}
+#endif
 
 #if PBL_API_EXISTS(touch_service_subscribe)
 static void touch_handler(const TouchEvent *event, void *context) {
@@ -485,7 +387,6 @@ static void battery_callback(BatteryChargeState state) {
   s_battery_level = state.charge_percent;
   s_battery_charging = state.is_charging;
   s_battery_plugged = state.is_plugged;
-  update_nightlight();
   update_charging_animation();
   layer_mark_dirty(s_canvas_layer);
 }
@@ -823,10 +724,6 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     }
   }
 
-  if (s_nightlight && (s_battery_charging || s_battery_plugged)) {
-    light_enable(true);
-  }
-
   bool animating_charge = (s_battery_charging || s_battery_plugged || s_charging_preview) && (s_charging_style != CHARGING_STYLE_OFF) && (s_charging_style != CHARGING_STYLE_SOLID);
   if (s_display_mode == DISPLAY_MODE_SECONDS || animating_charge || (s_operating_mode == MODE_ALWAYS_ON && (units_changed & SECOND_UNIT))) {
     layer_mark_dirty(s_canvas_layer);
@@ -895,9 +792,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       s_colorway = tuple_to_int(t, s_colorway);
       if (s_colorway < 0 || s_colorway >= NUM_COLORWAYS) s_colorway = 0;
       persist_write_int(STORAGE_KEY_COLORWAY, s_colorway);
-    } else if (key == MESSAGE_KEY_AppKeyFlickAction) {
-      s_flick_action = tuple_to_int(t, s_flick_action);
-      persist_write_int(STORAGE_KEY_FLICK_ACTION, s_flick_action);
+      update_backlight_tint();
     } else if (key == MESSAGE_KEY_AppKeyHourlyVibe) {
       s_hourly_vibe = tuple_to_int(t, s_hourly_vibe);
       persist_write_int(STORAGE_KEY_HOURLY_VIBE, s_hourly_vibe);
@@ -911,6 +806,31 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       bool show = tuple_to_bool(t, true);
       s_bead_mode = show ? BEAD_MODE_STEPS : BEAD_MODE_OFF;
       persist_write_int(STORAGE_KEY_BEAD_MODE, s_bead_mode);
+    } else if (key == MESSAGE_KEY_AppKeyBacklightTint) {
+      s_backlight_tint = tuple_to_bool(t, s_backlight_tint);
+      persist_write_bool(STORAGE_KEY_BACKLIGHT_TINT, s_backlight_tint);
+      update_backlight_tint();
+    } else if (key == MESSAGE_KEY_AppKeyLedGlow) {
+      s_led_glow = tuple_to_bool(t, s_led_glow);
+      persist_write_bool(STORAGE_KEY_LED_GLOW, s_led_glow);
+      pulsar_set_glow_enabled(s_led_glow);
+  if (persist_exists(STORAGE_KEY_BACKLIGHT_TINT)) {
+    s_backlight_tint = persist_read_bool(STORAGE_KEY_BACKLIGHT_TINT);
+  }
+    } else if (key == MESSAGE_KEY_AppKeyDotSize) {
+      s_dot_size = tuple_to_int(t, s_dot_size);
+      if (s_dot_size < 0 || s_dot_size > 2) s_dot_size = 0;
+      persist_write_int(STORAGE_KEY_DOT_SIZE, s_dot_size);
+      pulsar_set_dot_boost(s_dot_size);
+    } else if (key == MESSAGE_KEY_AppKeyLedBrightness) {
+      s_led_brightness = tuple_to_int(t, s_led_brightness);
+      if (s_led_brightness < 0 || s_led_brightness >= NUM_LED_BRIGHTNESS) s_led_brightness = LED_BRIGHTNESS_CLASSIC;
+      persist_write_int(STORAGE_KEY_LED_BRIGHTNESS, s_led_brightness);
+      pulsar_set_brightness(s_led_brightness);
+    } else if (key == MESSAGE_KEY_AppKeyShowGhost) {
+      s_show_ghost = tuple_to_bool(t, s_show_ghost);
+      persist_write_bool(STORAGE_KEY_SHOW_GHOST, s_show_ghost);
+      pulsar_set_ghost_enabled(s_show_ghost);
     } else if (key == MESSAGE_KEY_AppKeyItalicSlant) {
       s_italic_slant = tuple_to_bool(t, s_italic_slant);
       persist_write_bool(STORAGE_KEY_ITALIC_SLANT, s_italic_slant);
@@ -952,13 +872,11 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       persist_write_bool(STORAGE_KEY_NIGHTLIGHT, s_nightlight);
       
       if (changed && s_nightlight) {
-        light_enable(true);
         if (!s_battery_charging && !s_battery_plugged) {
           if (s_preview_timer) app_timer_cancel(s_preview_timer);
           s_preview_timer = app_timer_register(5000, preview_timer_callback, NULL);
         }
       } else {
-        update_nightlight();
       }
     } else if (key == MESSAGE_KEY_AppKeyCycleSlot1) {
       s_cycle_slot1 = tuple_to_int(t, s_cycle_slot1);
@@ -975,13 +893,8 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     } else if (key == MESSAGE_KEY_AppKeyCycleSlot5) {
       s_cycle_slot5 = tuple_to_int(t, s_cycle_slot5);
       persist_write_int(STORAGE_KEY_CYCLE_SLOT_5, s_cycle_slot5);
-    } else if (key == MESSAGE_KEY_AppKeyFlickSensitivity) {
-      s_flick_sensitivity = tuple_to_int(t, s_flick_sensitivity);
-      persist_write_int(STORAGE_KEY_FLICK_SENSITIVITY, s_flick_sensitivity);
     }
   }
-  update_accel_subscription();
-  APP_LOG(APP_LOG_LEVEL_INFO, "Pulsar synced: action=%d, sensitivity=%d, mode=%d", s_flick_action, s_flick_sensitivity, s_operating_mode);
   layer_mark_dirty(s_canvas_layer);
 }
 
@@ -989,12 +902,15 @@ static void load_settings(void) {
   if (persist_exists(STORAGE_KEY_OPERATING_MODE)) {
     s_operating_mode = persist_read_int(STORAGE_KEY_OPERATING_MODE);
   }
+#if !PBL_API_EXISTS(backlight_service_subscribe)
+  // AIDEV-NOTE: Without the backlight event there is NO wake source -- watchfaces receive no button
+  // clicks -- so Stealth would leave the screen dark with no way back except the phone settings.
+  // Force Always-On rather than ship a dead end.
+  s_operating_mode = MODE_ALWAYS_ON;
+#endif
   if (persist_exists(STORAGE_KEY_COLORWAY)) {
     s_colorway = persist_read_int(STORAGE_KEY_COLORWAY);
     if (s_colorway < 0 || s_colorway >= NUM_COLORWAYS) s_colorway = 0;
-  }
-  if (persist_exists(STORAGE_KEY_FLICK_ACTION)) {
-    s_flick_action = persist_read_int(STORAGE_KEY_FLICK_ACTION);
   }
   if (persist_exists(STORAGE_KEY_HOURLY_VIBE)) {
     s_hourly_vibe = persist_read_int(STORAGE_KEY_HOURLY_VIBE);
@@ -1014,6 +930,22 @@ static void load_settings(void) {
   if (persist_exists(STORAGE_KEY_NIGHTLIGHT)) {
     s_nightlight = persist_read_bool(STORAGE_KEY_NIGHTLIGHT);
   }
+  if (persist_exists(STORAGE_KEY_SHOW_GHOST)) {
+    s_show_ghost = persist_read_bool(STORAGE_KEY_SHOW_GHOST);
+  }
+  pulsar_set_ghost_enabled(s_show_ghost);
+  if (persist_exists(STORAGE_KEY_LED_BRIGHTNESS)) {
+    s_led_brightness = persist_read_int(STORAGE_KEY_LED_BRIGHTNESS);
+  }
+  pulsar_set_brightness(s_led_brightness);
+  if (persist_exists(STORAGE_KEY_DOT_SIZE)) {
+    s_dot_size = persist_read_int(STORAGE_KEY_DOT_SIZE);
+  }
+  pulsar_set_dot_boost(s_dot_size);
+  if (persist_exists(STORAGE_KEY_LED_GLOW)) {
+    s_led_glow = persist_read_bool(STORAGE_KEY_LED_GLOW);
+  }
+  pulsar_set_glow_enabled(s_led_glow);
   if (persist_exists(STORAGE_KEY_ITALIC_SLANT)) {
     s_italic_slant = persist_read_bool(STORAGE_KEY_ITALIC_SLANT);
   }
@@ -1047,10 +979,6 @@ static void load_settings(void) {
   if (persist_exists(STORAGE_KEY_CYCLE_SLOT_5)) {
     s_cycle_slot5 = persist_read_int(STORAGE_KEY_CYCLE_SLOT_5);
   }
-  if (persist_exists(STORAGE_KEY_FLICK_SENSITIVITY)) {
-    s_flick_sensitivity = persist_read_int(STORAGE_KEY_FLICK_SENSITIVITY);
-  }
-  update_accel_subscription();
 }
 
 static void main_window_load(Window *window) {
@@ -1083,7 +1011,14 @@ static void init(void) {
   app_message_open(1024, 128);
 
   tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
-  update_accel_subscription();
+
+#if PBL_API_EXISTS(backlight_service_subscribe)
+  backlight_service_subscribe(backlight_handler);
+#endif
+
+  // did_focus, not will_focus: restore the system colour only once the covering window is actually up,
+  // and re-tint only once we are genuinely back, so the LED never changes mid-animation.
+  app_focus_service_subscribe_handlers((AppFocusHandlers){ .did_focus = focus_handler });
 
 #if PBL_API_EXISTS(touch_service_subscribe)
   if (touch_service_is_enabled()) {
@@ -1104,12 +1039,14 @@ static void init(void) {
   s_battery_level = charge_state.charge_percent;
   s_battery_charging = charge_state.is_charging;
   s_battery_plugged = charge_state.is_plugged;
-  update_nightlight();
   update_charging_animation();
 }
 
 static void deinit(void) {
-  light_enable(false);
+  // Restore explicitly rather than trusting the documented auto-reset on exit: the same doc promises a
+  // reset when a notification preempts the app, and that demonstrably does not happen on FW 4.36.2.
+  pulsar_apply_backlight_tint(s_colorway % NUM_COLORWAYS, false);
+  app_focus_service_unsubscribe();
 #if defined(PBL_HEALTH)
   health_service_events_unsubscribe();
 #endif
@@ -1120,10 +1057,6 @@ static void deinit(void) {
 #endif
   battery_state_service_unsubscribe();
   connection_service_unsubscribe();
-  if (s_accel_subscribed) {
-    accel_data_service_unsubscribe();
-    s_accel_subscribed = false;
-  }
   tick_timer_service_unsubscribe();
   if (s_mode_timer) {
     app_timer_cancel(s_mode_timer);

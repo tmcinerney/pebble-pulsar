@@ -12,7 +12,7 @@
       },
       {
         "type": "text",
-        "defaultValue": "💡 <b>How it works:</b><br>• <b>Always-On:</b> Keeps the LED time continuously visible.<br>• <b>Stealth (1970 Push-to-Wake):</b> Replicates the original 1970 Pulsar push-button experience. The display rests in dark stealth mode until you <b>flick your wrist, tap your watch crystal, or touch the screen</b> (Pebble Time 2), illuminating the LEDs for 4 seconds."
+        "defaultValue": "\ud83d\udca1 <b>How it works:</b><br>\u2022 <b>Always-On:</b> Keeps the LED time continuously visible.<br>\u2022 <b>Stealth (1970 Push-to-Wake):</b> Replicates the original 1970 Pulsar push-button experience. The display rests in dark stealth mode until you <b>flick your wrist, tap your watch crystal, or touch the screen</b> (Pebble Time 2), illuminating the LEDs for 4 seconds."
       },
       {
         "type": "radiogroup",
@@ -74,6 +74,69 @@
             "value": "6"
           }
         ]
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyLedGlow",
+        "label": "LED Glow",
+        "defaultValue": true,
+        "description": "Halo around each lit dot, mimicking the bloom of a real LED."
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyBacklightTint",
+        "label": "Tint Backlight to Match",
+        "defaultValue": false,
+        "description": "Makes lit dots more vivid, but overrides your watch's own backlight colour. Weakest effect on red."
+      },
+      {
+        "type": "select",
+        "messageKey": "AppKeyLedBrightness",
+        "label": "LED Brightness",
+        "defaultValue": "0",
+        "description": "Higher settings light more display subpixels: brighter, but less saturated.",
+        "options": [
+          {
+            "label": "Classic (truest colour)",
+            "value": "0"
+          },
+          {
+            "label": "Bright",
+            "value": "1"
+          },
+          {
+            "label": "Max (most washed out)",
+            "value": "2"
+          }
+        ]
+      },
+      {
+        "type": "select",
+        "messageKey": "AppKeyDotSize",
+        "label": "LED Dot Size",
+        "defaultValue": "1",
+        "description": "Bigger dots light more of the screen, brightening the display without changing colour.",
+        "options": [
+          {
+            "label": "Standard",
+            "value": "0"
+          },
+          {
+            "label": "Large (+1px)",
+            "value": "1"
+          },
+          {
+            "label": "Huge (+2px)",
+            "value": "2"
+          }
+        ]
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyShowGhost",
+        "label": "Ghost Dots",
+        "defaultValue": false,
+        "description": "Dim unlit dots showing the full matrix. Off gives brighter, higher-contrast digits."
       },
       {
         "type": "toggle",
@@ -279,72 +342,7 @@
       },
       {
         "type": "text",
-        "defaultValue": "👋 <b>Wrist Flick & Crystal Tap Gestures:</b><br>• In <b>Stealth Mode</b>: A quick wrist flick or crystal tap illuminates the watch for 4 seconds.<br>• In <b>Always-On Mode</b>: A flick or tap triggers your chosen action below, returning to Time after 4 seconds."
-      },
-      {
-        "type": "select",
-        "messageKey": "AppKeyFlickAction",
-        "label": "Wrist Flick / Crystal Tap Mode",
-        "defaultValue": "0",
-        "options": [
-          {
-            "label": "Custom Cycle Sequence (Slots 1-5 Below)",
-            "value": "0"
-          },
-          {
-            "label": "Live Seconds Counter Only (:SS)",
-            "value": "1"
-          },
-          {
-            "label": "Date Display Only",
-            "value": "2"
-          },
-          {
-            "label": "Daily Step Count Only",
-            "value": "3"
-          },
-          {
-            "label": "Battery Percentage Only",
-            "value": "4"
-          },
-          {
-            "label": "Heart Rate Only (Pebble 2 HR)",
-            "value": "5"
-          },
-          {
-            "label": "Disabled / Off (No gesture action)",
-            "value": "6"
-          }
-        ]
-      },
-      {
-        "type": "select",
-        "messageKey": "AppKeyFlickSensitivity",
-        "label": "Gesture & Flick Sensitivity",
-        "description": "Adjust how easily wrist flicks trigger screen changes.",
-        "defaultValue": "0",
-        "options": [
-          {
-            "label": "Balanced (Natural wrist turn / casing tap - Default)",
-            "value": "0"
-          },
-          {
-            "label": "Low Sensitivity (Deliberate snap only)",
-            "value": "1"
-          },
-          {
-            "label": "High Sensitivity (Light motion)",
-            "value": "2"
-          },
-          {
-            "label": "Taps Only (Physical bezel/glass taps, no wrist rotation)",
-            "value": "3"
-          },
-          {
-            "label": "Disabled / Off (No gesture screen switching)",
-            "value": "4"
-          }
-        ]
+        "defaultValue": "\ud83d\udc4b <b>Wrist Flick & Crystal Tap Gestures:</b><br>\u2022 In <b>Stealth Mode</b>: A quick wrist flick or crystal tap illuminates the watch for 4 seconds.<br>\u2022 In <b>Always-On Mode</b>: A flick or tap triggers your chosen action below, returning to Time after 4 seconds."
       },
       {
         "type": "heading",
@@ -360,12 +358,30 @@
         "label": "Slot 1 (1st Tap Screen)",
         "defaultValue": "1",
         "options": [
-          { "label": "Disabled / None", "value": "0" },
-          { "label": "Live Seconds Counter (:SS)", "value": "1" },
-          { "label": "Date Display", "value": "2" },
-          { "label": "Daily Step Count", "value": "3" },
-          { "label": "Battery Percentage", "value": "4" },
-          { "label": "Heart Rate (Pebble 2 HR)", "value": "5" }
+          {
+            "label": "Disabled / None",
+            "value": "0"
+          },
+          {
+            "label": "Live Seconds Counter (:SS)",
+            "value": "1"
+          },
+          {
+            "label": "Date Display",
+            "value": "2"
+          },
+          {
+            "label": "Daily Step Count",
+            "value": "3"
+          },
+          {
+            "label": "Battery Percentage",
+            "value": "4"
+          },
+          {
+            "label": "Heart Rate (Pebble 2 HR)",
+            "value": "5"
+          }
         ]
       },
       {
@@ -374,12 +390,30 @@
         "label": "Slot 2 (2nd Tap Screen)",
         "defaultValue": "2",
         "options": [
-          { "label": "Disabled / None", "value": "0" },
-          { "label": "Live Seconds Counter (:SS)", "value": "1" },
-          { "label": "Date Display", "value": "2" },
-          { "label": "Daily Step Count", "value": "3" },
-          { "label": "Battery Percentage", "value": "4" },
-          { "label": "Heart Rate (Pebble 2 HR)", "value": "5" }
+          {
+            "label": "Disabled / None",
+            "value": "0"
+          },
+          {
+            "label": "Live Seconds Counter (:SS)",
+            "value": "1"
+          },
+          {
+            "label": "Date Display",
+            "value": "2"
+          },
+          {
+            "label": "Daily Step Count",
+            "value": "3"
+          },
+          {
+            "label": "Battery Percentage",
+            "value": "4"
+          },
+          {
+            "label": "Heart Rate (Pebble 2 HR)",
+            "value": "5"
+          }
         ]
       },
       {
@@ -388,12 +422,30 @@
         "label": "Slot 3 (3rd Tap Screen)",
         "defaultValue": "3",
         "options": [
-          { "label": "Disabled / None", "value": "0" },
-          { "label": "Live Seconds Counter (:SS)", "value": "1" },
-          { "label": "Date Display", "value": "2" },
-          { "label": "Daily Step Count", "value": "3" },
-          { "label": "Battery Percentage", "value": "4" },
-          { "label": "Heart Rate (Pebble 2 HR)", "value": "5" }
+          {
+            "label": "Disabled / None",
+            "value": "0"
+          },
+          {
+            "label": "Live Seconds Counter (:SS)",
+            "value": "1"
+          },
+          {
+            "label": "Date Display",
+            "value": "2"
+          },
+          {
+            "label": "Daily Step Count",
+            "value": "3"
+          },
+          {
+            "label": "Battery Percentage",
+            "value": "4"
+          },
+          {
+            "label": "Heart Rate (Pebble 2 HR)",
+            "value": "5"
+          }
         ]
       },
       {
@@ -402,12 +454,30 @@
         "label": "Slot 4 (4th Tap Screen)",
         "defaultValue": "4",
         "options": [
-          { "label": "Disabled / None", "value": "0" },
-          { "label": "Live Seconds Counter (:SS)", "value": "1" },
-          { "label": "Date Display", "value": "2" },
-          { "label": "Daily Step Count", "value": "3" },
-          { "label": "Battery Percentage", "value": "4" },
-          { "label": "Heart Rate (Pebble 2 HR)", "value": "5" }
+          {
+            "label": "Disabled / None",
+            "value": "0"
+          },
+          {
+            "label": "Live Seconds Counter (:SS)",
+            "value": "1"
+          },
+          {
+            "label": "Date Display",
+            "value": "2"
+          },
+          {
+            "label": "Daily Step Count",
+            "value": "3"
+          },
+          {
+            "label": "Battery Percentage",
+            "value": "4"
+          },
+          {
+            "label": "Heart Rate (Pebble 2 HR)",
+            "value": "5"
+          }
         ]
       },
       {
@@ -416,12 +486,30 @@
         "label": "Slot 5 (5th Tap Screen)",
         "defaultValue": "5",
         "options": [
-          { "label": "Disabled / None", "value": "0" },
-          { "label": "Live Seconds Counter (:SS)", "value": "1" },
-          { "label": "Date Display", "value": "2" },
-          { "label": "Daily Step Count", "value": "3" },
-          { "label": "Battery Percentage", "value": "4" },
-          { "label": "Heart Rate (Pebble 2 HR)", "value": "5" }
+          {
+            "label": "Disabled / None",
+            "value": "0"
+          },
+          {
+            "label": "Live Seconds Counter (:SS)",
+            "value": "1"
+          },
+          {
+            "label": "Date Display",
+            "value": "2"
+          },
+          {
+            "label": "Daily Step Count",
+            "value": "3"
+          },
+          {
+            "label": "Battery Percentage",
+            "value": "4"
+          },
+          {
+            "label": "Heart Rate (Pebble 2 HR)",
+            "value": "5"
+          }
         ]
       }
     ]
