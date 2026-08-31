@@ -44,15 +44,40 @@ static const uint8_t FONT_5X7[NUM_GLYPHS][7] = {
 static bool s_ghost_enabled = true;
 
 // AIDEV-NOTE: Coverage is the only lever that raises brightness WITHOUT shifting hue: total light is
-// lit-area x per-pixel reflectance, and reflectance is fixed by the colour's subpixel count. Boosting the
-// radius therefore brightens a pure-red display that the colour ramp could only brighten by desaturating.
-static int s_dot_boost = 0;
+// lit-area x per-pixel reflectance, and reflectance is fixed by the colour's subpixel count.
+//
+// Radius alone cannot deliver it. At emery's 7px pitch a radius-2 dot (diameter 5) is the ONLY size that
+// leaves a gap -- radius 3 is diameter 7 and touches its neighbour, which is why "Large"/"Huge" used to
+// merge into solid strokes. So the size levels scale PITCH and RADIUS together, growing the glyphs into
+// spare screen space instead of fattening dots into each other. Gaps shrink to keep 4 digits + colon
+// inside 200px; the layout maths centres off these accessors, so callers need no changes.
+static int s_dot_size = 0;
+
+typedef struct { int spacing_x, spacing_y, radius, digit_gap, colon_gap; } DotMetrics;
+
+static const DotMetrics DOT_METRICS[3] = {
+#if defined(PBL_PLATFORM_EMERY)
+  { 7,  8, 2, 14, 22 },   // Standard: unchanged from the original layout
+  { 9, 10, 3,  8, 14 },   // Large
+  {10, 12, 4,  6, 10 },   // Huge
+#else
+  { 5,  6, 1, 10, 16 },
+  { 6,  7, 2,  7, 11 },
+  { 7,  8, 2,  5,  9 },
+#endif
+};
 
 void pulsar_set_dot_boost(int boost) {
   if (boost < 0) boost = 0;
   if (boost > 2) boost = 2;
-  s_dot_boost = boost;
+  s_dot_size = boost;
 }
+
+int pulsar_spacing_x(void) { return DOT_METRICS[s_dot_size].spacing_x; }
+int pulsar_spacing_y(void) { return DOT_METRICS[s_dot_size].spacing_y; }
+int pulsar_dot_radius(void) { return DOT_METRICS[s_dot_size].radius; }
+int pulsar_digit_gap(void)  { return DOT_METRICS[s_dot_size].digit_gap; }
+int pulsar_colon_gap(void)  { return DOT_METRICS[s_dot_size].colon_gap; }
 
 // AIDEV-NOTE: LED bloom, on by default. The panel's red primary reproduces as ~#E35462 (measured off the
 // framebuffer), so no colour choice makes the dots read as saturated neon red. A bright core ringed by a
@@ -76,18 +101,19 @@ bool pulsar_ghost_enabled(void) {
 // palette has no red brighter than GColorRed -- the centre pixel is the only way to raise luminance
 // without changing hue. Colourways that set lit_core == lit (inverted paper, 1-bit) skip the second pass.
 void pulsar_draw_lit_dot(GContext *ctx, GPoint centre, int dot_radius, const Colorway *palette) {
-  // AIDEV-NOTE: Clamp the OUTERMOST ring (glow included) to half the dot pitch, else neighbouring dots
-  // touch and the matrix reads as solid strokes instead of discrete LEDs. Boost and glow used to stack
-  // unclamped, which merged the glyphs at size Large/Huge.
-  int max_outer = DOT_SPACING_X / 2;
   bool glow = false;
 #if defined(PBL_COLOR)
   glow = s_glow_enabled && palette->glow.argb != palette->lit.argb;
 #endif
 
-  int outer = dot_radius + s_dot_boost + (glow ? 1 : 0);
-  if (outer > max_outer) outer = max_outer;
-  int r = glow ? outer - 1 : outer;
+  // Keep the outermost ring strictly inside the pitch so adjacent dots never touch.
+  int max_outer = (pulsar_spacing_x() - 1) / 2;
+  int r = dot_radius;
+  int outer = glow ? r + 1 : r;
+  if (outer > max_outer) {
+    outer = max_outer;
+    r = glow ? outer - 1 : outer;
+  }
   if (r < 1) r = 1;
 
 #if defined(PBL_COLOR)
@@ -188,7 +214,7 @@ void pulsar_draw_digit_custom(GContext *ctx, int x_offset, int y_offset, int dig
 void pulsar_draw_digit(GContext *ctx, int x_offset, int y_offset, int digit_index, 
                        const Colorway *palette, bool is_active, int bounds_w, bool italic_slant) {
   pulsar_draw_digit_custom(ctx, x_offset, y_offset, digit_index, palette, is_active, bounds_w, 
-                           DOT_SPACING_X, DOT_SPACING_Y, DOT_RADIUS, italic_slant);
+                           pulsar_spacing_x(), pulsar_spacing_y(), pulsar_dot_radius(), italic_slant);
 }
 
 void pulsar_draw_colon(GContext *ctx, int colon_base_x, int start_y, 
@@ -199,13 +225,13 @@ void pulsar_draw_colon(GContext *ctx, int colon_base_x, int start_y,
   int colon_slant2 = italic_slant ? (((DIGIT_HEIGHT - 1 - 4) * slant_scale) / (DIGIT_HEIGHT - 1)) : 0;
   int colon_x1 = colon_base_x + colon_slant1;
   int colon_x2 = colon_base_x + colon_slant2;
-  int colon_y1 = start_y + (DOT_SPACING_Y * 2);
-  int colon_y2 = start_y + (DOT_SPACING_Y * 4);
+  int colon_y1 = start_y + (pulsar_spacing_y() * 2);
+  int colon_y2 = start_y + (pulsar_spacing_y() * 4);
   
 #if defined(PBL_COLOR)
   if (is_active && colon_lit) {
-    pulsar_draw_lit_dot(ctx, GPoint(colon_x1, colon_y1), DOT_RADIUS, palette);
-    pulsar_draw_lit_dot(ctx, GPoint(colon_x2, colon_y2), DOT_RADIUS, palette);
+    pulsar_draw_lit_dot(ctx, GPoint(colon_x1, colon_y1), pulsar_dot_radius(), palette);
+    pulsar_draw_lit_dot(ctx, GPoint(colon_x2, colon_y2), pulsar_dot_radius(), palette);
   } else if (s_ghost_enabled) {
     graphics_context_set_fill_color(ctx, palette->ghost);
     graphics_fill_circle(ctx, GPoint(colon_x1, colon_y1), 1);
@@ -214,8 +240,8 @@ void pulsar_draw_colon(GContext *ctx, int colon_base_x, int start_y,
 #else
   if (is_active && colon_lit) {
     graphics_context_set_fill_color(ctx, palette->lit);
-    graphics_fill_circle(ctx, GPoint(colon_x1, colon_y1), DOT_RADIUS);
-    graphics_fill_circle(ctx, GPoint(colon_x2, colon_y2), DOT_RADIUS);
+    graphics_fill_circle(ctx, GPoint(colon_x1, colon_y1), pulsar_dot_radius());
+    graphics_fill_circle(ctx, GPoint(colon_x2, colon_y2), pulsar_dot_radius());
   }
 #endif
 }
@@ -223,22 +249,22 @@ void pulsar_draw_colon(GContext *ctx, int colon_base_x, int start_y,
 void pulsar_draw_4digits_at_y(GContext *ctx, GRect bounds, int start_y, int d1, int d2, int d3, int d4, 
                              bool show_colon, bool colon_lit, const Colorway *palette, 
                              bool is_active, bool italic_slant) {
-  int digit_span_x = (DIGIT_WIDTH - 1) * DOT_SPACING_X;
+  int digit_span_x = (DIGIT_WIDTH - 1) * pulsar_spacing_x();
   int slant_scale = (bounds.size.w > 180) ? 7 : 5;
   int max_slant = italic_slant ? slant_scale : 0;
 
-  int total_width = (digit_span_x * 4) + (DIGIT_GAP * 2) + COLON_GAP + max_slant;
+  int total_width = (digit_span_x * 4) + (pulsar_digit_gap() * 2) + pulsar_colon_gap() + max_slant;
   int start_x = (bounds.size.w - total_width) / 2;
 
   int d1_x = start_x;
-  int d2_x = d1_x + digit_span_x + DIGIT_GAP;
-  int d3_x = d2_x + digit_span_x + COLON_GAP;
-  int d4_x = d3_x + digit_span_x + DIGIT_GAP;
+  int d2_x = d1_x + digit_span_x + pulsar_digit_gap();
+  int d3_x = d2_x + digit_span_x + pulsar_colon_gap();
+  int d4_x = d3_x + digit_span_x + pulsar_digit_gap();
 
   pulsar_draw_digit(ctx, d1_x, start_y, d1, palette, is_active, bounds.size.w, italic_slant);
   pulsar_draw_digit(ctx, d2_x, start_y, d2, palette, is_active, bounds.size.w, italic_slant);
   if (show_colon) {
-    int colon_base_x = d2_x + digit_span_x + (COLON_GAP / 2) - 1;
+    int colon_base_x = d2_x + digit_span_x + (pulsar_colon_gap() / 2) - 1;
     pulsar_draw_colon(ctx, colon_base_x, start_y, palette, is_active, colon_lit, bounds.size.w, italic_slant);
   }
   pulsar_draw_digit(ctx, d3_x, start_y, d3, palette, is_active, bounds.size.w, italic_slant);
