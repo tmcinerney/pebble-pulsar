@@ -1,4 +1,5 @@
 #include "pulsar_micro_bar.h"
+#include "pulsar_matrix.h"
 
 void pulsar_draw_micro_beads_at_y(GContext *ctx, GRect bounds, int bead_y, const Colorway *palette, 
                                  bool is_active, const bool beads_lit[NUM_MICRO_BEADS]) {
@@ -20,9 +21,14 @@ void pulsar_draw_micro_beads_at_y(GContext *ctx, GRect bounds, int bead_y, const
         graphics_fill_circle(ctx, GPoint(bx, bead_y), bead_radius);
       }
     } else {
-      GColor bead_color = lit ? GColorWhite : palette->ghost;
-      graphics_context_set_fill_color(ctx, bead_color);
-      graphics_fill_circle(ctx, GPoint(bx, bead_y), lit ? bead_radius : 1);
+      // AIDEV-NOTE: was hardcoded GColorWhite, which ignored the colourway. Now follows palette->lit
+      // (with hot core) so the bead row matches the digits.
+      if (lit) {
+        pulsar_draw_lit_dot(ctx, GPoint(bx, bead_y), bead_radius, palette);
+      } else if (pulsar_ghost_enabled()) {
+        graphics_context_set_fill_color(ctx, palette->ghost);
+        graphics_fill_circle(ctx, GPoint(bx, bead_y), 1);
+      }
     }
 #else
     if (lit) {

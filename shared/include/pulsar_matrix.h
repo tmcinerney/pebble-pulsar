@@ -33,6 +33,19 @@
 
 int pulsar_char_to_glyph(char c);
 
+// Enable/disable the dim "ghost" dots drawn on unlit cells. Default true.
+void pulsar_set_ghost_enabled(bool enabled);
+bool pulsar_ghost_enabled(void);
+
+// Adds 0-2 px to every lit dot's radius. Brightness via coverage, at unchanged hue.
+void pulsar_set_dot_boost(int boost);
+
+// LED bloom halo around each lit dot. Default true.
+void pulsar_set_glow_enabled(bool enabled);
+
+// Draws one lit LED dot: palette->lit bloom with a palette->lit_core centre.
+void pulsar_draw_lit_dot(GContext *ctx, GPoint centre, int dot_radius, const Colorway *palette);
+
 void pulsar_draw_digit_custom_ghost(GContext *ctx, int x_offset, int y_offset, int digit_index, 
                                    const Colorway *palette, bool is_active, int bounds_w, 
                                    int spacing_x, int spacing_y, int dot_radius, bool italic_slant, bool show_ghost);

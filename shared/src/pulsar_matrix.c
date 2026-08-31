@@ -39,6 +39,77 @@ static const uint8_t FONT_5X7[NUM_GLYPHS][7] = {
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x06}  // 34 = '.'
 };
 
+// AIDEV-NOTE: Ghost dots are the unlit cells of a glyph (~75% of it). Drawn in palette->ghost they wash
+// the whole digit in dim colour and crush the lit dots' local contrast. Runtime-toggleable per app.
+static bool s_ghost_enabled = true;
+
+// AIDEV-NOTE: Coverage is the only lever that raises brightness WITHOUT shifting hue: total light is
+// lit-area x per-pixel reflectance, and reflectance is fixed by the colour's subpixel count. Boosting the
+// radius therefore brightens a pure-red display that the colour ramp could only brighten by desaturating.
+static int s_dot_boost = 0;
+
+void pulsar_set_dot_boost(int boost) {
+  if (boost < 0) boost = 0;
+  if (boost > 2) boost = 2;
+  s_dot_boost = boost;
+}
+
+// AIDEV-NOTE: LED bloom, on by default. The panel's red primary reproduces as ~#E35462 (measured off the
+// framebuffer), so no colour choice makes the dots read as saturated neon red. A bright core ringed by a
+// dimmer halo of the same hue is the cue the eye reads as "glowing", and it costs one extra fill per dot.
+static bool s_glow_enabled = true;
+
+void pulsar_set_glow_enabled(bool enabled) {
+  s_glow_enabled = enabled;
+}
+
+void pulsar_set_ghost_enabled(bool enabled) {
+  s_ghost_enabled = enabled;
+}
+
+bool pulsar_ghost_enabled(void) {
+  return s_ghost_enabled;
+}
+
+// AIDEV-NOTE: Two-pass "hot core" LED dot: a bloom in palette->lit with a higher-luminance centre in
+// palette->lit_core. Perceived brightness on a reflective LCD is coverage x luminance, and the 64-colour
+// palette has no red brighter than GColorRed -- the centre pixel is the only way to raise luminance
+// without changing hue. Colourways that set lit_core == lit (inverted paper, 1-bit) skip the second pass.
+void pulsar_draw_lit_dot(GContext *ctx, GPoint centre, int dot_radius, const Colorway *palette) {
+  // AIDEV-NOTE: Clamp the OUTERMOST ring (glow included) to half the dot pitch, else neighbouring dots
+  // touch and the matrix reads as solid strokes instead of discrete LEDs. Boost and glow used to stack
+  // unclamped, which merged the glyphs at size Large/Huge.
+  int max_outer = DOT_SPACING_X / 2;
+  bool glow = false;
+#if defined(PBL_COLOR)
+  glow = s_glow_enabled && palette->glow.argb != palette->lit.argb;
+#endif
+
+  int outer = dot_radius + s_dot_boost + (glow ? 1 : 0);
+  if (outer > max_outer) outer = max_outer;
+  int r = glow ? outer - 1 : outer;
+  if (r < 1) r = 1;
+
+#if defined(PBL_COLOR)
+  if (glow) {
+    graphics_context_set_fill_color(ctx, palette->glow);
+    graphics_fill_circle(ctx, centre, outer);
+  }
+#endif
+
+  graphics_context_set_fill_color(ctx, palette->lit);
+  graphics_fill_circle(ctx, centre, r);
+
+#if defined(PBL_COLOR)
+  // A core only helps when it is a small highlight. At dot_radius 2 a radius-1 core is ~40% of the dot
+  // and desaturates it to pink, so the core is now a single centre pixel and the brightness ramp
+  // (pulsar_set_brightness) carries the actual luminance change by recolouring the whole dot.
+  if (palette->lit_core.argb == palette->lit.argb) return;
+  graphics_context_set_fill_color(ctx, palette->lit_core);
+  graphics_draw_pixel(ctx, centre);
+#endif
+}
+
 int pulsar_char_to_glyph(char c) {
   if (c >= '0' && c <= '9') return c - '0';
   switch (c) {
@@ -87,9 +158,8 @@ void pulsar_draw_digit_custom_ghost(GContext *ctx, int x_offset, int y_offset, i
       int dot_y = y_offset + (r * spacing_y);
       
       if (is_lit) {
-        graphics_context_set_fill_color(ctx, palette->lit);
-        graphics_fill_circle(ctx, GPoint(dot_x, dot_y), dot_radius);
-      } else if (show_ghost) {
+        pulsar_draw_lit_dot(ctx, GPoint(dot_x, dot_y), dot_radius, palette);
+      } else if (show_ghost && s_ghost_enabled) {
 #if defined(PBL_COLOR)
         if (palette->outer_bg.argb != GColorWhite.argb) {
           graphics_context_set_stroke_color(ctx, palette->ghost);
@@ -133,10 +203,14 @@ void pulsar_draw_colon(GContext *ctx, int colon_base_x, int start_y,
   int colon_y2 = start_y + (DOT_SPACING_Y * 4);
   
 #if defined(PBL_COLOR)
-  GColor colon_color = (is_active && colon_lit) ? palette->lit : palette->ghost;
-  graphics_context_set_fill_color(ctx, colon_color);
-  graphics_fill_circle(ctx, GPoint(colon_x1, colon_y1), (is_active && colon_lit) ? DOT_RADIUS : 1);
-  graphics_fill_circle(ctx, GPoint(colon_x2, colon_y2), (is_active && colon_lit) ? DOT_RADIUS : 1);
+  if (is_active && colon_lit) {
+    pulsar_draw_lit_dot(ctx, GPoint(colon_x1, colon_y1), DOT_RADIUS, palette);
+    pulsar_draw_lit_dot(ctx, GPoint(colon_x2, colon_y2), DOT_RADIUS, palette);
+  } else if (s_ghost_enabled) {
+    graphics_context_set_fill_color(ctx, palette->ghost);
+    graphics_fill_circle(ctx, GPoint(colon_x1, colon_y1), 1);
+    graphics_fill_circle(ctx, GPoint(colon_x2, colon_y2), 1);
+  }
 #else
   if (is_active && colon_lit) {
     graphics_context_set_fill_color(ctx, palette->lit);

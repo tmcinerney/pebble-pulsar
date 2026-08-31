@@ -1,5 +1,32 @@
 #include "pulsar_palette.h"
 
+static int s_brightness = LED_BRIGHTNESS_CLASSIC;
+
+void pulsar_set_brightness(int level) {
+  if (level < 0 || level >= NUM_LED_BRIGHTNESS) level = LED_BRIGHTNESS_CLASSIC;
+  s_brightness = level;
+}
+
+int pulsar_get_brightness(void) {
+  return s_brightness;
+}
+
+#if defined(PBL_COLOR)
+// Each colourway's (lit, lit_core) pair at each brightness level, dimmest first.
+static void apply_ramp(Colorway *p, GColor l0, GColor c0, GColor l1, GColor c1, GColor l2, GColor c2) {
+  switch (s_brightness) {
+    case LED_BRIGHTNESS_MAX:    p->lit = l2; p->lit_core = c2; break;
+    case LED_BRIGHTNESS_BRIGHT: p->lit = l1; p->lit_core = c1; break;
+    default:                    p->lit = l0; p->lit_core = c0; break;
+  }
+}
+
+// Mid-tone between the lit colour and the background, used for the bloom halo.
+static void set_glow(Colorway *p, GColor glow) {
+  p->glow = glow;
+}
+#endif
+
 Colorway pulsar_get_palette(int colorway_index) {
   Colorway p;
 #if defined(PBL_COLOR)
@@ -10,31 +37,45 @@ Colorway pulsar_get_palette(int colorway_index) {
   switch (colorway_index) {
     case COLORWAY_DEEP_RED:
       // Hot Lava Orange (Vintage LED)
-      p.lit = GColorOrange;
+      apply_ramp(&p, GColorOrange, GColorOrange,
+                     GColorRajah,  GColorRajah,
+                     GColorPastelYellow, GColorPastelYellow);
+      set_glow(&p, GColorWindsorTan);
       p.ghost = GColorBulgarianRose;
       p.accent = GColorSunsetOrange;
       break;
     case COLORWAY_PROTOTYPE_GREEN:
       // Authentic 1975 GaP Phosphor Green
-      p.lit = GColorBrightGreen;
+      apply_ramp(&p, GColorBrightGreen,   GColorBrightGreen,
+                     GColorScreaminGreen, GColorScreaminGreen,
+                     GColorMintGreen,     GColorMintGreen);
+      set_glow(&p, GColorIslamicGreen);
       p.ghost = GColorDarkGreen;
       p.accent = GColorSpringBud;
       break;
     case COLORWAY_AMBER_GOLD:
       // Amber Gold (HP-01 Space-Age LED)
-      p.lit = GColorYellow;
+      apply_ramp(&p, GColorYellow,       GColorYellow,
+                     GColorIcterine,     GColorIcterine,
+                     GColorPastelYellow, GColorPastelYellow);
+      set_glow(&p, GColorLimerick);
       p.ghost = GColorArmyGreen;
       p.accent = GColorChromeYellow;
       break;
     case COLORWAY_COBALT_BLUE:
       // Electric Cyan / Blue (Radiant on Reflective LCD)
-      p.lit = GColorCyan;
+      apply_ramp(&p, GColorCyan,    GColorCyan,
+                     GColorCeleste, GColorCeleste,
+                     GColorWhite,   GColorWhite);
+      set_glow(&p, GColorTiffanyBlue);
       p.ghost = GColorMidnightGreen;
       p.accent = GColorVividCerulean;
       break;
     case COLORWAY_LUNAR_WHITE:
       // Lunar White / Silver
       p.lit = GColorWhite;
+      p.lit_core = GColorWhite;       // already max luminance
+      set_glow(&p, GColorLightGray);
       p.ghost = GColorDarkGray;
       p.accent = GColorLightGray;
       break;
@@ -44,13 +85,18 @@ Colorway pulsar_get_palette(int colorway_index) {
       p.inner_bg = GColorWhite;
       p.text_outer = GColorBlack;
       p.lit = GColorBlack;
+      p.lit_core = GColorBlack;       // no core: dark-on-light colourway
+      set_glow(&p, GColorLightGray);
       p.ghost = GColorLightGray;
       p.accent = GColorDarkGray;
       break;
     case COLORWAY_VIBRANT_RUBY:
     default:
       // Classic 1972 GaAsP Ruby Red
-      p.lit = GColorRed;
+      apply_ramp(&p, GColorRed,          GColorRed,
+                     GColorSunsetOrange, GColorSunsetOrange,
+                     GColorMelon,        GColorMelon);
+      set_glow(&p, GColorDarkCandyAppleRed);
       p.ghost = GColorBulgarianRose;
       p.accent = GColorRed;
       break;
@@ -61,10 +107,14 @@ Colorway pulsar_get_palette(int colorway_index) {
     p.inner_bg = GColorWhite;
     p.text_outer = GColorBlack;
     p.lit = GColorBlack;
+    p.lit_core = GColorBlack;
+    p.glow = GColorBlack;
     p.ghost = GColorWhite;
     p.accent = GColorBlack;
   } else {
     p.lit = GColorWhite;
+    p.lit_core = GColorWhite;
+    p.glow = GColorWhite;
     p.ghost = GColorBlack;
     p.accent = GColorWhite;
     p.outer_bg = GColorBlack;
@@ -73,6 +123,32 @@ Colorway pulsar_get_palette(int colorway_index) {
   }
 #endif
   return p;
+}
+
+// The backlight LED cannot be addressed per pixel, but on emery/flint/gabbro it is colour-tintable at
+// 8 bits per channel. Tinting to the colourway makes the lit dots noticeably more vivid -- least so for
+// red, whose LED is both the least efficient and the one the eye is least sensitive to.
+uint32_t pulsar_get_backlight_rgb(int colorway_index) {
+  switch (colorway_index) {
+    case COLORWAY_DEEP_RED:        return 0xFF3300;  // hot lava orange
+    case COLORWAY_PROTOTYPE_GREEN: return 0x22FF22;  // GaP phosphor green
+    case COLORWAY_AMBER_GOLD:      return 0xFFAA00;  // amber
+    case COLORWAY_COBALT_BLUE:     return 0x00CCFF;  // electric cyan
+    case COLORWAY_LUNAR_WHITE:     return 0xFFFFFF;
+    case COLORWAY_INVERTED_PAPER:  return 0xFFFFFF;  // dark-on-light wants a neutral wash
+    case COLORWAY_VIBRANT_RUBY:
+    default:                       return 0xFF0000;  // GaAsP ruby red
+  }
+}
+
+void pulsar_apply_backlight_tint(int colorway_index, bool enabled) {
+#if PBL_API_EXISTS(light_set_color_rgb888)
+  if (enabled) {
+    light_set_color_rgb888(pulsar_get_backlight_rgb(colorway_index));
+  } else {
+    light_set_system_color();
+  }
+#endif
 }
 
 int pulsar_tuple_to_int(Tuple *tuple, int default_val) {
