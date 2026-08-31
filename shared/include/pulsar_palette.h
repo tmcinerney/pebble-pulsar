@@ -32,19 +32,15 @@ typedef struct {
   GColor text_outer;
 } Colorway;
 
-// AIDEV-NOTE: LED brightness ramp. The 64-colour MiP panel makes colour with an RGB subpixel filter, so
-// reflectance is ~proportional to how many subpixels are lit: GColorRed (R only) is ~1/3, yellow (R+G)
-// ~2/3, white 3/3. "Bright" and "saturated red" are therefore in direct tension -- each level up the ramp
-// lights more subpixels and necessarily desaturates. Level is global state, applied in pulsar_get_palette.
-enum LedBrightness {
-  LED_BRIGHTNESS_CLASSIC = 0,  // truest hue, dimmest
-  LED_BRIGHTNESS_BRIGHT  = 1,
-  LED_BRIGHTNESS_MAX     = 2   // brightest, most desaturated
-};
-#define NUM_LED_BRIGHTNESS 3
-
-void pulsar_set_brightness(int level);
-int pulsar_get_brightness(void);
+// AIDEV-NOTE: The 64-colour MiP panel builds colour from an RGB subpixel filter, so reflectance tracks how
+// many subpixels are lit: GColorRed (R only) is ~1/3, yellow (R+G) ~2/3, white 3/3. Brightness and
+// saturation are therefore in direct tension, and the hardware really only offers two useful positions.
+// Measured off the framebuffer for ruby: Red renders #E35462 (luminance 0.236, 63% saturation) and Melon
+// renders #EFB5B8 (0.549, 24%) -- 2.33x brighter. The intermediate SunsetOrange sat at just 1.29x, below
+// the point where the change is noticeable on a dot this small, so it was dropped rather than shipped as
+// a third position that does nothing. Global state, applied in pulsar_get_palette.
+void pulsar_set_bright_leds(bool bright);
+bool pulsar_bright_leds(void);
 
 Colorway pulsar_get_palette(int colorway_index);
 

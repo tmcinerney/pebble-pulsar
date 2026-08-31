@@ -1,24 +1,20 @@
 #include "pulsar_palette.h"
 
-static int s_brightness = LED_BRIGHTNESS_CLASSIC;
+static bool s_bright_leds = false;
 
-void pulsar_set_brightness(int level) {
-  if (level < 0 || level >= NUM_LED_BRIGHTNESS) level = LED_BRIGHTNESS_CLASSIC;
-  s_brightness = level;
+void pulsar_set_bright_leds(bool bright) {
+  s_bright_leds = bright;
 }
 
-int pulsar_get_brightness(void) {
-  return s_brightness;
+bool pulsar_bright_leds(void) {
+  return s_bright_leds;
 }
 
 #if defined(PBL_COLOR)
-// Each colourway's (lit, lit_core) pair at each brightness level, dimmest first.
-static void apply_ramp(Colorway *p, GColor l0, GColor c0, GColor l1, GColor c1, GColor l2, GColor c2) {
-  switch (s_brightness) {
-    case LED_BRIGHTNESS_MAX:    p->lit = l2; p->lit_core = c2; break;
-    case LED_BRIGHTNESS_BRIGHT: p->lit = l1; p->lit_core = c1; break;
-    default:                    p->lit = l0; p->lit_core = c0; break;
-  }
+// Truest hue, then the brightest usable variant of the same hue.
+static void apply_ramp(Colorway *p, GColor classic, GColor c0, GColor bright, GColor c1) {
+  p->lit      = s_bright_leds ? bright : classic;
+  p->lit_core = s_bright_leds ? c1 : c0;
 }
 
 // Mid-tone between the lit colour and the background, used for the bloom halo.
@@ -38,7 +34,6 @@ Colorway pulsar_get_palette(int colorway_index) {
     case COLORWAY_DEEP_RED:
       // Hot Lava Orange (Vintage LED)
       apply_ramp(&p, GColorOrange, GColorOrange,
-                     GColorRajah,  GColorRajah,
                      GColorPastelYellow, GColorPastelYellow);
       set_glow(&p, GColorWindsorTan);
       p.ghost = GColorBulgarianRose;
@@ -47,7 +42,6 @@ Colorway pulsar_get_palette(int colorway_index) {
     case COLORWAY_PROTOTYPE_GREEN:
       // Authentic 1975 GaP Phosphor Green
       apply_ramp(&p, GColorBrightGreen,   GColorBrightGreen,
-                     GColorScreaminGreen, GColorScreaminGreen,
                      GColorMintGreen,     GColorMintGreen);
       set_glow(&p, GColorIslamicGreen);
       p.ghost = GColorDarkGreen;
@@ -56,7 +50,6 @@ Colorway pulsar_get_palette(int colorway_index) {
     case COLORWAY_AMBER_GOLD:
       // Amber Gold (HP-01 Space-Age LED)
       apply_ramp(&p, GColorYellow,       GColorYellow,
-                     GColorIcterine,     GColorIcterine,
                      GColorPastelYellow, GColorPastelYellow);
       set_glow(&p, GColorLimerick);
       p.ghost = GColorArmyGreen;
@@ -65,7 +58,6 @@ Colorway pulsar_get_palette(int colorway_index) {
     case COLORWAY_COBALT_BLUE:
       // Electric Cyan / Blue (Radiant on Reflective LCD)
       apply_ramp(&p, GColorCyan,    GColorCyan,
-                     GColorCeleste, GColorCeleste,
                      GColorWhite,   GColorWhite);
       set_glow(&p, GColorTiffanyBlue);
       p.ghost = GColorMidnightGreen;
@@ -94,7 +86,6 @@ Colorway pulsar_get_palette(int colorway_index) {
     default:
       // Classic 1972 GaAsP Ruby Red
       apply_ramp(&p, GColorRed,          GColorRed,
-                     GColorSunsetOrange, GColorSunsetOrange,
                      GColorMelon,        GColorMelon);
       set_glow(&p, GColorDarkCandyAppleRed);
       p.ghost = GColorBulgarianRose;

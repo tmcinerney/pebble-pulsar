@@ -43,25 +43,11 @@
         ]
       },
       {
-        "type": "select",
+        "type": "toggle",
         "messageKey": "AppKeyLedBrightness",
-        "label": "Brightness",
-        "defaultValue": "0",
-        "description": "Brighter settings are less saturated.",
-        "options": [
-          {
-            "label": "Classic",
-            "value": "0"
-          },
-          {
-            "label": "Bright",
-            "value": "1"
-          },
-          {
-            "label": "Max",
-            "value": "2"
-          }
-        ]
+        "label": "Brighter LEDs",
+        "defaultValue": false,
+        "description": "Roughly twice as bright, but noticeably less saturated."
       },
       {
         "type": "toggle",

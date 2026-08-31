@@ -64,7 +64,7 @@ static AppTimer *s_blink_timer = NULL;
 
 static int s_colorway = COLORWAY_VIBRANT_RUBY;
 static bool s_show_ghost = true;
-static int s_led_brightness = LED_BRIGHTNESS_CLASSIC;
+static bool s_bright_leds = false;
 static bool s_led_glow = true;
 static bool s_italic_slant = true;
 static bool s_audio_enabled = true;
@@ -445,12 +445,9 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       persist_write_bool(STORAGE_KEY_SHOW_GHOST, s_show_ghost);
       pulsar_set_ghost_enabled(s_show_ghost);
     } else if (key == MESSAGE_KEY_AppKeyLedBrightness) {
-      s_led_brightness = pulsar_tuple_to_int(t, s_led_brightness);
-      if (s_led_brightness < 0 || s_led_brightness >= NUM_LED_BRIGHTNESS) {
-        s_led_brightness = LED_BRIGHTNESS_CLASSIC;
-      }
-      persist_write_int(STORAGE_KEY_LED_BRIGHTNESS, s_led_brightness);
-      pulsar_set_brightness(s_led_brightness);
+      s_bright_leds = pulsar_tuple_to_bool(t, s_bright_leds);
+      persist_write_bool(STORAGE_KEY_LED_BRIGHTNESS, s_bright_leds);
+      pulsar_set_bright_leds(s_bright_leds);
     } else if (key == MESSAGE_KEY_AppKeyLedGlow) {
       s_led_glow = pulsar_tuple_to_bool(t, s_led_glow);
       persist_write_bool(STORAGE_KEY_LED_GLOW, s_led_glow);
@@ -478,9 +475,10 @@ static void load_state(void) {
   }
   pulsar_set_ghost_enabled(s_show_ghost);
   if (persist_exists(STORAGE_KEY_LED_BRIGHTNESS)) {
-    s_led_brightness = persist_read_int(STORAGE_KEY_LED_BRIGHTNESS);
+    // Older installs stored a 0-2 level; any non-zero maps onto the bright position.
+    s_bright_leds = persist_read_int(STORAGE_KEY_LED_BRIGHTNESS) != 0;
   }
-  pulsar_set_brightness(s_led_brightness);
+  pulsar_set_bright_leds(s_bright_leds);
   if (persist_exists(STORAGE_KEY_LED_GLOW)) {
     s_led_glow = persist_read_bool(STORAGE_KEY_LED_GLOW);
   }
