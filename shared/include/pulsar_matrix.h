@@ -40,8 +40,10 @@ bool pulsar_ghost_enabled(void);
 // LED bloom halo around each lit dot. Default true.
 void pulsar_set_glow_enabled(bool enabled);
 
-// Draws one lit LED dot: palette->lit bloom with a palette->lit_core centre.
-void pulsar_draw_lit_dot(GContext *ctx, GPoint centre, int dot_radius, const Colorway *palette);
+// Draws one lit LED dot. `pitch` is the spacing to the neighbouring dot; the glow halo is skipped
+// when it would not fit inside it.
+void pulsar_draw_lit_dot(GContext *ctx, GPoint centre, int dot_radius, int pitch,
+                         const Colorway *palette);
 
 void pulsar_draw_digit_custom_ghost(GContext *ctx, int x_offset, int y_offset, int digit_index, 
                                    const Colorway *palette, bool is_active, int bounds_w, 

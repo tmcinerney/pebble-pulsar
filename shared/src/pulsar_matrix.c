@@ -63,7 +63,8 @@ bool pulsar_ghost_enabled(void) {
 // AIDEV-NOTE: A lit LED dot: the colourway's lit colour, optionally ringed by a dimmer halo of
 // the same hue. The eye reads a luminance gradient as a light source where a flat disc reads as
 // a painted dot, which is what makes the matrix look lit rather than printed.
-void pulsar_draw_lit_dot(GContext *ctx, GPoint centre, int dot_radius, const Colorway *palette) {
+void pulsar_draw_lit_dot(GContext *ctx, GPoint centre, int dot_radius, int pitch,
+                         const Colorway *palette) {
   // AIDEV-NOTE: The glow ring sits one pixel proud of the dot, so it is bounded by the dot pitch: at
   // emery's 7px pitch a radius-2 dot plus its halo is exactly 7px and just touches its neighbour. There
   // is no room to grow dots further -- a configurable size needs the PITCH to scale too, which in turn
@@ -71,7 +72,11 @@ void pulsar_draw_lit_dot(GContext *ctx, GPoint centre, int dot_radius, const Col
   int r = dot_radius;
 
 #if defined(PBL_COLOR)
-  if (s_glow_enabled && palette->glow.argb != palette->lit.argb) {
+  // AIDEV-NOTE: The halo sits a pixel proud of the dot, so it needs a pitch wide enough to contain it --
+  // the small grids (chrono's 5px sub-dial, the 6px 5-digit steps row) are tighter than the main matrix
+  // and would smear into an unreadable blur. Skip the glow there rather than shrink it: a halo the same
+  // size as the dot is not a halo.
+  if (s_glow_enabled && palette->glow.argb != palette->lit.argb && (2 * (r + 1) + 1) <= pitch) {
     graphics_context_set_fill_color(ctx, palette->glow);
     graphics_fill_circle(ctx, centre, r + 1);
   }
@@ -130,7 +135,7 @@ void pulsar_draw_digit_custom_ghost(GContext *ctx, int x_offset, int y_offset, i
       int dot_y = y_offset + (r * spacing_y);
       
       if (is_lit) {
-        pulsar_draw_lit_dot(ctx, GPoint(dot_x, dot_y), dot_radius, palette);
+        pulsar_draw_lit_dot(ctx, GPoint(dot_x, dot_y), dot_radius, spacing_x, palette);
       } else if (show_ghost && s_ghost_enabled) {
 #if defined(PBL_COLOR)
         if (palette->outer_bg.argb != GColorWhite.argb) {
@@ -176,8 +181,8 @@ void pulsar_draw_colon(GContext *ctx, int colon_base_x, int start_y,
   
 #if defined(PBL_COLOR)
   if (is_active && colon_lit) {
-    pulsar_draw_lit_dot(ctx, GPoint(colon_x1, colon_y1), DOT_RADIUS, palette);
-    pulsar_draw_lit_dot(ctx, GPoint(colon_x2, colon_y2), DOT_RADIUS, palette);
+    pulsar_draw_lit_dot(ctx, GPoint(colon_x1, colon_y1), DOT_RADIUS, DOT_SPACING_X, palette);
+    pulsar_draw_lit_dot(ctx, GPoint(colon_x2, colon_y2), DOT_RADIUS, DOT_SPACING_X, palette);
   } else if (s_ghost_enabled) {
     graphics_context_set_fill_color(ctx, palette->ghost);
     graphics_fill_circle(ctx, GPoint(colon_x1, colon_y1), 1);

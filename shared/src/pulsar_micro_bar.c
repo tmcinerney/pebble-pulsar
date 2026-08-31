@@ -24,7 +24,7 @@ void pulsar_draw_micro_beads_at_y(GContext *ctx, GRect bounds, int bead_y, const
       // AIDEV-NOTE: was hardcoded GColorWhite, which ignored the colourway. Now follows palette->lit
       // (with hot core) so the bead row matches the digits.
       if (lit) {
-        pulsar_draw_lit_dot(ctx, GPoint(bx, bead_y), bead_radius, palette);
+        pulsar_draw_lit_dot(ctx, GPoint(bx, bead_y), bead_radius, bead_spacing, palette);
       } else if (pulsar_ghost_enabled()) {
         graphics_context_set_fill_color(ctx, palette->ghost);
         graphics_fill_circle(ctx, GPoint(bx, bead_y), 1);
