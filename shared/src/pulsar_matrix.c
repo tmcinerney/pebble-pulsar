@@ -69,18 +69,12 @@ void pulsar_draw_lit_dot(GContext *ctx, GPoint centre, int dot_radius, const Col
   // emery's 7px pitch a radius-2 dot plus its halo is exactly 7px and just touches its neighbour. There
   // is no room to grow dots further -- a configurable size needs the PITCH to scale too, which in turn
   // needs the fixed HEADER_Y/TOP_MARGIN/BEAD_Y anchors to reflow. See the reverted attempt in git log.
-  bool glow = false;
-#if defined(PBL_COLOR)
-  glow = s_glow_enabled && palette->glow.argb != palette->lit.argb;
-#endif
-
   int r = dot_radius;
-  int outer = glow ? r + 1 : r;
 
 #if defined(PBL_COLOR)
-  if (glow) {
+  if (s_glow_enabled && palette->glow.argb != palette->lit.argb) {
     graphics_context_set_fill_color(ctx, palette->glow);
-    graphics_fill_circle(ctx, centre, outer);
+    graphics_fill_circle(ctx, centre, r + 1);
   }
 #endif
 
