@@ -46,7 +46,6 @@
       "AppKeyHourlyBeep": 10021,
       "AppKeyStepCelebration": 10022,
       "AppKeyShowGhost": 10025,
-      "AppKeyLedBrightness": 10026,
       "AppKeyLedGlow": 10028,
       "AppKeyBacklightTint": 10029
     },

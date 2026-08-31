@@ -48,13 +48,6 @@
       },
       {
         "type": "toggle",
-        "messageKey": "AppKeyLedBrightness",
-        "label": "Brighter LEDs",
-        "defaultValue": false,
-        "description": "Roughly twice as bright, but noticeably less saturated."
-      },
-      {
-        "type": "toggle",
         "messageKey": "AppKeyLedGlow",
         "label": "Glow",
         "defaultValue": true,

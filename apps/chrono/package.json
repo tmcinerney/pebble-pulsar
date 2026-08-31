@@ -29,7 +29,6 @@
       "AppKeyAudioEnabled": 10020,
       "AppKeyVibeEnabled": 10021,
       "AppKeyShowGhost": 10025,
-      "AppKeyLedBrightness": 10026,
       "AppKeyLedGlow": 10028
     },
     "targetPlatforms": [

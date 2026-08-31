@@ -34,7 +34,6 @@
 #define STORAGE_KEY_CYCLE_SLOT_4     10018
 #define STORAGE_KEY_CYCLE_SLOT_5     10019
 #define STORAGE_KEY_SHOW_GHOST       10025
-#define STORAGE_KEY_LED_BRIGHTNESS   10026
 #define STORAGE_KEY_LED_GLOW         10028
 #define STORAGE_KEY_BACKLIGHT_TINT   10029
 #define STORAGE_KEY_SOUND_ENABLED    10020
@@ -163,7 +162,6 @@ static bool s_nightlight = false;
 // the gaps and kill the glow), Classic brightness -- the panel's reddest reproduction, measured at
 // ~#E35462. There is no brighter red available; the ramp above it only trades saturation for luminance.
 static bool s_show_ghost = false;
-static bool s_bright_leds = false;
 static bool s_led_glow = true;
 static bool s_backlight_tint = false;
 static int s_cycle_slot1 = 1; // Live Seconds
@@ -886,10 +884,6 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   if (persist_exists(STORAGE_KEY_BACKLIGHT_TINT)) {
     s_backlight_tint = persist_read_bool(STORAGE_KEY_BACKLIGHT_TINT);
   }
-    } else if (key == MESSAGE_KEY_AppKeyLedBrightness) {
-      s_bright_leds = tuple_to_bool(t, s_bright_leds);
-      persist_write_bool(STORAGE_KEY_LED_BRIGHTNESS, s_bright_leds);
-      pulsar_set_bright_leds(s_bright_leds);
     } else if (key == MESSAGE_KEY_AppKeyShowGhost) {
       s_show_ghost = tuple_to_bool(t, s_show_ghost);
       persist_write_bool(STORAGE_KEY_SHOW_GHOST, s_show_ghost);
@@ -1006,11 +1000,6 @@ static void load_settings(void) {
     s_show_ghost = persist_read_bool(STORAGE_KEY_SHOW_GHOST);
   }
   pulsar_set_ghost_enabled(s_show_ghost);
-  if (persist_exists(STORAGE_KEY_LED_BRIGHTNESS)) {
-    // Older installs stored a 0-2 level; any non-zero maps onto the bright position.
-    s_bright_leds = persist_read_int(STORAGE_KEY_LED_BRIGHTNESS) != 0;
-  }
-  pulsar_set_bright_leds(s_bright_leds);
   if (persist_exists(STORAGE_KEY_LED_GLOW)) {
     s_led_glow = persist_read_bool(STORAGE_KEY_LED_GLOW);
   }

@@ -60,10 +60,9 @@ bool pulsar_ghost_enabled(void) {
   return s_ghost_enabled;
 }
 
-// AIDEV-NOTE: Two-pass "hot core" LED dot: a bloom in palette->lit with a higher-luminance centre in
-// palette->lit_core. Perceived brightness on a reflective LCD is coverage x luminance, and the 64-colour
-// palette has no red brighter than GColorRed -- the centre pixel is the only way to raise luminance
-// without changing hue. Colourways that set lit_core == lit (inverted paper, 1-bit) skip the second pass.
+// AIDEV-NOTE: A lit LED dot: the colourway's lit colour, optionally ringed by a dimmer halo of
+// the same hue. The eye reads a luminance gradient as a light source where a flat disc reads as
+// a painted dot, which is what makes the matrix look lit rather than printed.
 void pulsar_draw_lit_dot(GContext *ctx, GPoint centre, int dot_radius, const Colorway *palette) {
   // AIDEV-NOTE: The glow ring sits one pixel proud of the dot, so it is bounded by the dot pitch: at
   // emery's 7px pitch a radius-2 dot plus its halo is exactly 7px and just touches its neighbour. There
@@ -81,14 +80,6 @@ void pulsar_draw_lit_dot(GContext *ctx, GPoint centre, int dot_radius, const Col
   graphics_context_set_fill_color(ctx, palette->lit);
   graphics_fill_circle(ctx, centre, r);
 
-#if defined(PBL_COLOR)
-  // A core only helps when it is a small highlight. At dot_radius 2 a radius-1 core is ~40% of the dot
-  // and desaturates it to pink, so the core is now a single centre pixel and the brightness ramp
-  // (pulsar_set_brightness) carries the actual luminance change by recolouring the whole dot.
-  if (palette->lit_core.argb == palette->lit.argb) return;
-  graphics_context_set_fill_color(ctx, palette->lit_core);
-  graphics_draw_pixel(ctx, centre);
-#endif
 }
 
 int pulsar_char_to_glyph(char c) {

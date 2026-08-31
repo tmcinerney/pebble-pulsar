@@ -13,7 +13,6 @@
 #define STORAGE_KEY_COLORWAY            10001
 #define STORAGE_KEY_ITALIC_SLANT        10005
 #define STORAGE_KEY_SHOW_GHOST          10025
-#define STORAGE_KEY_LED_BRIGHTNESS      10026
 #define STORAGE_KEY_LED_GLOW            10028
 #define STORAGE_KEY_AUDIO_ENABLED       10020
 #define STORAGE_KEY_VIBE_ENABLED        10021
@@ -27,7 +26,6 @@
 #define MESSAGE_KEY_AppKeyColorway            10001
 #define MESSAGE_KEY_AppKeyItalicSlant        10005
 #define MESSAGE_KEY_AppKeyShowGhost          10025
-#define MESSAGE_KEY_AppKeyLedBrightness      10026
 #define MESSAGE_KEY_AppKeyLedGlow            10028
 #define MESSAGE_KEY_AppKeyAudioEnabled       10020
 #define MESSAGE_KEY_AppKeyVibeEnabled        10021
@@ -42,7 +40,6 @@ static int s_colorway = COLORWAY_VIBRANT_RUBY;
 // Ghost dots off by default across the suite: they grey out the gaps between lit dots and
 // flatten the glow. Matches the watchface so a fresh install looks consistent.
 static bool s_show_ghost = false;
-static bool s_bright_leds = false;
 static bool s_led_glow = true;
 static bool s_italic_slant = true;
 static bool s_audio_enabled = true;
@@ -394,10 +391,6 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       s_show_ghost = pulsar_tuple_to_bool(t, s_show_ghost);
       persist_write_bool(STORAGE_KEY_SHOW_GHOST, s_show_ghost);
       pulsar_set_ghost_enabled(s_show_ghost);
-    } else if (key == MESSAGE_KEY_AppKeyLedBrightness) {
-      s_bright_leds = pulsar_tuple_to_bool(t, s_bright_leds);
-      persist_write_bool(STORAGE_KEY_LED_BRIGHTNESS, s_bright_leds);
-      pulsar_set_bright_leds(s_bright_leds);
     } else if (key == MESSAGE_KEY_AppKeyLedGlow) {
       s_led_glow = pulsar_tuple_to_bool(t, s_led_glow);
       persist_write_bool(STORAGE_KEY_LED_GLOW, s_led_glow);
@@ -421,11 +414,6 @@ static void load_state(void) {
     s_show_ghost = persist_read_bool(STORAGE_KEY_SHOW_GHOST);
   }
   pulsar_set_ghost_enabled(s_show_ghost);
-  if (persist_exists(STORAGE_KEY_LED_BRIGHTNESS)) {
-    // Older installs stored a 0-2 level; any non-zero maps onto the bright position.
-    s_bright_leds = persist_read_int(STORAGE_KEY_LED_BRIGHTNESS) != 0;
-  }
-  pulsar_set_bright_leds(s_bright_leds);
   if (persist_exists(STORAGE_KEY_LED_GLOW)) {
     s_led_glow = persist_read_bool(STORAGE_KEY_LED_GLOW);
   }

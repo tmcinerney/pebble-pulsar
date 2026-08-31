@@ -48,13 +48,6 @@
       },
       {
         "type": "toggle",
-        "messageKey": "AppKeyLedBrightness",
-        "label": "Brighter LEDs",
-        "defaultValue": false,
-        "description": "Roughly twice as bright, but noticeably less saturated."
-      },
-      {
-        "type": "toggle",
         "messageKey": "AppKeyLedGlow",
         "label": "Glow",
         "defaultValue": true,
@@ -72,7 +65,7 @@
         "messageKey": "AppKeyBacklightTint",
         "label": "Tint Backlight",
         "defaultValue": false,
-        "description": "Overrides your watch's backlight colour."
+        "description": "Tints the backlight to match the LED colour. Replaces your watch's own backlight colour while this watchface is open."
       },
       {
         "type": "toggle",
