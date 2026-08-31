@@ -10,34 +10,91 @@
         "type": "select",
         "messageKey": "AppKeyColorway",
         "defaultValue": "0",
-        "label": "LED Colorway",
+        "label": "LED Colour",
         "options": [
-          { "label": "GaAsP Ruby Red (1972)", "value": "0" },
-          { "label": "Hot Lava Orange", "value": "1" },
-          { "label": "GaP Phosphor Green (1975)", "value": "2" },
-          { "label": "Amber Gold (HP-01)", "value": "3" },
-          { "label": "Cobalt Blue", "value": "4" },
-          { "label": "Lunar White", "value": "5" },
-          { "label": "Inverted E-Paper", "value": "6" }
+          {
+            "label": "GaAsP Ruby Red (1972)",
+            "value": "0"
+          },
+          {
+            "label": "Hot Lava Orange",
+            "value": "1"
+          },
+          {
+            "label": "GaP Phosphor Green (1975)",
+            "value": "2"
+          },
+          {
+            "label": "Amber Gold (HP-01)",
+            "value": "3"
+          },
+          {
+            "label": "Cobalt Blue",
+            "value": "4"
+          },
+          {
+            "label": "Lunar White",
+            "value": "5"
+          },
+          {
+            "label": "Inverted E-Paper",
+            "value": "6"
+          }
         ]
+      },
+      {
+        "type": "select",
+        "messageKey": "AppKeyLedBrightness",
+        "label": "Brightness",
+        "defaultValue": "0",
+        "description": "Brighter settings are less saturated.",
+        "options": [
+          {
+            "label": "Classic",
+            "value": "0"
+          },
+          {
+            "label": "Bright",
+            "value": "1"
+          },
+          {
+            "label": "Max",
+            "value": "2"
+          }
+        ]
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyLedGlow",
+        "label": "Glow",
+        "defaultValue": true,
+        "description": "Halo around each lit dot."
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyShowGhost",
+        "label": "Ghost Dots",
+        "defaultValue": true,
+        "description": "Show the unlit dots of the matrix."
       },
       {
         "type": "toggle",
         "messageKey": "AppKeyItalicSlant",
         "defaultValue": true,
-        "label": "12° Italic LED Slant"
+        "label": "Italic Slant"
       },
       {
         "type": "toggle",
         "messageKey": "AppKeyAudioEnabled",
         "defaultValue": true,
-        "label": "Retro Synth Audio (PT2)"
+        "label": "Sound",
+        "description": "Speaker-equipped watches only."
       },
       {
         "type": "toggle",
         "messageKey": "AppKeyVibeEnabled",
         "defaultValue": true,
-        "label": "Haptic Vibe Feedback"
+        "label": "Vibration"
       }
     ]
   },

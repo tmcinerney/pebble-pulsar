@@ -40,6 +40,9 @@ enum EditMode {
 
 #define STORAGE_KEY_COLORWAY        10001
 #define STORAGE_KEY_ITALIC_SLANT    10005
+#define STORAGE_KEY_SHOW_GHOST     10025
+#define STORAGE_KEY_LED_BRIGHTNESS 10026
+#define STORAGE_KEY_LED_GLOW       10028
 #define STORAGE_KEY_AUDIO_ENABLED   10020
 #define STORAGE_KEY_VIBE_ENABLED    10021
 #define STORAGE_KEY_SNOOZE_DUR      10050
@@ -60,6 +63,9 @@ static AppTimer *s_ring_timer = NULL;
 static AppTimer *s_blink_timer = NULL;
 
 static int s_colorway = COLORWAY_VIBRANT_RUBY;
+static bool s_show_ghost = true;
+static int s_led_brightness = LED_BRIGHTNESS_CLASSIC;
+static bool s_led_glow = true;
 static bool s_italic_slant = true;
 static bool s_audio_enabled = true;
 static bool s_vibe_enabled = true;
@@ -434,6 +440,21 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       s_colorway = pulsar_tuple_to_int(t, s_colorway);
       if (s_colorway < 0 || s_colorway >= NUM_COLORWAYS) s_colorway = 0;
       persist_write_int(STORAGE_KEY_COLORWAY, s_colorway);
+    } else if (key == MESSAGE_KEY_AppKeyShowGhost) {
+      s_show_ghost = pulsar_tuple_to_bool(t, s_show_ghost);
+      persist_write_bool(STORAGE_KEY_SHOW_GHOST, s_show_ghost);
+      pulsar_set_ghost_enabled(s_show_ghost);
+    } else if (key == MESSAGE_KEY_AppKeyLedBrightness) {
+      s_led_brightness = pulsar_tuple_to_int(t, s_led_brightness);
+      if (s_led_brightness < 0 || s_led_brightness >= NUM_LED_BRIGHTNESS) {
+        s_led_brightness = LED_BRIGHTNESS_CLASSIC;
+      }
+      persist_write_int(STORAGE_KEY_LED_BRIGHTNESS, s_led_brightness);
+      pulsar_set_brightness(s_led_brightness);
+    } else if (key == MESSAGE_KEY_AppKeyLedGlow) {
+      s_led_glow = pulsar_tuple_to_bool(t, s_led_glow);
+      persist_write_bool(STORAGE_KEY_LED_GLOW, s_led_glow);
+      pulsar_set_glow_enabled(s_led_glow);
     } else if (key == MESSAGE_KEY_AppKeyItalicSlant) {
       s_italic_slant = pulsar_tuple_to_bool(t, s_italic_slant);
       persist_write_bool(STORAGE_KEY_ITALIC_SLANT, s_italic_slant);
@@ -452,6 +473,18 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 }
 
 static void load_state(void) {
+  if (persist_exists(STORAGE_KEY_SHOW_GHOST)) {
+    s_show_ghost = persist_read_bool(STORAGE_KEY_SHOW_GHOST);
+  }
+  pulsar_set_ghost_enabled(s_show_ghost);
+  if (persist_exists(STORAGE_KEY_LED_BRIGHTNESS)) {
+    s_led_brightness = persist_read_int(STORAGE_KEY_LED_BRIGHTNESS);
+  }
+  pulsar_set_brightness(s_led_brightness);
+  if (persist_exists(STORAGE_KEY_LED_GLOW)) {
+    s_led_glow = persist_read_bool(STORAGE_KEY_LED_GLOW);
+  }
+  pulsar_set_glow_enabled(s_led_glow);
   if (persist_exists(STORAGE_KEY_COLORWAY)) {
     s_colorway = persist_read_int(STORAGE_KEY_COLORWAY);
     if (s_colorway < 0 || s_colorway >= NUM_COLORWAYS) s_colorway = 0;
