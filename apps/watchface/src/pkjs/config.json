@@ -8,16 +8,12 @@
     "items": [
       {
         "type": "heading",
-        "defaultValue": "Operating Mode"
-      },
-      {
-        "type": "text",
-        "defaultValue": "\ud83d\udca1 <b>How it works:</b><br>\u2022 <b>Always-On:</b> Keeps the LED time continuously visible.<br>\u2022 <b>Stealth (1970 Push-to-Wake):</b> Replicates the original 1970 Pulsar push-button experience. The display rests in dark stealth mode until you <b>flick your wrist, tap your watch crystal, or touch the screen</b> (Pebble Time 2), illuminating the LEDs for 4 seconds."
+        "defaultValue": "Display"
       },
       {
         "type": "radiogroup",
         "messageKey": "AppKeyOperatingMode",
-        "label": "Operating Mode",
+        "label": "Display Mode",
         "defaultValue": "0",
         "options": [
           {
@@ -37,12 +33,12 @@
     "items": [
       {
         "type": "heading",
-        "defaultValue": "Display & Themes"
+        "defaultValue": "LED Appearance"
       },
       {
         "type": "select",
         "messageKey": "AppKeyColorway",
-        "label": "LED Colorway / Theme",
+        "label": "LED Colour",
         "defaultValue": "0",
         "options": [
           {
@@ -76,25 +72,11 @@
         ]
       },
       {
-        "type": "toggle",
-        "messageKey": "AppKeyLedGlow",
-        "label": "LED Glow",
-        "defaultValue": true,
-        "description": "Halo around each lit dot, mimicking the bloom of a real LED."
-      },
-      {
-        "type": "toggle",
-        "messageKey": "AppKeyBacklightTint",
-        "label": "Tint Backlight to Match",
-        "defaultValue": false,
-        "description": "Makes lit dots more vivid, but overrides your watch's own backlight colour. Weakest effect on red."
-      },
-      {
         "type": "select",
         "messageKey": "AppKeyLedBrightness",
-        "label": "LED Brightness",
+        "label": "Brightness",
         "defaultValue": "0",
-        "description": "Higher settings light more display subpixels: brighter, but less saturated.",
+        "description": "Brighter settings are less saturated.",
         "options": [
           {
             "label": "Classic (truest colour)",
@@ -113,9 +95,8 @@
       {
         "type": "select",
         "messageKey": "AppKeyDotSize",
-        "label": "LED Dot Size",
+        "label": "Dot Size",
         "defaultValue": "1",
-        "description": "Bigger dots light more of the screen, brightening the display without changing colour.",
         "options": [
           {
             "label": "Standard",
@@ -133,22 +114,35 @@
       },
       {
         "type": "toggle",
+        "messageKey": "AppKeyLedGlow",
+        "label": "Glow",
+        "defaultValue": true,
+        "description": "Halo around each lit dot."
+      },
+      {
+        "type": "toggle",
         "messageKey": "AppKeyShowGhost",
         "label": "Ghost Dots",
         "defaultValue": false,
-        "description": "Dim unlit dots showing the full matrix. Off gives brighter, higher-contrast digits."
+        "description": "Show the unlit dots of the matrix."
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyBacklightTint",
+        "label": "Tint Backlight",
+        "defaultValue": false,
+        "description": "Overrides your watch's backlight colour."
       },
       {
         "type": "toggle",
         "messageKey": "AppKeyItalicSlant",
-        "label": "Vintage Italic Slant (1970s)",
-        "description": "Applies authentic 12-degree rightward italic slant to LED matrix digits. Disable for upright rectangular blocks.",
+        "label": "Italic Slant",
         "defaultValue": true
       },
       {
         "type": "select",
         "messageKey": "AppKeyHeaderStyle",
-        "label": "Top Header Brand Text",
+        "label": "Header Text",
         "defaultValue": "0",
         "options": [
           {
@@ -172,7 +166,7 @@
       {
         "type": "select",
         "messageKey": "AppKeyFooterStyle",
-        "label": "Bottom Bezel Footer Text",
+        "label": "Footer Text",
         "defaultValue": "0",
         "options": [
           {
@@ -208,13 +202,12 @@
     "items": [
       {
         "type": "heading",
-        "defaultValue": "10-Dot Micro-LED Progress Bar"
+        "defaultValue": "Dot Meter"
       },
       {
         "type": "select",
         "messageKey": "AppKeyBeadMode",
-        "label": "Dot Meter Mode",
-        "description": "Choose what the row of 10 micro-LEDs above the footer displays.",
+        "label": "Dot Meter",
         "defaultValue": "0",
         "options": [
           {
@@ -234,7 +227,7 @@
       {
         "type": "select",
         "messageKey": "AppKeyStepGoal",
-        "label": "Daily Step Goal",
+        "label": "Step Goal",
         "defaultValue": "10000",
         "options": [
           {
@@ -262,8 +255,7 @@
       {
         "type": "select",
         "messageKey": "AppKeyChargingStyle",
-        "label": "Charging Animation Style",
-        "description": "Live animated pattern on the 10 micro-LEDs when connected to power.",
+        "label": "Charging Animation",
         "defaultValue": "0",
         "options": [
           {
@@ -295,8 +287,8 @@
       {
         "type": "toggle",
         "messageKey": "AppKeyNightlight",
-        "label": "Charging Nightlight (Bedside Clock)",
-        "description": "Keeps the screen backlight continuously illuminated while connected to power on your nightstand or charging dock.",
+        "label": "Stay Lit While Charging",
+        "description": "Keeps the display active on a dock.",
         "defaultValue": false
       }
     ]
@@ -306,12 +298,12 @@
     "items": [
       {
         "type": "heading",
-        "defaultValue": "Time & Date Format"
+        "defaultValue": "Time & Date"
       },
       {
         "type": "select",
         "messageKey": "AppKeyDateFormat",
-        "label": "Date Display Format",
+        "label": "Date Format",
         "defaultValue": "0",
         "options": [
           {
@@ -327,8 +319,7 @@
       {
         "type": "toggle",
         "messageKey": "AppKeyLeadingZero",
-        "label": "Show Leading Zero on Hours (09:41 vs  9:41)",
-        "description": "Disable for authentic 1970s blank first digit during single-digit hours.",
+        "label": "Leading Zero on Hours",
         "defaultValue": false
       }
     ]
@@ -338,24 +329,12 @@
     "items": [
       {
         "type": "heading",
-        "defaultValue": "Interaction & Gestures"
-      },
-      {
-        "type": "text",
-        "defaultValue": "\ud83d\udc4b <b>Wrist Flick & Crystal Tap Gestures:</b><br>\u2022 In <b>Stealth Mode</b>: A quick wrist flick or crystal tap illuminates the watch for 4 seconds.<br>\u2022 In <b>Always-On Mode</b>: A flick or tap triggers your chosen action below, returning to Time after 4 seconds."
-      },
-      {
-        "type": "heading",
-        "defaultValue": "Custom Tap Cycle Sequence & Ordering"
-      },
-      {
-        "type": "text",
-        "defaultValue": "Configure which screens appear on sequential wrist flicks or taps. Duplicate selections are automatically deduplicated, and disabled slots are seamlessly skipped."
+        "defaultValue": "Screens"
       },
       {
         "type": "select",
         "messageKey": "AppKeyCycleSlot1",
-        "label": "Slot 1 (1st Tap Screen)",
+        "label": "Screen 1",
         "defaultValue": "1",
         "options": [
           {
@@ -387,7 +366,7 @@
       {
         "type": "select",
         "messageKey": "AppKeyCycleSlot2",
-        "label": "Slot 2 (2nd Tap Screen)",
+        "label": "Screen 2",
         "defaultValue": "2",
         "options": [
           {
@@ -419,7 +398,7 @@
       {
         "type": "select",
         "messageKey": "AppKeyCycleSlot3",
-        "label": "Slot 3 (3rd Tap Screen)",
+        "label": "Screen 3",
         "defaultValue": "3",
         "options": [
           {
@@ -451,7 +430,7 @@
       {
         "type": "select",
         "messageKey": "AppKeyCycleSlot4",
-        "label": "Slot 4 (4th Tap Screen)",
+        "label": "Screen 4",
         "defaultValue": "4",
         "options": [
           {
@@ -483,7 +462,7 @@
       {
         "type": "select",
         "messageKey": "AppKeyCycleSlot5",
-        "label": "Slot 5 (5th Tap Screen)",
+        "label": "Screen 5",
         "defaultValue": "5",
         "options": [
           {
@@ -519,20 +498,19 @@
     "items": [
       {
         "type": "heading",
-        "defaultValue": "Vibration & Sound Alerts"
+        "defaultValue": "Alerts"
       },
       {
         "type": "toggle",
         "messageKey": "AppKeySoundEnabled",
-        "label": "Master Speaker Sound",
-        "description": "Master switch to enable or silence all retro audio tones and beeps on speaker-equipped hardware (Pebble Time 2 / Emery).",
+        "label": "Sound",
+        "description": "Speaker-equipped watches only.",
         "defaultValue": true
       },
       {
         "type": "select",
         "messageKey": "AppKeyHourlyVibe",
-        "label": "Hourly Chime Vibration",
-        "description": "Wrist vibration pulse at the top of every hour.",
+        "label": "Hourly Vibration",
         "defaultValue": "0",
         "options": [
           {
@@ -552,15 +530,13 @@
       {
         "type": "toggle",
         "messageKey": "AppKeyHourlyBeep",
-        "label": "Hourly Audio Beep",
-        "description": "Plays a retro synth acoustic tone at the top of every hour on speaker-equipped hardware.",
+        "label": "Hourly Beep",
         "defaultValue": false
       },
       {
         "type": "select",
         "messageKey": "AppKeyStepCelebration",
-        "label": "Step Goal Celebration",
-        "description": "Celebration alert when reaching your daily step goal.",
+        "label": "Step Goal Alert",
         "defaultValue": "1",
         "options": [
           {
@@ -584,15 +560,13 @@
       {
         "type": "toggle",
         "messageKey": "AppKeyBtVibe",
-        "label": "Bluetooth Disconnect Vibration",
-        "description": "Vibrates with a double pulse when Bluetooth connection to phone is lost.",
+        "label": "Bluetooth Lost: Vibrate",
         "defaultValue": false
       },
       {
         "type": "toggle",
         "messageKey": "AppKeyBtSound",
-        "label": "Bluetooth Disconnect Sound",
-        "description": "Plays an audio warning beep when Bluetooth connection to phone is lost.",
+        "label": "Bluetooth Lost: Beep",
         "defaultValue": false
       }
     ]
