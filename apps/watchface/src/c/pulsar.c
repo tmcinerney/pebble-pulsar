@@ -545,7 +545,14 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
   const Colorway *palette = &active_palette;
   bool on_power = (s_battery_charging || s_battery_plugged);
   bool is_active = (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake || (on_power && s_nightlight) || s_charging_preview;
-  
+
+  // AIDEV-NOTE: Force the ghost matrix on while Stealth is asleep, whatever the setting says. With no lit
+  // dots AND no ghost dots the screen is bare black behind the header and footer -- it reads as a dead
+  // screen with text floating on it rather than a real LED panel that is currently off. Ghost dots are
+  // exactly the unlit-panel look Stealth wants, and they cost nothing when nothing else is drawn.
+  bool stealth_asleep = (s_operating_mode == MODE_STEALTH) && !is_active;
+  pulsar_set_ghost_enabled(stealth_asleep ? true : s_show_ghost);
+
   // 1. Background Fill
   graphics_context_set_fill_color(ctx, palette->outer_bg);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
