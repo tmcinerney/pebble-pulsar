@@ -44,6 +44,7 @@ static const TimerPreset PRESETS[NUM_PRESETS] = {
 #define STORAGE_KEY_ITALIC_SLANT   10005
 #define STORAGE_KEY_SHOW_GHOST     10025
 #define STORAGE_KEY_LED_GLOW       10028
+#define STORAGE_KEY_BACKLIGHT_TINT 10029
 #define STORAGE_KEY_AUDIO_ENABLED  10020
 #define STORAGE_KEY_VIBE_ENABLED   10021
 #define STORAGE_KEY_PRESET_IDX     10040
@@ -72,6 +73,7 @@ static int s_colorway = COLORWAY_VIBRANT_RUBY;
 // flatten the glow. Matches the watchface so a fresh install looks consistent.
 static bool s_show_ghost = false;
 static bool s_led_glow = true;
+static bool s_backlight_tint = false;
 static bool s_italic_slant = true;
 static bool s_audio_enabled = true;
 static bool s_vibe_enabled = true;
@@ -352,11 +354,11 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
   }
 
   if (s_edit_mode == EDIT_MINUTES) {
-    s_edit_minutes = (s_edit_minutes + 1) % 100;
+    if (s_edit_minutes < 99) s_edit_minutes++;
     layer_mark_dirty(s_canvas_layer);
     return;
   } else if (s_edit_mode == EDIT_SECONDS) {
-    s_edit_seconds = (s_edit_seconds + 1) % 60;
+    if (s_edit_seconds < 59) s_edit_seconds++;
     layer_mark_dirty(s_canvas_layer);
     return;
   }
@@ -374,9 +376,10 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
     pulsar_sound_lap(s_audio_enabled, s_vibe_enabled);
     layer_mark_dirty(s_canvas_layer);
   } else if (!s_is_paused) {
-    // Cycle preset up
-    s_preset_index--;
-    if (s_preset_index < 0) s_preset_index = NUM_PRESETS - 1;
+    // AIDEV-NOTE: PRESETS[] is ordered by ascending duration, so UP must step FORWARD through it to reach
+    // a longer timer. These were inverted: pressing DOWN on a 1:00 preset moved to 2:00.
+    s_preset_index++;
+    if (s_preset_index >= NUM_PRESETS) s_preset_index = 0;
     s_total_duration_sec = get_preset_duration(s_preset_index);
     s_remaining_sec = s_total_duration_sec;
     pulsar_sound_start(s_audio_enabled, s_vibe_enabled);
@@ -390,12 +393,15 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
     return;
   }
 
+  // AIDEV-NOTE: Clamp at zero rather than wrap. A duration is a magnitude, not a cyclic quantity, so
+  // wrapping 0 -> 99 made DOWN read as a large increment -- the timer opens at 0 minutes, so that was the
+  // first thing a press did. (The alarm still wraps, correctly: a time of day IS cyclic.)
   if (s_edit_mode == EDIT_MINUTES) {
-    s_edit_minutes = (s_edit_minutes + 99) % 100;
+    if (s_edit_minutes > 0) s_edit_minutes--;
     layer_mark_dirty(s_canvas_layer);
     return;
   } else if (s_edit_mode == EDIT_SECONDS) {
-    s_edit_seconds = (s_edit_seconds + 59) % 60;
+    if (s_edit_seconds > 0) s_edit_seconds--;
     layer_mark_dirty(s_canvas_layer);
     return;
   }
@@ -416,9 +422,8 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   } else if (s_is_paused) {
     reset_timer();
   } else {
-    // Cycle preset down
-    s_preset_index++;
-    if (s_preset_index >= NUM_PRESETS) s_preset_index = 0;
+    s_preset_index--;
+    if (s_preset_index < 0) s_preset_index = NUM_PRESETS - 1;
     s_total_duration_sec = get_preset_duration(s_preset_index);
     s_remaining_sec = s_total_duration_sec;
     pulsar_sound_start(s_audio_enabled, s_vibe_enabled);
@@ -541,14 +546,22 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       s_colorway = pulsar_tuple_to_int(t, s_colorway);
       if (s_colorway < 0 || s_colorway >= NUM_COLORWAYS) s_colorway = 0;
       persist_write_int(STORAGE_KEY_COLORWAY, s_colorway);
+      pulsar_apply_backlight_tint(s_colorway % NUM_COLORWAYS, s_backlight_tint);
     } else if (key == MESSAGE_KEY_AppKeyShowGhost) {
       s_show_ghost = pulsar_tuple_to_bool(t, s_show_ghost);
       persist_write_bool(STORAGE_KEY_SHOW_GHOST, s_show_ghost);
       pulsar_set_ghost_enabled(s_show_ghost);
+    } else if (key == MESSAGE_KEY_AppKeyBacklightTint) {
+      s_backlight_tint = pulsar_tuple_to_bool(t, s_backlight_tint);
+      persist_write_bool(STORAGE_KEY_BACKLIGHT_TINT, s_backlight_tint);
+      pulsar_apply_backlight_tint(s_colorway % NUM_COLORWAYS, s_backlight_tint);
     } else if (key == MESSAGE_KEY_AppKeyLedGlow) {
       s_led_glow = pulsar_tuple_to_bool(t, s_led_glow);
       persist_write_bool(STORAGE_KEY_LED_GLOW, s_led_glow);
       pulsar_set_glow_enabled(s_led_glow);
+  if (persist_exists(STORAGE_KEY_BACKLIGHT_TINT)) {
+    s_backlight_tint = persist_read_bool(STORAGE_KEY_BACKLIGHT_TINT);
+  }
     } else if (key == MESSAGE_KEY_AppKeyItalicSlant) {
       s_italic_slant = pulsar_tuple_to_bool(t, s_italic_slant);
       persist_write_bool(STORAGE_KEY_ITALIC_SLANT, s_italic_slant);

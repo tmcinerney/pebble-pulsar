@@ -42,6 +42,7 @@ enum EditMode {
 #define STORAGE_KEY_ITALIC_SLANT    10005
 #define STORAGE_KEY_SHOW_GHOST     10025
 #define STORAGE_KEY_LED_GLOW       10028
+#define STORAGE_KEY_BACKLIGHT_TINT 10029
 #define STORAGE_KEY_AUDIO_ENABLED   10020
 #define STORAGE_KEY_VIBE_ENABLED    10021
 #define STORAGE_KEY_SNOOZE_DUR      10050
@@ -66,6 +67,7 @@ static int s_colorway = COLORWAY_VIBRANT_RUBY;
 // flatten the glow. Matches the watchface so a fresh install looks consistent.
 static bool s_show_ghost = false;
 static bool s_led_glow = true;
+static bool s_backlight_tint = false;
 static bool s_italic_slant = true;
 static bool s_audio_enabled = true;
 static bool s_vibe_enabled = true;
@@ -397,8 +399,11 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     d4 = GLYPH_BLANK;
   }
 
-  bool is_active = slot->enabled || (s_edit_mode != EDIT_NONE) || s_is_ringing;
-  pulsar_draw_4digits(ctx, bounds, d1, d2, d3, d4, true, is_active, palette, is_active, s_italic_slant);
+  // AIDEV-NOTE: The matrix stays lit even for a disabled slot. It used to go dark, which relied on ghost
+  // dots to show the unlit grid -- once those defaulted off, paging onto a disabled alarm blanked the
+  // screen entirely and the slot indicator vanished with it. Enabled state is still carried twice, by the
+  // bead row and the [ON]/[OFF] footer, so nothing is lost by showing the time.
+  pulsar_draw_4digits(ctx, bounds, d1, d2, d3, d4, true, true, palette, true, s_italic_slant);
 
   // 5. Micro-LED Bar: Slots 1-4 indicator or Days
   bool beads[NUM_MICRO_BEADS] = {false};
@@ -413,7 +418,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     }
     beads[s_active_slot_idx * 2 + 1] = true;
   }
-  pulsar_draw_micro_beads(ctx, bounds, palette, is_active, beads);
+  // Always lit: this row is how you tell which slot you are on, so it must survive a disabled slot.
+  pulsar_draw_micro_beads(ctx, bounds, palette, true, beads);
 
   // 6. Vintage Space-Age Footer
   static char footer_buffer[32];
@@ -440,14 +446,22 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       s_colorway = pulsar_tuple_to_int(t, s_colorway);
       if (s_colorway < 0 || s_colorway >= NUM_COLORWAYS) s_colorway = 0;
       persist_write_int(STORAGE_KEY_COLORWAY, s_colorway);
+      pulsar_apply_backlight_tint(s_colorway % NUM_COLORWAYS, s_backlight_tint);
     } else if (key == MESSAGE_KEY_AppKeyShowGhost) {
       s_show_ghost = pulsar_tuple_to_bool(t, s_show_ghost);
       persist_write_bool(STORAGE_KEY_SHOW_GHOST, s_show_ghost);
       pulsar_set_ghost_enabled(s_show_ghost);
+    } else if (key == MESSAGE_KEY_AppKeyBacklightTint) {
+      s_backlight_tint = pulsar_tuple_to_bool(t, s_backlight_tint);
+      persist_write_bool(STORAGE_KEY_BACKLIGHT_TINT, s_backlight_tint);
+      pulsar_apply_backlight_tint(s_colorway % NUM_COLORWAYS, s_backlight_tint);
     } else if (key == MESSAGE_KEY_AppKeyLedGlow) {
       s_led_glow = pulsar_tuple_to_bool(t, s_led_glow);
       persist_write_bool(STORAGE_KEY_LED_GLOW, s_led_glow);
       pulsar_set_glow_enabled(s_led_glow);
+  if (persist_exists(STORAGE_KEY_BACKLIGHT_TINT)) {
+    s_backlight_tint = persist_read_bool(STORAGE_KEY_BACKLIGHT_TINT);
+  }
     } else if (key == MESSAGE_KEY_AppKeyItalicSlant) {
       s_italic_slant = pulsar_tuple_to_bool(t, s_italic_slant);
       persist_write_bool(STORAGE_KEY_ITALIC_SLANT, s_italic_slant);

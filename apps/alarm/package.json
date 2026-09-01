@@ -30,7 +30,8 @@
       "AppKeyVibeEnabled": 10021,
       "AppKeySnoozeDuration": 10050,
       "AppKeyShowGhost": 10025,
-      "AppKeyLedGlow": 10028
+      "AppKeyLedGlow": 10028,
+      "AppKeyBacklightTint": 10029
     },
     "targetPlatforms": [
       "emery",

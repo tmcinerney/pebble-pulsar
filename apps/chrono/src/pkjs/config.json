@@ -17,7 +17,7 @@
         "label": "LED Colour",
         "options": [
           {
-            "label": "GaAsP Ruby Red (1972)",
+            "label": "Ruby Red (1972 GaAsP)",
             "value": "0"
           },
           {
@@ -25,7 +25,7 @@
             "value": "1"
           },
           {
-            "label": "GaP Phosphor Green (1975)",
+            "label": "Phosphor Green (1975 GaP)",
             "value": "2"
           },
           {
@@ -33,7 +33,7 @@
             "value": "3"
           },
           {
-            "label": "Cobalt Blue",
+            "label": "Electric Cyan",
             "value": "4"
           },
           {
@@ -41,7 +41,7 @@
             "value": "5"
           },
           {
-            "label": "Inverted E-Paper",
+            "label": "Inverted Paper",
             "value": "6"
           }
         ]
@@ -59,6 +59,13 @@
         "label": "Ghost Dots",
         "defaultValue": false,
         "description": "Show the unlit dots of the matrix."
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyBacklightTint",
+        "label": "Tint Backlight",
+        "defaultValue": false,
+        "description": "Tints the backlight to match the LED colour. Replaces your watch's own backlight colour while this app is open."
       },
       {
         "type": "toggle",

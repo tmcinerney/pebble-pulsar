@@ -695,8 +695,7 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
       int colon_slant2 = s_italic_slant ? (((DIGIT_HEIGHT - 1 - 4) * slant_scale) / (DIGIT_HEIGHT - 1)) : 0;
       int colon_x2 = colon_base_x + colon_slant2;
       int colon_y2 = TOP_MARGIN + (DOT_SPACING_Y * 4);
-      graphics_context_set_fill_color(ctx, palette->lit);
-      graphics_fill_circle(ctx, GPoint(colon_x2, colon_y2), DOT_RADIUS);
+      pulsar_draw_lit_dot(ctx, GPoint(colon_x2, colon_y2), DOT_RADIUS, DOT_SPACING_X, palette);
     }
     
     // AM/PM Indicator Dot
@@ -708,8 +707,8 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
         int max_slant = s_italic_slant ? slant_scale : 0;
         int total_width = (digit_span_x * 4) + (DIGIT_GAP * 2) + COLON_GAP + max_slant;
         int start_x = (bounds.size.w - total_width) / 2;
-        graphics_context_set_fill_color(ctx, palette->lit);
-        graphics_fill_circle(ctx, GPoint(start_x, TOP_MARGIN + (DIGIT_HEIGHT * DOT_SPACING_Y) + 4), INDICATOR_RADIUS);
+        pulsar_draw_lit_dot(ctx, GPoint(start_x, TOP_MARGIN + (DIGIT_HEIGHT * DOT_SPACING_Y) + 4),
+                            INDICATOR_RADIUS, DOT_SPACING_X, palette);
       }
     }
   }

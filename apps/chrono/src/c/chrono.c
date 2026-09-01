@@ -14,6 +14,7 @@
 #define STORAGE_KEY_ITALIC_SLANT        10005
 #define STORAGE_KEY_SHOW_GHOST          10025
 #define STORAGE_KEY_LED_GLOW            10028
+#define STORAGE_KEY_BACKLIGHT_TINT      10029
 #define STORAGE_KEY_AUDIO_ENABLED       10020
 #define STORAGE_KEY_VIBE_ENABLED        10021
 #define STORAGE_KEY_RUNNING_STATE       10030
@@ -27,6 +28,7 @@
 #define MESSAGE_KEY_AppKeyItalicSlant        10005
 #define MESSAGE_KEY_AppKeyShowGhost          10025
 #define MESSAGE_KEY_AppKeyLedGlow            10028
+#define MESSAGE_KEY_AppKeyBacklightTint      10029
 #define MESSAGE_KEY_AppKeyAudioEnabled       10020
 #define MESSAGE_KEY_AppKeyVibeEnabled        10021
 #endif
@@ -41,6 +43,7 @@ static int s_colorway = COLORWAY_VIBRANT_RUBY;
 // flatten the glow. Matches the watchface so a fresh install looks consistent.
 static bool s_show_ghost = false;
 static bool s_led_glow = true;
+static bool s_backlight_tint = false;
 static bool s_italic_slant = true;
 static bool s_audio_enabled = true;
 static bool s_vibe_enabled = true;
@@ -324,15 +327,18 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
 
   // Separator
   int dot_x = sub_start_x;
-  graphics_context_set_fill_color(ctx, palette->lit);
+  // AIDEV-NOTE: Through the shared renderer, not raw fills -- these separator dots sit alongside the
+  // sub-dial digits and must pick up the same colour and glow treatment, including the pitch check that
+  // suppresses the halo at this spacing.
   if (!is_sub_colon) {
     int dot_y = sub_y + (DIGIT_HEIGHT - 1) * sub_spacing_y;
-    graphics_fill_circle(ctx, GPoint(dot_x, dot_y), sub_dot_radius);
+    pulsar_draw_lit_dot(ctx, GPoint(dot_x, dot_y), sub_dot_radius, sub_spacing_x, palette);
   } else {
     int colon_y1 = sub_y + (2 * sub_spacing_y);
     int colon_y2 = sub_y + (4 * sub_spacing_y);
-    graphics_fill_circle(ctx, GPoint(dot_x + (s_italic_slant ? 1 : 0), colon_y1), sub_dot_radius);
-    graphics_fill_circle(ctx, GPoint(dot_x, colon_y2), sub_dot_radius);
+    pulsar_draw_lit_dot(ctx, GPoint(dot_x + (s_italic_slant ? 1 : 0), colon_y1),
+                        sub_dot_radius, sub_spacing_x, palette);
+    pulsar_draw_lit_dot(ctx, GPoint(dot_x, colon_y2), sub_dot_radius, sub_spacing_x, palette);
   }
 
   // Sub digits (pure glowing LED dots)
@@ -387,14 +393,22 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       s_colorway = pulsar_tuple_to_int(t, s_colorway);
       if (s_colorway < 0 || s_colorway >= NUM_COLORWAYS) s_colorway = 0;
       persist_write_int(STORAGE_KEY_COLORWAY, s_colorway);
+      pulsar_apply_backlight_tint(s_colorway % NUM_COLORWAYS, s_backlight_tint);
     } else if (key == MESSAGE_KEY_AppKeyShowGhost) {
       s_show_ghost = pulsar_tuple_to_bool(t, s_show_ghost);
       persist_write_bool(STORAGE_KEY_SHOW_GHOST, s_show_ghost);
       pulsar_set_ghost_enabled(s_show_ghost);
+    } else if (key == MESSAGE_KEY_AppKeyBacklightTint) {
+      s_backlight_tint = pulsar_tuple_to_bool(t, s_backlight_tint);
+      persist_write_bool(STORAGE_KEY_BACKLIGHT_TINT, s_backlight_tint);
+      pulsar_apply_backlight_tint(s_colorway % NUM_COLORWAYS, s_backlight_tint);
     } else if (key == MESSAGE_KEY_AppKeyLedGlow) {
       s_led_glow = pulsar_tuple_to_bool(t, s_led_glow);
       persist_write_bool(STORAGE_KEY_LED_GLOW, s_led_glow);
       pulsar_set_glow_enabled(s_led_glow);
+  if (persist_exists(STORAGE_KEY_BACKLIGHT_TINT)) {
+    s_backlight_tint = persist_read_bool(STORAGE_KEY_BACKLIGHT_TINT);
+  }
     } else if (key == MESSAGE_KEY_AppKeyItalicSlant) {
       s_italic_slant = pulsar_tuple_to_bool(t, s_italic_slant);
       persist_write_bool(STORAGE_KEY_ITALIC_SLANT, s_italic_slant);

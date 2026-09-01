@@ -36,7 +36,7 @@ Colorway pulsar_get_palette(int colorway_index) {
       p.ghost = GColorArmyGreen;
       p.accent = GColorChromeYellow;
       break;
-    case COLORWAY_COBALT_BLUE:
+    case COLORWAY_ELECTRIC_CYAN:
       // Electric Cyan / Blue (Radiant on Reflective LCD)
       p.lit = GColorCyan;
       set_glow(&p, GColorTiffanyBlue);
@@ -99,7 +99,7 @@ uint32_t pulsar_get_backlight_rgb(int colorway_index) {
     case COLORWAY_DEEP_RED:        return 0xFF3300;  // hot lava orange
     case COLORWAY_PROTOTYPE_GREEN: return 0x22FF22;  // GaP phosphor green
     case COLORWAY_AMBER_GOLD:      return 0xFFAA00;  // amber
-    case COLORWAY_COBALT_BLUE:     return 0x00CCFF;  // electric cyan
+    case COLORWAY_ELECTRIC_CYAN:     return 0x00CCFF;  // electric cyan
     case COLORWAY_LUNAR_WHITE:     return 0xFFFFFF;
     case COLORWAY_INVERTED_PAPER:  return 0xFFFFFF;  // dark-on-light wants a neutral wash
     case COLORWAY_VIBRANT_RUBY:

@@ -29,7 +29,8 @@
       "AppKeyAudioEnabled": 10020,
       "AppKeyVibeEnabled": 10021,
       "AppKeyShowGhost": 10025,
-      "AppKeyLedGlow": 10028
+      "AppKeyLedGlow": 10028,
+      "AppKeyBacklightTint": 10029
     },
     "targetPlatforms": [
       "emery",
