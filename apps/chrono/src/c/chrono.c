@@ -406,10 +406,6 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       s_led_glow = pulsar_tuple_to_bool(t, s_led_glow);
       persist_write_bool(STORAGE_KEY_LED_GLOW, s_led_glow);
       pulsar_set_glow_enabled(s_led_glow);
-  if (persist_exists(STORAGE_KEY_BACKLIGHT_TINT)) {
-    s_backlight_tint = persist_read_bool(STORAGE_KEY_BACKLIGHT_TINT);
-  }
-  pulsar_apply_backlight_tint(s_colorway % NUM_COLORWAYS, s_backlight_tint);
     } else if (key == MESSAGE_KEY_AppKeyItalicSlant) {
       s_italic_slant = pulsar_tuple_to_bool(t, s_italic_slant);
       persist_write_bool(STORAGE_KEY_ITALIC_SLANT, s_italic_slant);
@@ -425,6 +421,9 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 }
 
 static void load_state(void) {
+  if (persist_exists(STORAGE_KEY_BACKLIGHT_TINT)) {
+    s_backlight_tint = persist_read_bool(STORAGE_KEY_BACKLIGHT_TINT);
+  }
   if (persist_exists(STORAGE_KEY_SHOW_GHOST)) {
     s_show_ghost = persist_read_bool(STORAGE_KEY_SHOW_GHOST);
   }
@@ -476,6 +475,7 @@ static void load_state(void) {
       persist_write_int(STORAGE_KEY_SAVED_START, (int)now);
     }
   }
+  pulsar_apply_backlight_tint(s_colorway % NUM_COLORWAYS, s_backlight_tint);
 }
 
 static void save_state(void) {

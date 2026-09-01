@@ -893,9 +893,6 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       s_led_glow = tuple_to_bool(t, s_led_glow);
       persist_write_bool(STORAGE_KEY_LED_GLOW, s_led_glow);
       pulsar_set_glow_enabled(s_led_glow);
-  if (persist_exists(STORAGE_KEY_BACKLIGHT_TINT)) {
-    s_backlight_tint = persist_read_bool(STORAGE_KEY_BACKLIGHT_TINT);
-  }
     } else if (key == MESSAGE_KEY_AppKeyShowGhost) {
       s_show_ghost = tuple_to_bool(t, s_show_ghost);
       persist_write_bool(STORAGE_KEY_SHOW_GHOST, s_show_ghost);
@@ -945,7 +942,6 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
           if (s_preview_timer) app_timer_cancel(s_preview_timer);
           s_preview_timer = app_timer_register(5000, preview_timer_callback, NULL);
         }
-      } else {
       }
     } else if (key == MESSAGE_KEY_AppKeyCycleSlot1) {
       s_cycle_slot1 = tuple_to_int(t, s_cycle_slot1);
@@ -1016,6 +1012,9 @@ static void load_settings(void) {
     s_led_glow = persist_read_bool(STORAGE_KEY_LED_GLOW);
   }
   pulsar_set_glow_enabled(s_led_glow);
+  if (persist_exists(STORAGE_KEY_BACKLIGHT_TINT)) {
+    s_backlight_tint = persist_read_bool(STORAGE_KEY_BACKLIGHT_TINT);
+  }
   if (persist_exists(STORAGE_KEY_ITALIC_SLANT)) {
     s_italic_slant = persist_read_bool(STORAGE_KEY_ITALIC_SLANT);
   }
