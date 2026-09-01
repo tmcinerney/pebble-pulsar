@@ -208,7 +208,7 @@
     "items": [
       {
         "type": "heading",
-        "defaultValue": "Steps"
+        "defaultValue": "Micro-LED Bar"
       },
       {
         "type": "select",
@@ -255,30 +255,6 @@
           {
             "label": "15,000 steps",
             "value": "15000"
-          }
-        ]
-      },
-      {
-        "type": "select",
-        "messageKey": "AppKeyStepCelebration",
-        "label": "Step Goal Alert",
-        "defaultValue": "1",
-        "options": [
-          {
-            "label": "Off",
-            "value": "0"
-          },
-          {
-            "label": "Vibration Only",
-            "value": "1"
-          },
-          {
-            "label": "Audio Chime Only",
-            "value": "2"
-          },
-          {
-            "label": "Vibration & Audio Chime",
-            "value": "3"
           }
         ]
       },
@@ -524,6 +500,30 @@
         "messageKey": "AppKeyHourlyBeep",
         "label": "Hourly Beep",
         "defaultValue": false
+      },
+      {
+        "type": "select",
+        "messageKey": "AppKeyStepCelebration",
+        "label": "Step Goal Alert",
+        "defaultValue": "1",
+        "options": [
+          {
+            "label": "Off",
+            "value": "0"
+          },
+          {
+            "label": "Vibration Only",
+            "value": "1"
+          },
+          {
+            "label": "Audio Chime Only",
+            "value": "2"
+          },
+          {
+            "label": "Vibration & Audio Chime",
+            "value": "3"
+          }
+        ]
       }
     ]
   },
