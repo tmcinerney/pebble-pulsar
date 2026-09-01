@@ -462,6 +462,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   if (persist_exists(STORAGE_KEY_BACKLIGHT_TINT)) {
     s_backlight_tint = persist_read_bool(STORAGE_KEY_BACKLIGHT_TINT);
   }
+  pulsar_apply_backlight_tint(s_colorway % NUM_COLORWAYS, s_backlight_tint);
     } else if (key == MESSAGE_KEY_AppKeyItalicSlant) {
       s_italic_slant = pulsar_tuple_to_bool(t, s_italic_slant);
       persist_write_bool(STORAGE_KEY_ITALIC_SLANT, s_italic_slant);
@@ -514,6 +515,14 @@ static void save_state(void) {
   persist_write_data(STORAGE_KEY_ALARM_SLOTS, s_alarms, sizeof(s_alarms));
 }
 
+// AIDEV-NOTE: light_set_color() is documented to reset when a notification preempts the app, but on
+// FW 4.36.2 the tint survives into the notification and system UI. Drop to the wearer's system colour
+// whenever we lose focus and re-apply on regain, so our colour never escapes our own screen.
+static void focus_handler(bool in_focus) {
+  if (!s_backlight_tint) return;
+  pulsar_apply_backlight_tint(s_colorway % NUM_COLORWAYS, in_focus);
+}
+
 static void main_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
@@ -551,9 +560,13 @@ static void init(void) {
 
   app_message_register_inbox_received(inbox_received_callback);
   app_message_open(256, 64);
+
+  app_focus_service_subscribe_handlers((AppFocusHandlers){ .did_focus = focus_handler });
 }
 
 static void deinit(void) {
+  pulsar_apply_backlight_tint(s_colorway % NUM_COLORWAYS, false);
+  app_focus_service_unsubscribe();
   light_enable(false);
   save_state();
   if (s_ring_timer) {
