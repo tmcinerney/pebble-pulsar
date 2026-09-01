@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-09-01
+
+### Added
+- **LED Glow**, **Ghost Dots** and **Tint Backlight** settings, matching the rest of the suite.
+- **Menu icon** and a **Reset to Defaults** button.
+
+### Changed
+- Settings regrouped into LED Appearance, Alerts and Alarm, with shortened labels.
+- Colourway names unified with the rest of the suite.
+
+### Fixed
+- Paging onto a disabled alarm blanked the display entirely, taking the slot indicator with it. The time now stays visible; the bead row and the [ON]/[OFF] footer show whether that alarm is armed.
+
+---
+
 ## [1.0.0] - 2026-08-23
 
 ### Added

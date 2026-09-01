@@ -1,8 +1,8 @@
 {
   "name": "pebble-pulsar-chrono",
   "author": "Travers McInerney",
-  "version": "1.1.0",
-  "versionLabel": "1.1.0",
+  "version": "1.2.0",
+  "versionLabel": "1.2.0",
   "keywords": [
     "stopwatch",
     "chrono",

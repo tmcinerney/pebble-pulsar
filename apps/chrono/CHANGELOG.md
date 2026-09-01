@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - 2026-09-01
+
+### Added
+- **LED Glow**, **Ghost Dots** and **Tint Backlight** settings, matching the rest of the suite.
+- **Menu icon** and a **Reset to Defaults** button.
+
+### Changed
+- Settings regrouped into LED Appearance and Alerts, with shortened labels.
+- Removed **Always-On Backlight**. Backlight behaviour is governed by your watch's own motion, ambient and timeout settings.
+- Colourway names unified with the rest of the suite.
+
+### Fixed
+- Elapsed time compounded across relaunches. Restoring a running stopwatch folded in the time away but left the stored start timestamp untouched, so if the system closed the app without a clean exit the next launch added the same gap again. A 10-second stopwatch could report 35 seconds after five relaunches.
+- The glow halo blurred the hundredths sub-dial, whose dots sit closer together than the main matrix.
+
+---
+
 ## [1.1.0] - 2026-08-23
 
 ### Added
