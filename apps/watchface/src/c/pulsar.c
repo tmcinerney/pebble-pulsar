@@ -847,6 +847,12 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     uint32_t key = t->key;
     if (key == MESSAGE_KEY_AppKeyOperatingMode) {
       s_operating_mode = tuple_to_int(t, s_operating_mode);
+#if !PBL_API_EXISTS(backlight_service_subscribe)
+      // AIDEV-NOTE: Same guard as load_settings(). Without it, selecting Stealth from the phone on a
+      // platform with no wake source darkened the screen immediately and left no way back on the watch --
+      // the guard only took effect at the next launch, which is exactly when it was least use.
+      s_operating_mode = MODE_ALWAYS_ON;
+#endif
       persist_write_int(STORAGE_KEY_OPERATING_MODE, s_operating_mode);
     } else if (key == MESSAGE_KEY_AppKeyColorway) {
       s_colorway = tuple_to_int(t, s_colorway);
