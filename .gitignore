@@ -29,3 +29,7 @@ Thumbs.db
 *~
 __pycache__/
 *.pyc
+
+# Screenshots written into app dirs by pebble screenshot during debugging.
+# Real assets live in screenshots/ and apps/*/resources/.
+/apps/*/*.png
