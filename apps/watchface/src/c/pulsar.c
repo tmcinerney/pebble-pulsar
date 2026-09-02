@@ -406,7 +406,19 @@ static void handle_gesture_dir(int dir, int debounce_ms) {
 // the seconds screen. So the backlight edge only WAKES (and returns to Time); paging is the tap's job.
 #if PBL_API_EXISTS(backlight_service_subscribe)
 static void backlight_handler(bool on) {
-  if (!on) return;
+  // AIDEV-NOTE: The backlight going out is a better "they have stopped looking" signal than any timer we
+  // could pick, and it already follows the wearer's own timeout setting. WAKE_DURATION_MS stays as the
+  // backstop, because in daylight the backlight may never come on and so never go off.
+  if (!on) {
+    if (s_display_mode != DISPLAY_MODE_TIME || s_stealth_awake) {
+      if (s_mode_timer) {
+        app_timer_cancel(s_mode_timer);
+        s_mode_timer = NULL;
+      }
+      mode_timer_callback(NULL);
+    }
+    return;
+  }
 
   if (s_operating_mode == MODE_STEALTH && !s_stealth_awake) {
     s_stealth_awake = true;

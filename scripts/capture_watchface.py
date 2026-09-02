@@ -42,8 +42,13 @@ BATTERY = 85
 K_COLORWAY, K_GHOST, K_GLOW, K_HEADER, K_FOOTER = 10001, 10025, 10028, 10008, 10006
 K_SLOT1 = 10015
 
-# (label, how many taps from the Time screen)
+# (label, how many taps from the Time screen). The GIF shows the paging interaction, which is the
+# thing stills cannot convey, so it covers every screen.
 SCREENS = [("time", 0), ("seconds", 1), ("date", 2), ("steps", 3), ("battery", 4)]
+
+# Stills sell the look rather than the interaction, so they show the Time screen in each colourway.
+# Values match enum ColorwayId in shared/include/pulsar_palette.h.
+COLOURWAYS = [(0, "ruby"), (3, "amber"), (2, "green"), (4, "cyan")]
 
 
 def run(args, check=True, timeout=180):
@@ -148,6 +153,31 @@ def capture_screens(platform):
     return saved
 
 
+def capture_colourways(platform):
+    """One Time-screen still per colourway."""
+    saved = []
+    for value, name in COLOURWAYS:
+        run(["pebble", "send-app-message", "--emulator", platform, "--int",
+             f"{K_COLORWAY}={value}"], check=False)
+        time.sleep(1.5)
+        path = os.path.join(OUT, f"{platform}-colour-{name}.png")
+        for _ in range(4):
+            if shot(platform, path):
+                ok, why = is_plausible(path)
+                if ok:
+                    saved.append(path)
+                    print(f"   {name:9} -> {os.path.basename(path)}")
+                    break
+                print(f"      retry ({why})")
+            time.sleep(1.5)
+        else:
+            print(f"   {name:9} FAILED")
+    # Leave the emulator on the shipping default.
+    run(["pebble", "send-app-message", "--emulator", platform, "--int",
+         f"{K_COLORWAY}=0"], check=False)
+    return saved
+
+
 def build_gif(paths, out_path, ms=1400):
     from PIL import Image
     frames = [Image.open(p).convert("P", palette=Image.ADAPTIVE) for p in paths]
@@ -159,7 +189,8 @@ def build_gif(paths, out_path, ms=1400):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("platforms", nargs="*", default=None)
-    ap.add_argument("--gif", action="store_true", help="also build a screen-cycling GIF")
+    ap.add_argument("--colours", action="store_true",
+                    help="also capture one Time-screen still per colourway")
     args = ap.parse_args()
     targets = args.platforms or PLATFORMS
     unknown = [t for t in targets if t not in PLATFORMS]
@@ -180,8 +211,10 @@ def main():
         saved = capture_screens(platform)
         if len(saved) != len(SCREENS):
             failed.append(platform)
-        if args.gif and len(saved) >= 2:
+        if len(saved) >= 2:
             build_gif(saved, os.path.join(OUT, f"{platform}-cycle.gif"))
+        if args.colours:
+            capture_colourways(platform)
 
     print("\n" + ("FAILED: " + ", ".join(failed) if failed else "all platforms captured"))
     return 1 if failed else 0
