@@ -224,6 +224,32 @@ static void update_charging_animation(void) {
   }
 }
 
+// AIDEV-NOTE: Two levels of capability, and both matter. PBL_HEALTH is compile-time and false only on
+// aplite, which has no health service at all. An HR sensor is a separate question the platform define
+// cannot answer -- basalt has health but no sensor -- so that one has to be asked of the service at
+// runtime. Anything a watch cannot measure is hidden rather than shown reading zero.
+static bool steps_available(void) {
+#if defined(PBL_HEALTH)
+  time_t start = time_start_of_today();
+  time_t end = time(NULL);
+  return (health_service_metric_accessible(HealthMetricStepCount, start, end)
+          & HealthServiceAccessibilityMaskAvailable) != 0;
+#else
+  return false;
+#endif
+}
+
+static bool heart_rate_available(void) {
+#if defined(PBL_HEALTH)
+  time_t now = time(NULL);
+  return (health_service_metric_aggregate_averaged_accessible(
+              HealthMetricHeartRateBPM, now, now, HealthAggregationAvg, HealthServiceTimeScopeOnce)
+          & HealthServiceAccessibilityMaskAvailable) != 0;
+#else
+  return false;
+#endif
+}
+
 static int get_step_count(void) {
   int steps = 0;
 #if defined(PBL_HEALTH)
@@ -269,6 +295,12 @@ static void mode_timer_callback(void *data) {
 }
 
 static void trigger_display_change(int mode) {
+  // Single choke point for every path that changes screen, so an unsupported one cannot be reached
+  // by any route -- cycling, a restored setting, or a direct jump.
+  if ((mode == DISPLAY_MODE_HEART_RATE && !heart_rate_available()) ||
+      (mode == DISPLAY_MODE_STEPS && !steps_available())) {
+    mode = DISPLAY_MODE_TIME;
+  }
   light_enable_interaction();
   s_display_mode = mode;
   if (s_mode_timer) {
@@ -285,11 +317,13 @@ static void advance_display_mode_dir(int dir) {
   for (int i = 0; i < 5; i++) {
     int slot_val = raw_slots[i];
     if (slot_val >= 1 && slot_val <= 5) {
-#if !defined(PBL_HEALTH)
-      if (slot_val == DISPLAY_MODE_HEART_RATE) {
+      // Skip screens this watch cannot populate, so the cycle never lands on a blank reading.
+      if (slot_val == DISPLAY_MODE_HEART_RATE && !heart_rate_available()) {
         continue;
       }
-#endif
+      if (slot_val == DISPLAY_MODE_STEPS && !steps_available()) {
+        continue;
+      }
       bool duplicate = false;
       for (int j = 0; j < active_count; j++) {
         if (active_slots[j] == slot_val) {
@@ -509,7 +543,11 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
         lit = is_active && (i < current_beads);
       }
     } else {
-      if (s_bead_mode == BEAD_MODE_STEPS) {
+      // A step meter on a watch with no pedometer would sit permanently empty, so the bar is left
+      // dark instead. Battery mode still works everywhere and remains selectable.
+      if (s_bead_mode == BEAD_MODE_STEPS && !steps_available()) {
+        lit = false;
+      } else if (s_bead_mode == BEAD_MODE_STEPS) {
         if (steps >= goal) {
           if (steps >= 2 * goal) {
             bool flash = (sec % 2 == 0);
