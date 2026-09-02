@@ -4,7 +4,7 @@ This document provides ready-to-copy listings, metadata, release notes, and imag
 
 ---
 
-# 1. Pulsar 1970 Watchface `v2.2.0`
+# 1. Pulsar 1970 Watchface `v2.3.0`
 
 ### 📋 App Store Listing Fields
 
@@ -14,7 +14,7 @@ This document provides ready-to-copy listings, metadata, release notes, and imag
 | **Category** | `Watchfaces` |
 | **Type** | `Watchface` |
 | **Author / Developer** | `Travers McInerney` |
-| **Version** | `2.2.0` |
+| **Version** | `2.3.0` |
 | **Source Code URL** | `https://github.com/tmcinerney/pebble-pulsar` |
 | **Target Architectures** | `Emery (Pebble Time 2)`, `Basalt (Pebble Time/Steel)`, `Diorite (Pebble 2 HR)`, `Aplite (Pebble Classic)` |
 
@@ -22,42 +22,49 @@ This document provides ready-to-copy listings, metadata, release notes, and imag
 
 ### 📝 Short Subtitle / Teaser
 ```
-The authentic 1972 Hamilton Pulsar Time Computer LED watchface with procedural dot-matrix graphics, Health tracking, and 8-bit audio synth chimes.
+A dot-matrix LED watchface modelled on the Hamilton Pulsar, the first electronic digital wristwatch.
 ```
 
 ---
 
 ### 📄 Full Store Description (Copy & Paste)
 ```markdown
-Step into 1970s horological history with **Pulsar 1970**, a faithful recreation of the world's first commercial digital LED wristwatch — the Hamilton Pulsar Time Computer.
+Hamilton showed the Pulsar "Wrist Computer" as a prototype in May 1970, and sold the P1 from 1972. It was the first watch to tell the time with light-emitting diodes: the display stayed dark until you pressed a button, then lit red digits for a few seconds.
 
-Powered by a lightweight procedural C graphics engine (`libpulsar`), Pulsar renders authentic 5x7 GaAsP circular dot-matrix LEDs with sub-surface phosphor glow and 12° vintage italic slant.
+This watchface reproduces that display on the Pebble. Digits are drawn as individual round LEDs on a 5x7 grid, unlit by default, with an optional slight rightward slant and a glow around each lit dot.
 
-### ⚡ Operating Modes
-- **Time Mode:** Crisp `HH:MM` time with optional leading zero and customizable header/footer.
-- **Seconds Mode:** Live ticking `:SS` display.
-- **Date Mode:** Full `MM.DD` calendar display with day-of-week indicator.
-- **Pebble Health Steps Mode:** Live step count with daily goal tracking.
-- **Battery Mode:** Exact battery percentage (`BATT`) with charge state.
-- **Heart Rate Mode:** Real-time pulse monitoring (`BPM`) on supported hardware.
+### Display modes
+- **Time** - `HH:MM`, with optional leading zero
+- **Seconds** - live `:SS`
+- **Date** - `MM.DD`
+- **Steps** - daily step count, where Pebble Health is available
+- **Battery** - charge percentage
+- **Heart rate** - BPM, on watches with the sensor
 
-### 🌟 Key Features
-- **Pebble Health 10-Dot Progress Bar:** Micro-LED bead gauge tracking daily step targets with Overdrive celebration animation upon reaching 100%.
-- **Wrist Flick / Tap Gesture Cycling:** Seamlessly switch modes with a gentle wrist flick or button tap.
-- **Clock-Synchronized Charging Animations:** Cylon eye scanner, theater marquee, and heartbeat pulse while on the charger.
-- **Bedside Nightlight:** Keeps the screen illuminated while charging on your nightstand.
-- **8-Bit Retro Synth Audio:** Hourly tone chimes, step celebration fanfares, and Bluetooth connection alerts (Pebble Time 2).
-- **7 Vintage Colorways:** GaAsP Ruby Red, Hot Lava Orange, GaP Phosphor Green, Amber Gold (HP-01), Cobalt Blue, Lunar White, and Inverted High-Contrast Paper.
+Raise your wrist to see the time. Tap the watch to page through the other screens, which return to the time after four seconds. Which screens appear, and in what order, is configurable.
+
+### Other features
+- **Micro-LED bar** - a row of ten dots showing progress toward your step goal, or battery level
+- **Charging animations** - the bar animates while the watch is charging
+- **Seven colourways** - ruby red, hot lava orange, phosphor green, amber gold, electric cyan, lunar white, and a dark-on-light inverted scheme
+- **Hourly chime** - optional vibration, and a tone on watches with a speaker
+- **Step goal alert** - fires once when you pass your daily goal
+
+The watchface does not control the backlight. When the screen lights, and in what colour, follows your watch's own settings, though you can optionally tint the backlight to match the LED colour.
 ```
 
 ---
 
-### 🚀 Release Notes (What's New in v2.2.0)
+### Release notes (v2.3.0)
 ```markdown
-- Added 8-bit retro synth audio chimes for hourly alerts, step goal fanfares, and Bluetooth disconnection (Pebble Time 2).
-- Isolated audio sound effects and haptic vibration toggles into independent settings.
-- Enhanced bedtime nightlight mode with automatic backlight holding while connected to charger.
-- Optimized 12° italic slant font cache for ultra-low battery consumption.
+- Added a glow around each lit dot, and a setting to turn off the dim unlit dots. Unlit dots are now hidden by default, which raises the contrast of the digits.
+- Wrist gestures now use the watch's own motion detection. Raising your wrist shows the time; tapping pages through the other screens.
+- The watchface no longer overrides the backlight. When it lights follows your watch settings; the backlight can optionally be tinted to match the LED colour.
+- Settings regrouped and relabelled.
+- Fixed: the sound settings did nothing, and the hourly beep played whenever hourly vibration was on.
+- Fixed: the step goal alert was never implemented.
+- Fixed: the micro-LED bar ignored the selected colourway.
+- Removed the LED brightness setting; measured on the panel it was not perceptibly brighter and cost most of the colour saturation.
 ```
 
 ---
@@ -77,7 +84,7 @@ Powered by a lightweight procedural C graphics engine (`libpulsar`), Pulsar rend
 ---
 ---
 
-# 2. Pulsar Chrono (Precision Stopwatch) `v1.1.0`
+# 2. Pulsar Chrono (Precision Stopwatch) `v1.2.0`
 
 ### 📋 App Store Listing Fields
 
@@ -87,7 +94,7 @@ Powered by a lightweight procedural C graphics engine (`libpulsar`), Pulsar rend
 | **Category** | `Tools & Utilities` (or `Sports & Fitness`) |
 | **Type** | `Watchapp` |
 | **Author / Developer** | `Travers McInerney` |
-| **Version** | `1.1.0` |
+| **Version** | `1.2.0` |
 | **Source Code URL** | `https://github.com/tmcinerney/pebble-pulsar` |
 | **Rebble Store URL** | [**`apps.rebble.io/application/6a8bc61f06d13300097edc49`**](https://apps.rebble.io/en_US/application/6a8bc61f06d13300097edc49) |
 | **Target Architectures** | `Emery`, `Basalt`, `Diorite`, `Aplite` |
@@ -103,17 +110,16 @@ Precision 1970s digital LED chronograph with 50ms centisecond readout, live lap 
 
 ### 📄 Full Store Description (Copy & Paste)
 ```markdown
-**Pulsar Chrono** is a high-performance digital chronograph and split-lap stopwatch for Pebble OS styled after vintage 1970s solid-state LED timing instruments.
+**Pulsar Chrono** is a stopwatch drawn in the same LED dot-matrix style as the Pulsar 1970 watchface.
 
 ### ⚡ Timing Features
-- **Centisecond Precision:** High-rate 50ms (20fps) refresh loop displaying split-second timing in `MM:SS.cc`.
-- **Automatic Hours Scaling:** Seamlessly switches to `HH:MM :SS` format when timing passes 60 minutes with `CHRONO [HR]` indicator.
-- **Live Lap Split Freeze:** Pressing `UP` during active timing records a lap split (up to 20 laps) and freezes the split time on-screen for 3 seconds while background timing continues unaffected.
-- **Interactive Lap Review Browser:** When stopped, press `UP` or `DOWN` to cycle through recorded splits (`LAP 01`, `LAP 02`, etc.) with the fastest split highlighted as `[BEST]`.
-- **10-Dot Micro-LED Tachymeter:** Smooth optical bead chaser animating split-second progression.
-- **Zero-Drift Background Persistence:** Exiting to your watchface or switching apps preserves elapsed time and running state via epoch timestamps with zero background battery drain.
-- **Always-On Backlight Mode:** Toggleable backlight hold to keep the screen readable during workouts.
-- **Retro Synth Audio & Tactile Haptics:** Distinct actuation buzzer tones and haptic pulses.
+- **Centiseconds:** `MM:SS.cc`, redrawn every 50ms.
+- **Hours:** switches to `HH:MM :SS` past 60 minutes.
+- **Laps:** `UP` records a split, up to 20, and holds it on screen for 3 seconds while timing continues.
+- **Lap review:** when stopped, `UP` and `DOWN` step through the splits, with the fastest marked `[BEST]`.
+- **Micro-LED bar:** a ten-dot chaser tracking the passing seconds.
+- **Runs in the background:** leaving the app preserves the elapsed time and running state, recorded as timestamps rather than a running timer.
+- **Sound and vibration:** optional, with tones on watches that have a speaker.
 
 ### 🎮 Hardware Controls
 - **SELECT:** Start / Stop timing loop.
@@ -153,7 +159,7 @@ Precision 1970s digital LED chronograph with 50ms centisecond readout, live lap 
 ---
 ---
 
-# 3. Pulsar Timer (Countdown & Pomodoro) `v1.0.0`
+# 3. Pulsar Timer (Countdown & Pomodoro) `v1.1.0`
 
 ### 📋 App Store Listing Fields
 
@@ -163,7 +169,7 @@ Precision 1970s digital LED chronograph with 50ms centisecond readout, live lap 
 | **Category** | `Tools & Utilities` (or `Daily`) |
 | **Type** | `Watchapp` |
 | **Author / Developer** | `Travers McInerney` |
-| **Version** | `1.0.0` |
+| **Version** | `1.1.0` |
 | **Source Code URL** | `https://github.com/tmcinerney/pebble-pulsar` |
 | **Target Architectures** | `Emery`, `Basalt`, `Diorite`, `Aplite` |
 
@@ -178,16 +184,16 @@ Vintage 1970s solid-state LED countdown timer and Pomodoro focus tool with backg
 
 ### 📄 Full Store Description (Copy & Paste)
 ```markdown
-**Pulsar Timer** brings the tactile retro charm of 1970s digital LED instrumentation to interval timing and focus management.
+**Pulsar Timer** is a countdown timer drawn in the same LED dot-matrix style as the Pulsar 1970 watchface.
 
 ### ⚡ Features
-- **15 Quick Duration Presets:** Sub-minute intervals (`00:10`, `00:30`, `00:45`), standard intervals (1m to 90m), and Pomodoro (25m).
-- **Interactive Custom Duration Editor:** Long-press SELECT (500ms) to dial in exact custom minutes (0–99) and seconds (0–59) with blinking LED digits.
-- **10-Dot Micro-LED Depletion Gauge:** Progressive optical bead gauge visually displaying remaining time proportion.
-- **Continuous 30-Second Bedside Alarm Loop:** Flashing strobe banners, illuminated backlight, buzzer piezo synth chimes, and repeating vibration.
-- **Pebble Wakeup API:** Reliable background alarms wake the watch and fire alerts even if you switch apps or turn off the screen.
-- **Ascending 3-2-1 Audio Warnings:** Warning buzzer beeps at 3s, 2s, 1s leading into timer expiration.
-- **Live Time Adjustment:** Add or subtract time (+15s / +1m) during active countdowns.
+- **16 presets:** from 10 seconds to 90 minutes, including 25 minutes.
+- **Custom durations:** hold `SELECT` to set minutes (0-99) and seconds (0-59) directly.
+- **Micro-LED bar:** ten dots showing the proportion of time remaining.
+- **Expiry alert:** 30 seconds of flashing banners, vibration, and a tone where supported.
+- **Background alarms:** uses the Pebble wakeup service, so the timer fires even after you leave the app.
+- **Countdown warning:** beeps at 3, 2 and 1 seconds.
+- **Adjust while running:** add or remove 15 seconds or a minute mid-countdown.
 
 ### 🎮 Hardware Controls
 - **UP / DOWN (Preset Selection):** Choose preset duration.
@@ -210,7 +216,7 @@ Vintage 1970s solid-state LED countdown timer and Pomodoro focus tool with backg
 - Continuous 30-second alarm firing loop with glowing backlight, piezo tones, and repeating haptics.
 - Pebble Wakeup API background scheduler integration.
 - Ascending 3-2-1 audio warning ticks and ruby alarm alert screen.
-- 7 Vintage LED colorways and 12° Italic slant support.
+- Seven LED colourways, with an optional italic slant.
 ```
 
 ---
@@ -230,7 +236,7 @@ Vintage 1970s solid-state LED countdown timer and Pomodoro focus tool with backg
 ---
 ---
 
-# 4. Pulsar Alarm (Multi-Schedule Clock) `v1.0.0`
+# 4. Pulsar Alarm (Multi-Schedule Clock) `v1.1.0`
 
 ### 📋 App Store Listing Fields
 
@@ -240,7 +246,7 @@ Vintage 1970s solid-state LED countdown timer and Pomodoro focus tool with backg
 | **Category** | `Daily` (or `Tools & Utilities`) |
 | **Type** | `Watchapp` |
 | **Author / Developer** | `Travers McInerney` |
-| **Version** | `1.0.0` |
+| **Version** | `1.1.0` |
 | **Source Code URL** | `https://github.com/tmcinerney/pebble-pulsar` |
 | **Target Architectures** | `Emery`, `Basalt`, `Diorite`, `Aplite` |
 
@@ -255,16 +261,16 @@ Vintage multi-schedule digital LED alarm clock with 4 independent alarm slots, f
 
 ### 📄 Full Store Description (Copy & Paste)
 ```markdown
-**Pulsar Alarm** transforms your Pebble into an authentic 1970s solid-state digital alarm clock with multi-alarm scheduling and vintage snooze behavior.
+**Pulsar Alarm** is a multi-alarm clock drawn in the same LED dot-matrix style as the Pulsar 1970 watchface.
 
 ### ⚡ Features
-- **4 Independent Alarm Slots:** Configure up to 4 discrete alarms with individual wake times and schedules.
-- **4 Flexible Repeat Schedules:** Choose between `DAILY`, `WEEKDAYS` (Mon-Fri), `WEEKENDS` (Sat-Sun), and `ONCE`.
-- **Bedside Clock Alarm Mode:** Leave open on your nightstand for continuous 30-second repeating vibration pulses, retro piezo chimes, illuminated backlight, and flashing alert banners.
-- **Pebble Wakeup API Engine:** Reliable background execution wakes the watch and sounds alarms even from deep standby.
-- **Authentic 9-Minute Snooze:** Traditional mechanical snooze duration (customizable to 5m, 9m, 10m, or 15m via Clay).
-- **Interactive Dial-In Edit Mode:** Dial in hours, minutes, and repeat rules directly on your wrist with blinking cursor feedback.
-- **Escalating Synth & Haptic Curve:** Gentle initial tone pulse escalating into high-urgency wake alarms.
+- **Four alarms**, each with its own time and schedule.
+- **Repeat options:** daily, weekdays, weekends, or once.
+- **Alarm alert:** 30 seconds of flashing banners, vibration, and a tone where supported.
+- **Background alarms:** uses the Pebble wakeup service, so alarms fire even after you leave the app.
+- **Snooze:** 9 minutes by default, the interval mechanical clock radios used; also 5, 10 or 15.
+- **On-watch editing:** set hours, minutes and repeat rule with a blinking cursor.
+- **Sound and vibration:** optional, with tones on watches that have a speaker.
 
 ### 🎮 Hardware Controls
 - **UP / DOWN (Slot List):** Navigate between Alarm Slots 1–4.
@@ -286,7 +292,7 @@ Vintage multi-schedule digital LED alarm clock with 4 independent alarm slots, f
 - Continuous Bedside Alarm Mode with illuminated backlight, piezo synth chimes, and strobe banners.
 - Pebble Wakeup API background scheduler integration.
 - Vintage 9-minute snooze and in-app dial-in edit mode.
-- 7 Vintage LED colorways and 12° Italic slant support.
+- Seven LED colourways, with an optional italic slant.
 ```
 
 ---
