@@ -33,7 +33,9 @@ PLATFORMS = ["emery", "basalt", "diorite", "aplite"]
 
 # Fixed state, so every capture across every platform is comparable.
 # 10:09 follows the convention digital watch advertising uses, and exercises four distinct digits.
-CLOCK = "10:09:30"   # HH:MM:SS, per emu-set-time
+# AIDEV-NOTE: Unix seconds, NOT "HH:MM:SS". emu-set-time accepts the HH:MM:SS form, exits 0, and
+# silently leaves the clock alone -- captures then carry whatever the wall clock said.
+CLOCK_EPOCH = 1788368970    # 2026-09-02 10:09:30 local
 STEPS = 8420          # 84% of the default 10,000 goal: a partly filled bead row reads better than a full one
 HEART_RATE = 72
 BATTERY = 85
@@ -65,12 +67,19 @@ def shot(platform, path):
     return r.returncode == 0 and os.path.exists(path)
 
 
-def frame_signature(path):
-    """Colour histogram, used both to spot junk frames and to tell screens apart."""
+def footer_signature(path):
+    """Identify the screen by its footer text band.
+
+    AIDEV-NOTE: The footer literally names the screen -- TIME COMPUTER, SECONDS, DATE, STEPS, BATTERY --
+    so it is the one region that identifies where we are. A whole-frame histogram cannot: the colon
+    blinks, so two captures of the Time screen differ and a duplicate reads as a new screen. That is
+    exactly how an off-by-one crept in, saving Time as "seconds", seconds as "date", and so on.
+    """
     from PIL import Image
-    im = Image.open(path).convert("RGB")
-    counts = collections.Counter(im.getdata())
-    return tuple(sorted(counts.items(), key=lambda kv: -kv[1])[:6]), im.size
+    im = Image.open(path).convert("L")
+    w, h = im.size
+    band = im.crop((0, int(h * 0.82), w, int(h * 0.95)))
+    return tuple(band.getdata())
 
 
 def is_plausible(path):
@@ -106,8 +115,13 @@ def wait_for_emulator(platform, tries=40):
 
 def apply_state(platform):
     """Pin everything that would otherwise drift between runs."""
-    run(["pebble", "emu-set-time", "--emulator", platform, CLOCK], check=False)
-    run(["pebble", "emu-steps", "--emulator", platform, str(STEPS)], check=False)
+    for label, cmd in [
+        ("clock", ["pebble", "emu-set-time", "--emulator", platform, str(CLOCK_EPOCH)]),
+        ("steps", ["pebble", "emu-steps", "--emulator", platform, str(STEPS)]),
+    ]:
+        r = run(cmd, check=False)
+        if r.returncode != 0:
+            print(f"   WARNING: could not set {label}: {r.stderr.strip()[:120]}")
     run(["pebble", "emu-battery", "--emulator", platform, "--percent", str(BATTERY)], check=False)
     run(["pebble", "emu-heart-rate", "--emulator", platform, str(HEART_RATE)], check=False)
     # Ship-default appearance: ruby, glow on, ghost dots off, header and footer present.
@@ -117,40 +131,54 @@ def apply_state(platform):
     time.sleep(1.5)
 
 
-def capture_screens(platform):
-    """Tap to each screen and verify the frame actually changed before keeping it."""
-    saved, previous = [], None
-    for name, taps in SCREENS:
-        path = os.path.join(OUT, f"{platform}-{name}.png")
+def capture_screens(platform, attempts=3):
+    """Walk the cycle in one pass: tap, capture, tap, capture.
 
-        # Return to Time, then tap forward. The wake timer returns to Time on its own after 4s,
-        # so waiting it out is more reliable than assuming where we are.
-        time.sleep(5)
-        for _ in range(taps):
-            run(["pebble", "emu-tap", "--emulator", platform, "--direction", "x+"], check=False)
-            time.sleep(0.8)
+    AIDEV-NOTE: Do NOT wait for the wake timer between screens. It returns the display to Time after
+    WAKE_DURATION_MS, and a `pebble` invocation costs a second or more, so any pause long enough to feel
+    safe is long enough to lose the screen -- which is how an earlier version silently saved Time under
+    four different names. Capturing straight after each tap keeps the whole walk inside one wake, and a
+    frame matching the Time frame means we desynced, so the pass restarts.
+    """
+    for attempt in range(attempts):
+        # Settle on Time first, so the walk starts from a known screen.
+        time.sleep(6)
+        saved, previous_sig, desync = [], None, False
 
-        for attempt in range(4):
+        for idx, (name, _) in enumerate(SCREENS):
+            if idx > 0:
+                run(["pebble", "emu-tap", "--emulator", platform, "--direction", "x+"], check=False)
+                # Long enough for the tap to be handled and the layer redrawn, short enough that the
+                # capture still lands inside WAKE_DURATION_MS. Without it the screenshot catches the
+                # previous screen and every frame shifts by one.
+                time.sleep(0.7)
+
+            path = os.path.join(OUT, f"{platform}-{name}.png")
             if not shot(platform, path):
-                time.sleep(1.5)
-                continue
+                desync = True
+                break
+
             ok, why = is_plausible(path)
             if not ok:
-                print(f"      retry ({why})")
-                time.sleep(1.5)
-                continue
-            sig = frame_signature(path)
-            if previous is not None and sig == previous and name != "time":
-                print("      retry (frame identical to previous screen)")
-                time.sleep(1.5)
-                continue
-            previous = sig
+                print(f"      {name}: {why}")
+                desync = True
+                break
+
+            sig = footer_signature(path)
+            if previous_sig is not None and sig == previous_sig:
+                print(f"      {name}: footer unchanged, pass desynced")
+                desync = True
+                break
+            previous_sig = sig
+
             saved.append(path)
             print(f"   {name:9} -> {os.path.basename(path)}")
-            break
-        else:
-            print(f"   {name:9} FAILED after 4 attempts")
-    return saved
+
+        if not desync and len(saved) == len(SCREENS):
+            return saved
+        print(f"   restarting pass ({attempt + 1}/{attempts})")
+
+    return []
 
 
 def capture_colourways(platform):
@@ -202,6 +230,12 @@ def main():
     failed = []
     for platform in targets:
         print(f"\n=== {platform} ===")
+        # AIDEV-NOTE: Repeated emulator restarts corrupt qemu_spi_flash.bin, after which installs still
+        # report success but every screenshot and ping times out. It presents as a hung emulator sitting
+        # on the boot screen at 100% CPU. kill+wipe is the documented recovery, and starting each session
+        # from a clean flash stops it recurring.
+        run(["pebble", "kill"], check=False, timeout=60)
+        run(["pebble", "wipe"], check=False, timeout=60)
         run(["pebble", "install", "--emulator", platform], check=False, timeout=420)
         if not wait_for_emulator(platform):
             print("   emulator never became ready")
