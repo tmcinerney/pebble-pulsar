@@ -1,3 +1,39 @@
+# Pulsar 1970 v3.0.0 Release Notes
+
+**Release Date:** October 2026  
+**Target Platforms:** Pebble Time 2 (`emery`), Pebble Time / Time Steel (`basalt`), Pebble 2 HR (`diorite`), Pebble Classic & Steel (`aplite`)
+
+---
+
+## 🚀 Overview
+
+**Pulsar 1970 v3.0.0** ("The Battery & Native Performance Update") is a major architectural overhaul that slashes CPU active time and display bus traffic by up to 98%, completely eliminates background accelerometer polling in favor of native PebbleOS 4.41+ system services, adds the highly-requested toggleable solid colon, introduces procedural optical LED glow halos, and brings full native touch navigation to the companion apps.
+
+---
+
+## 🌟 What's New in v3.0.0
+
+### 1. Dynamic Tick Throttling & Battery Saver Colon Mode
+- **Blink Colon Toggle:** A new setting under *Time & Date* allows turning off the 1 Hz colon pulse, keeping the `:` separator solid.
+- **Dynamic `SECOND_UNIT` ↔ `MINUTE_UNIT` Throttling:** When the colon is static, in stealth sleep, or when Pebble Health detects the wearer is asleep, the watchface drops from 60 CPU wakeups per minute down to 1 per minute.
+- **Direct Battery Solution:** Eliminates over 84,960 full-screen matrix redraws and SPI bus transfers per day, resolving the +241 µA draw measured on Pebble Time 2.
+
+### 2. Native PebbleOS Gesture & Backlight Integration
+- **Two-Step Flick/Tap Interaction:** The first wrist flick from dark illuminates the backlight and stays locked on the Time screen (does not jump to Seconds). A second flick or tap during the interaction window pages secondary screens.
+- **Palm-to-Sleep:** Fully integrated with PebbleOS 4.41+ palm gestures via `BacklightService` to immediately sleep and return to Time.
+- **Backlight Persistence Fix:** Exiting the watchface or companion apps on a button press no longer cuts off the backlight prematurely; the system timeout applies naturally.
+
+### 3. Procedural LED Glow & Ghost Dots
+- **Optical Glow Halos:** Each lit diode is surrounded by a calculated bloom halo of the same hue, accurately reproducing the visual weight of real GaAsP solid-state LED dies.
+- **Ghost Dots Toggle:** The unlit 5×7 diode matrix can now be toggled on or off (off by default), providing stark, high-contrast visibility on reflective e-paper screens.
+- **RGB Backlight Tinting:** Optionally matches the watch backlight LED to your selected colourway on supported hardware.
+
+### 4. Platform Respect & Audio Modernization
+- **Quiet Time & Speaker Mute:** Hourly beeps, chimes, and step celebrations automatically respect PebbleOS Quiet Time (`quiet_time_is_active()`) and muted speaker states (`speaker_is_muted()`).
+- **Native Touch Navigation:** Companion apps (`chrono`, `timer`, `alarm`) now participate in native PebbleOS touch navigation via `app_touch_navigation_enable(true)`.
+
+---
+
 # Pulsar 1970 v2.1.0 Release Notes
 
 **Release Date:** August 2026  

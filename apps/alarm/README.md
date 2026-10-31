@@ -1,4 +1,4 @@
-# Pulsar Multi-Alarm Clock `v1.0.0`
+# Pulsar Multi-Alarm Clock `v1.1.0`
 
 <p align="center">
   <img src="../../screenshots/mockups/alarm/pebble-time2-alarm.png" width="38%" alt="Pebble Time 2 Alarm Mockup" />
@@ -16,8 +16,10 @@ A multi-schedule vintage LED alarm clock for Pebble OS styled after the 1970s Ha
 - **Pebble Wakeup API:** Reliable background alarms that launch the app and alert even during sleep or standby.
 - **Vintage 9-Minute Snooze:** Authentic mechanical snooze duration, configurable via Clay (5m, 9m, 10m, 15m).
 - **In-App Dial Edit Mode:** Interactive hour/minute editing with blinking cursor feedback.
-- **Escalating Synth & Haptic Curve:** Gentle initial tone pulse escalating to urgent wake alerts.
+- **Native PebbleOS Touch Navigation:** Integrated with PebbleOS 4.33+ touch navigation bridge for touchscreen scrolling and button mapping.
+- **Escalating Synth & Haptic Curve:** Gentle initial tone pulse escalating to urgent wake alerts (respecting muted speaker state).
 - **Continuous Bedside Alarm Loop:** 30-second repeating strobe alert with backlight illumination and continuous haptics when open in foreground.
+- **Backlight Safety:** Pressing buttons or exiting the app no longer extinguishes the system backlight prematurely.
 
 ---
 
@@ -34,7 +36,7 @@ Pebble OS treats 3rd-party background alarms differently than built-in system al
 | :--- | :--- | :--- |
 | **UP / DOWN** | Slot List | Navigate between Alarm Slots 1–4 |
 | **SELECT** | Slot List | **Toggle On / Off** selected alarm slot |
-| **SELECT (Hold)** | Slot List | **Enter Edit Mode** for selected alarm |
+| **SELECT (Hold 500ms)** | Slot List | **Enter Edit Mode** for selected alarm |
 | **UP / DOWN** | Edit Mode | Adjust active digit (Hours / Minutes / Schedule) |
 | **SELECT** | Edit Mode | Advance cursor to next field / Confirm |
 | **SELECT** | Firing Alarm | **Snooze** alarm (+9 minutes) |
@@ -46,8 +48,11 @@ Pebble OS treats 3rd-party background alarms differently than built-in system al
 
 | Key | Description | Type | Default |
 | :--- | :--- | :--- | :--- |
-| `AppKeyColorway` | LED Palette (Ruby, Lava, Green, Gold, Blue, Lunar, Paper) | select | GaAsP Ruby Red (`0`) |
-| `AppKeyItalicSlant` | 12° Italic Display Slant | toggle | Enabled (`true`) |
+| `AppKeyColorway` | LED Palette (Ruby, Lava, Green, Gold, Cyan, Lunar, Paper) | select | Ruby Red (`0`) |
+| `AppKeyLedGlow` | Optical bloom halo around lit dots | toggle | Enabled (`true`) |
+| `AppKeyShowGhost` | Display unlit dots of the matrix | toggle | Disabled (`false`) |
+| `AppKeyBacklightTint` | Match backlight color to active LED colorway | toggle | Disabled (`false`) |
+| `AppKeyItalicSlant` | Vintage rightward matrix slant | toggle | Enabled (`true`) |
 | `AppKeyAudioEnabled` | Buzzer alarm synth tones (Pebble Time 2) | toggle | Enabled (`true`) |
 | `AppKeyVibeEnabled` | Escalating wake haptics | toggle | Enabled (`true`) |
 | `AppKeySnoozeDuration` | Snooze duration (5, 9, 10, 15 minutes) | select | 9 Minutes (`9`) |

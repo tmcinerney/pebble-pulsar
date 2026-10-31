@@ -1,4 +1,4 @@
-# Pulsar Countdown Timer `v1.0.0`
+# Pulsar Countdown Timer `v1.1.0`
 
 <p align="center">
   <img src="../../screenshots/mockups/timer/pebble-time2-timer.png" width="38%" alt="Pebble Time 2 Timer Mockup" />
@@ -11,12 +11,14 @@ A vintage LED countdown timer and Pomodoro focus tool for Pebble OS styled after
 
 ## ⚡ Features
 
-- **15 Quick Duration Presets:** Instant selection for short intervals (`00:10`, `00:30`, `00:45`), standard intervals (1m, 2m, 3m, 5m, 10m, 15m, 20m, 30m, 45m, 60m, 90m), and Pomodoro (25m).
-- **Interactive Custom Duration Editor:** Long-press SELECT (500ms) to dial in exact minutes (0–99) and seconds (0–59) with blinking LED digits.
+- **16 Quick Duration Presets:** Instant selection for short intervals (`00:10`, `00:30`, `00:45`), standard intervals (1m, 2m, 3m, 5m, 10m, 15m, 20m, 30m, 45m, 60m, 90m), Pomodoro (25m), and Custom duration.
+- **Interactive Custom Duration Editor:** Long-press SELECT (500ms) to dial in exact minutes (0–99) and seconds (0–59) with blinking LED digits and clamped non-wrapping decrement.
 - **10-Dot Micro-LED Depletion Gauge:** Progressive optical bead depletion visualizing remaining countdown proportion.
 - **Pebble Wakeup API Integration:** Safely schedules hardware wakeups and alerts when time is up even if you exit the app.
-- **Ascending 3-2-1 Audio Warning:** Warning audio beeps at 3s, 2s, 1s leading into timer completion.
+- **Native PebbleOS Touch Navigation:** Integrated with PebbleOS 4.33+ touch navigation bridge for touchscreen scrolling and button mapping.
+- **Ascending 3-2-1 Audio Warning:** Warning audio beeps at 3s, 2s, 1s leading into timer completion (respecting muted speaker state).
 - **Escalating Ruby Alarm Pulse:** Pulsing red LED display alert with buzzer synth tones, backlight illumination, and repeating haptic vibration pattern.
+- **Backlight Safety:** Pressing buttons or exiting the app no longer extinguishes the system backlight prematurely.
 - **Quick Time Adjust:** Add or subtract +15s / +1m on the fly during active countdowns.
 
 ---
@@ -30,11 +32,12 @@ A vintage LED countdown timer and Pomodoro focus tool for Pebble OS styled after
 
 | Button | Mode | Action |
 | :--- | :--- | :--- |
-| **UP / DOWN** | Preset Select | Cycle duration presets (1m to 60m) |
+| **UP / DOWN** | Preset Select | Cycle duration presets (10s to 90m) |
 | **SELECT** | Preset Select | **Start** countdown timer |
-| **UP / DOWN** | Running | **+1m / -1m** time adjustment |
+| **UP / DOWN** | Running | **+1m / -1m** (or ±15s under 1m) time adjustment |
 | **SELECT** | Running | **Pause / Resume** countdown |
-| **SELECT (Hold)** | Paused | **Reset** timer to preset selection |
+| **DOWN** | Paused | **Reset** timer to preset selection |
+| **SELECT (Hold 500ms)** | Preset Select | **Enter Custom Editor** (MM:SS) |
 | **ANY BUTTON** | Firing Alarm | **Dismiss** alarm alert |
 
 ---
@@ -43,8 +46,11 @@ A vintage LED countdown timer and Pomodoro focus tool for Pebble OS styled after
 
 | Key | Description | Type | Default |
 | :--- | :--- | :--- | :--- |
-| `AppKeyColorway` | LED Palette (Ruby, Lava, Green, Gold, Blue, Lunar, Paper) | select | GaAsP Ruby Red (`0`) |
-| `AppKeyItalicSlant` | 12° Italic Display Slant | toggle | Enabled (`true`) |
+| `AppKeyColorway` | LED Palette (Ruby, Lava, Green, Gold, Cyan, Lunar, Paper) | select | Ruby Red (`0`) |
+| `AppKeyLedGlow` | Optical bloom halo around lit dots | toggle | Enabled (`true`) |
+| `AppKeyShowGhost` | Display unlit dots of the matrix | toggle | Disabled (`false`) |
+| `AppKeyBacklightTint` | Match backlight color to active LED colorway | toggle | Disabled (`false`) |
+| `AppKeyItalicSlant` | Vintage rightward matrix slant | toggle | Enabled (`true`) |
 | `AppKeyAudioEnabled` | Buzzer countdown and alarm tones (Pebble Time 2) | toggle | Enabled (`true`) |
 | `AppKeyVibeEnabled` | Haptic actuation and alarm vibration | toggle | Enabled (`true`) |
 

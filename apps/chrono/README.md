@@ -1,4 +1,4 @@
-# Pulsar Chronograph (Stopwatch) `v1.1.0`
+# Pulsar Chronograph (Stopwatch) `v1.2.0`
 
 <p align="center">
   <img src="../../screenshots/mockups/chrono/pebble-time2-chrono.png" width="38%" alt="Pebble Time 2 Chronograph Mockup" />
@@ -16,9 +16,10 @@ A precision digital chronograph and lap timer for Pebble OS styled after the 197
 - **Live Lap Split Freeze:** Pressing `UP` during active timing records a lap split (up to 20 laps) and freezes the split time on-screen for 3 seconds while background timing continues unaffected.
 - **Interactive Lap Review Browser:** When stopped, press `UP` or `DOWN` to cycle through recorded splits (`LAP 01`, `LAP 02`, etc.) with the fastest split highlighted as `[BEST]`.
 - **10-Dot Micro-LED Tachymeter Chaser:** Real-time optical bead animation visualizing sub-second momentum.
-- **Zero-Drift Background Persistence:** Exiting or switching apps preserves elapsed time and running state via epoch timestamps with zero battery drain.
-- **Always-On Backlight Setting:** Toggleable backlight hold to keep the screen visible during continuous workouts.
-- **Retro Synth Audio & Tactile Haptics:** Discrete toggles for buzzer audio tones and vibration pulses.
+- **Zero-Drift Background Persistence:** Exiting or switching apps preserves elapsed time and running state via epoch timestamps with zero battery drain and no compounding on relaunch.
+- **Native PebbleOS Touch Navigation:** Integrated with PebbleOS 4.33+ touch navigation bridge for touchscreen scrolling and button mapping.
+- **Procedural LED Glow & Ghost Dots:** Shared optical bloom engine with toggleable unlit matrix dots.
+- **Retro Synth Audio & Tactile Haptics:** Discrete toggles for buzzer audio tones (respecting muted speaker states) and vibration pulses.
 
 ---
 
@@ -41,11 +42,13 @@ A precision digital chronograph and lap timer for Pebble OS styled after the 197
 
 | Key | Description | Type | Default |
 | :--- | :--- | :--- | :--- |
-| `AppKeyColorway` | LED Palette (Ruby, Lava, Green, Gold, Blue, Lunar, Paper) | select | GaAsP Ruby Red (`0`) |
-| `AppKeyItalicSlant` | 12° Italic Display Slant | toggle | Enabled (`true`) |
+| `AppKeyColorway` | LED Palette (Ruby, Lava, Green, Gold, Cyan, Lunar, Paper) | select | Ruby Red (`0`) |
+| `AppKeyLedGlow` | Optical bloom halo around lit dots | toggle | Enabled (`true`) |
+| `AppKeyShowGhost` | Display unlit dots of the matrix | toggle | Disabled (`false`) |
+| `AppKeyBacklightTint` | Match backlight color to active LED colorway | toggle | Disabled (`false`) |
+| `AppKeyItalicSlant` | Vintage rightward matrix slant | toggle | Enabled (`true`) |
 | `AppKeyAudioEnabled` | Actuation buzzer tones (Pebble Time 2) | toggle | Enabled (`true`) |
 | `AppKeyVibeEnabled` | Haptic actuation vibration | toggle | Enabled (`true`) |
-| `AppKeyBacklightAlwaysOn` | Hold display backlight on while app is active | toggle | Disabled (`false`) |
 
 ---
 

@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.0] - 2026-10-31
+
+### Added
+- **Pulsar 1970 v3.0.0 Release:** Major architectural and battery optimization release across the suite.
+- **Dynamic Tick Timer Throttling:** Automatically throttles CPU ticks from `SECOND_UNIT` (60/min) down to `MINUTE_UNIT` (1/min) when the blinking colon is turned off, in Stealth sleep, or when Pebble Health detects sleep. Eliminates up to 98.3% of daily screen redraws and SPI bus transfers.
+- **Blink Colon Setting:** Added toggleable `AppKeyBlinkColon` under *Time & Date* to turn off the 1 Hz colon pulse for maximum battery life.
+- **Two-Step Gesture Interaction:** First wrist flick illuminates the backlight and stays on Time; subsequent flicks or taps during the interaction window page secondary screens.
+- **Palm-to-Sleep Support:** Full integration with PebbleOS 4.41+ palm gestures via `BacklightService`.
+- **Procedural LED Glow:** Realistic optical halo bloom around lit LEDs.
+- **Ghost Dots Toggle:** High-contrast unlit matrix toggle (off by default).
+- **RGB Backlight Tinting:** Optionally tints Pebble Time 2 / Flint backlight to match the selected LED colourway.
+- **Native Touch Navigation:** Companion watchapps (`chrono`, `timer`, `alarm`) now participate in native PebbleOS touch navigation via `app_touch_navigation_enable(true)`.
+
+### Fixed
+- Fixed bug where pressing a button to exit the watchface or companion apps extinguished the backlight prematurely.
+- Fixed 32-bit integer overflow in steady-backlight timing calculation.
+- Fixed Clay WebView `ReferenceError` during platform capability filtering and fixed "Reset to Defaults" button across all apps.
+- Fixed Progressive Flow charging animation index overflow on the micro-LED bead row.
+- Audio and vibration settings now function independently across all apps, respecting system Quiet Time and muted speaker state.
+
+---
+
+## [2.2.0] - 2026-08-23
+
+### Added
+- **Retro 8-Bit Synth Audio Chimes:** Optional hourly tone chimes, step goal milestone fanfares, and Bluetooth alerts on hardware with speaker support (Pebble Time 2 `emery`).
+- **Independent Audio & Haptics:** Discrete Clay settings for sound effects vs haptic vibration.
+- **Enhanced Bedside Nightlight Mode:** Automatic backlight holding when placed on a charger stand.
+- **Multi-Platform Support:** Pebble Time 2 (`emery`), Pebble Time/Steel (`basalt`), Pebble 2 (`diorite`), and Pebble Classic (`aplite`).
+
+---
+
 ## [2.1.0] - 2026-08-23
 
 ### Added

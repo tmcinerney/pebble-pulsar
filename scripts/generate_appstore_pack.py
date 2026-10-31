@@ -32,14 +32,14 @@ APPS = {
         "subtitle": "1 9 7 0   T I M E   C O M P U T E R",
         "tagline": "The 1972 Hamilton Digital LED Icon for Pebble OS.",
         "category": "Watchfaces",
-        "version": "2.2.0",
+        "version": "3.0.0",
         "pbw_name": "pebble-pulsar-watchface.pbw",
         "shot_prefix": "time",
         "bullets": [
-            "● Procedural 5x7 GaAsP Dot-Matrix LEDs",
-            "● 6 Modes: Time, Sec, Date, Steps, Batt, HR",
-            "● Wrist Flick / Tap Gesture Cycling",
-            "● 8-Bit Retro Synth Chimes & Nightlight"
+            "● Procedural 5x7 GaAsP LEDs with Optical Bloom",
+            "● Dynamic Battery Saver (Solid Colon / 1 Tick/Min)",
+            "● 2-Step Gestures (Flick for Time, Tap for Modes)",
+            "● Palm-to-Sleep & PebbleOS 4.41+ Integration"
         ]
     },
     "chrono": {
@@ -47,13 +47,13 @@ APPS = {
         "subtitle": "P R E C I S I O N   C H R O N O M E T E R",
         "tagline": "Vintage Sub-Second Digital Chronograph with 20-Lap Memory.",
         "category": "Tools & Utilities",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "pbw_name": "pebble-pulsar-chrono.pbw",
         "shot_prefix": "chrono-running",
         "bullets": [
             "● 50ms High-Frequency Centisecond Readout",
             "● Live Lap Split Freeze & 20-Lap Review",
-            "● 10-Dot Micro-LED Optical Tachymeter",
+            "● Native PebbleOS Touch Navigation Bridge",
             "● Auto Hours Scaling & Zero-Drift Persistence"
         ]
     },
@@ -62,11 +62,11 @@ APPS = {
         "subtitle": "C O U N T D O W N   I N S T R U M E N T",
         "tagline": "Vintage LED Countdown Timer & Pomodoro Focus Tool.",
         "category": "Tools & Utilities",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "pbw_name": "pebble-pulsar-timer.pbw",
         "shot_prefix": "timer-running",
         "bullets": [
-            "● 10 Quick Duration Presets (1m to 60m)",
+            "● 16 Quick Duration Presets (10s to 90m)",
             "● 10-Dot Micro-LED Depletion Progress Bar",
             "● Pebble Wakeup API Background Scheduler",
             "● Escalating Ruby Alarm & 3-2-1 Warning Tones"
@@ -77,7 +77,7 @@ APPS = {
         "subtitle": "M U L T I - A L A R M   C L O C K",
         "tagline": "Vintage Multi-Schedule Digital LED Alarm Clock.",
         "category": "Daily",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "pbw_name": "pebble-pulsar-alarm.pbw",
         "shot_prefix": "alarm-view",
         "bullets": [
@@ -186,45 +186,50 @@ def draw_app_icon(app_key, app_info, size, out_path):
 
 def organize_platform_screenshots(app_key, app_info, pack_dir):
     """Gathers and organizes up to 5 screenshots per hardware platform."""
+    from PIL import ImageChops
     platforms = ["emery", "basalt", "diorite", "aplite"]
     
     shot_mappings = {
         "watchface": [
-            ("time", "1-time-mode"),
-            ("seconds", "2-seconds-mode"),
-            ("date", "3-calendar-date"),
-            ("steps", "4-health-steps"),
-            ("battery", "5-battery-status")
+            ("time", "time-mode"),
+            ("seconds", "seconds-mode"),
+            ("date", "calendar-date"),
+            ("steps", "health-steps"),
+            ("battery", "battery-status")
         ],
         "chrono": [
-            ("chrono-ready", "1-stopwatch-ready"),
-            ("chrono-running", "2-centiseconds-running"),
-            ("chrono-lap", "3-lap-split-freeze"),
-            ("chrono-lap-review", "4-lap-split-browser"),
-            ("chrono-running", "5-tachymeter-chaser")
+            ("chrono-ready", "stopwatch-ready"),
+            ("chrono-running", "centiseconds-running"),
+            ("chrono-lap", "lap-split-freeze"),
+            ("chrono-lap-review", "lap-split-browser"),
+            ("chrono-tachymeter", "tachymeter-chaser")
         ],
         "timer": [
-            ("timer-preset", "1-preset-picker"),
-            ("timer-running", "2-countdown-running"),
-            ("timer-pomodoro", "3-pomodoro-focus"),
-            ("timer-custom-edit", "4-custom-duration-dial"),
-            ("timer-alert", "5-alarm-firing-alert")
+            ("timer-preset", "preset-picker"),
+            ("timer-running", "countdown-running"),
+            ("timer-pomodoro", "pomodoro-focus"),
+            ("timer-custom-edit", "custom-duration-dial"),
+            ("timer-alert", "alarm-firing-alert")
         ],
         "alarm": [
-            ("alarm-slot1", "1-alarm-slot1-daily"),
-            ("alarm-slot2", "2-alarm-slot2-weekdays"),
-            ("alarm-slot3", "3-alarm-slot3-weekends"),
-            ("alarm-edit", "4-dial-in-edit-mode"),
-            ("alarm-slot4", "5-multi-alarm-schedules")
+            ("alarm-slot1", "alarm-slot1-daily"),
+            ("alarm-slot2", "alarm-slot2-weekdays"),
+            ("alarm-slot3", "alarm-slot3-weekends"),
+            ("alarm-edit", "dial-in-edit-mode"),
+            ("alarm-slot4", "multi-alarm-schedules")
         ]
     }
 
     print(f"\n  Organizing 5 Platform Screenshots for '{app_key}'...")
     for p in platforms:
         plat_dir = os.path.join(pack_dir, "screenshots", p)
+        # Purge stale files to prevent duplicate or mismatched leftovers
+        if os.path.exists(plat_dir):
+            shutil.rmtree(plat_dir)
         os.makedirs(plat_dir, exist_ok=True)
         
-        mappings = shot_mappings.get(app_key, [(app_info["shot_prefix"], "1-main")])
+        mappings = shot_mappings.get(app_key, [(app_info["shot_prefix"], "main")])
+        copied_files = []
         for idx, (shot_type, label) in enumerate(mappings, 1):
             src_shot = os.path.join(REPO_ROOT, "screenshots", app_key, f"{p}-{shot_type}.png")
             if not os.path.exists(src_shot):
@@ -237,7 +242,17 @@ def organize_platform_screenshots(app_key, app_info, pack_dir):
             if os.path.exists(src_shot):
                 dst_shot = os.path.join(plat_dir, f"{idx}-{label}.png")
                 shutil.copyfile(src_shot, dst_shot)
+                copied_files.append((dst_shot, f"{idx}-{label}"))
                 print(f"    ✓ [{p.upper()}] Screenshot {idx}: {os.path.basename(dst_shot)}")
+
+        # Validate that all 5 copied files are visually distinct
+        if len(copied_files) > 1:
+            imgs = [Image.open(f[0]).convert('RGB') for f in copied_files]
+            for i in range(len(imgs)):
+                for j in range(i + 1, len(imgs)):
+                    diff = ImageChops.difference(imgs[i], imgs[j])
+                    if diff.getbbox() is None:
+                        print(f"    ⚠️ WARNING: [{p.upper()}] {copied_files[i][1]} is identical to {copied_files[j][1]}!")
 
 
 def build_pack_for_app(app_key):
