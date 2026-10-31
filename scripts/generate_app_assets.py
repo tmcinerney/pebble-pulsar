@@ -43,29 +43,34 @@ PLATFORM_DIMENSIONS = {
 HAS_PEBBLE_IN_PATH = shutil.which("pebble") is not None
 
 
-def run_cmd(cmd, cwd=REPO_ROOT, check=True):
+def run_cmd(cmd, cwd=REPO_ROOT, check=True, timeout=35):
     """Executes a command inside the devenv shell if pebble is not directly in PATH."""
     if HAS_PEBBLE_IN_PATH or "devenv" in cmd:
         full_cmd = cmd
     else:
         full_cmd = f"devenv shell -- {cmd}"
-    res = subprocess.run(full_cmd, shell=True, cwd=cwd, capture_output=True, text=True)
-    if check and res.returncode != 0:
-        print(f"Command failed [{res.returncode}]: {full_cmd}\n{res.stderr}", flush=True)
-    return res
+    try:
+        res = subprocess.run(full_cmd, shell=True, cwd=cwd, capture_output=True, text=True, timeout=timeout)
+        if check and res.returncode != 0:
+            print(f"Command failed [{res.returncode}]: {full_cmd}\n{res.stderr}", flush=True)
+        return res
+    except subprocess.TimeoutExpired:
+        print(f"Command timed out after {timeout}s: {full_cmd}", flush=True)
+        return subprocess.CompletedProcess(args=full_cmd, returncode=124, stdout="", stderr="Timeout")
 
 
 # ==============================================================================
 # VALIDATION ENGINE
 # ==============================================================================
 
-def validate_screenshot(image_path, platform, min_active_pixel_ratio=0.012):
+def validate_screenshot(image_path, platform, min_active_pixel_ratio=0.012, max_active_pixel_ratio=0.25):
     """
     Validates that a captured screenshot is authentic and contains active app content:
     1. File exists and has non-zero size.
     2. Dimensions exactly match target platform hardware.
     3. Not pitch black / blank (minimum active glowing LED pixels present).
-    4. Image has non-trivial color/brightness variance (not a solid boot screen).
+    4. Not a system launcher / crash screen (active glowing LED pixels ceiling < 25%).
+    5. Image has non-trivial color/brightness variance (not a solid boot screen).
     """
     if not os.path.exists(image_path) or os.path.getsize(image_path) < 200:
         return False, "File does not exist or is empty"
@@ -92,12 +97,49 @@ def validate_screenshot(image_path, platform, min_active_pixel_ratio=0.012):
             if active_ratio < min_active_pixel_ratio:
                 return False, f"Image is blank/empty: only {active_pixels} active pixels ({active_ratio:.1%})"
 
+            if active_ratio > max_active_pixel_ratio:
+                return False, f"Image has excessive lit pixels ({active_ratio:.1%}, likely system launcher/crash, expected LED matrix < 25%)"
+
             if mean_brightness < 1.0:
                 return False, f"Image is virtually pitch black (mean brightness {mean_brightness:.2f})"
 
             return True, f"Valid ({actual_w}x{actual_h}, {active_pixels} active LEDs, {active_ratio:.1%})"
     except Exception as e:
         return False, f"Image decode error: {str(e)}"
+
+
+def install_and_boot(platform, app_dir):
+    """Cleanly stops previous emulators, installs the built app pbw, and waits until app UI is active."""
+    subprocess.run("pkill -9 -f qemu-pebble 2>/dev/null; pkill -9 -f pypkjs 2>/dev/null", shell=True, check=False)
+    run_cmd("pebble kill", check=False)
+    time.sleep(1.5)
+    
+    pbw_name = os.path.basename(app_dir) + ".pbw"
+    pbw_path = os.path.abspath(os.path.join(app_dir, "build", pbw_name))
+    if not os.path.exists(pbw_path):
+        pbws = glob.glob(os.path.join(app_dir, "build", "*.pbw"))
+        if pbws:
+            pbw_path = os.path.abspath(pbws[0])
+            
+    cmd = f"pebble install --emulator {platform} {pbw_path}" if os.path.exists(pbw_path) else f"pebble install --emulator {platform}"
+    run_cmd(cmd, cwd=app_dir, check=False)
+    time.sleep(3.0)
+    
+    # Poll until app UI is active
+    tmp_check = f"/tmp/boot_check_{platform}.png"
+    for _ in range(12):
+        if os.path.exists(tmp_check):
+            os.remove(tmp_check)
+        run_cmd(f"pebble screenshot --emulator {platform} {tmp_check}", check=False)
+        valid, _ = validate_screenshot(tmp_check, platform)
+        if valid:
+            break
+        time.sleep(0.6)
+    if os.path.exists(tmp_check):
+        try:
+            os.remove(tmp_check)
+        except OSError:
+            pass
 
 
 def capture_with_validation(platform, out_path, max_retries=6, retry_delay=0.6):
@@ -132,43 +174,67 @@ def capture_watchface_assets():
     print("▶ CAPTURING & VALIDATING WATCHFACE ASSETS")
     print("=" * 60)
 
+    shot_names = ["time", "seconds", "date", "steps", "battery"]
+
     for plat in PLATFORMS:
         print(f"\n[Platform: {plat.upper()}]")
-        run_cmd("pebble kill", check=False)
-        time.sleep(0.5)
-        run_cmd(f"pebble install --emulator {plat}", cwd=app_dir, check=False)
-        time.sleep(2.0)
+        install_and_boot(plat, app_dir)
 
         # Inject standard steps & battery
         run_cmd(f"pebble emu-steps --emulator {plat} 8420", check=False)
         run_cmd(f"pebble emu-battery --emulator {plat} --percent 85", check=False)
         if plat in ["emery", "basalt", "diorite"]:
             run_cmd(f"pebble emu-heart-rate --emulator {plat} 72", check=False)
+        time.sleep(0.5)
 
         # 1. Main Time Mode
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-time.png"))
 
         # 2. Live Seconds Mode (Tap once)
         run_cmd(f"pebble emu-tap --emulator {plat} --direction x+", check=False)
-        time.sleep(0.4)
+        time.sleep(0.6)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-seconds.png"))
 
         # 3. Calendar Date Mode (Tap again)
         run_cmd(f"pebble emu-tap --emulator {plat} --direction x+", check=False)
-        time.sleep(0.4)
+        time.sleep(0.6)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-date.png"))
 
         # 4. Steps Mode (Tap again)
         run_cmd(f"pebble emu-tap --emulator {plat} --direction x+", check=False)
-        time.sleep(0.4)
+        time.sleep(0.6)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-steps.png"))
 
         # 5. Battery Mode (Tap again)
         run_cmd(f"pebble emu-tap --emulator {plat} --direction x+", check=False)
-        time.sleep(0.4)
+        time.sleep(0.6)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-battery.png"))
 
+        verify_pairwise_distinctness(out_dir, plat, shot_names)
         run_cmd("pebble kill", check=False)
+        time.sleep(1.5)
+
+
+def verify_pairwise_distinctness(out_dir, plat, shot_names):
+    """Verifies that none of the generated platform screenshots are visually identical."""
+    from PIL import ImageChops
+    print(f"  🔍 Verifying pairwise visual distinctness for {plat.upper()} ({len(shot_names)} shots)...")
+    images = {}
+    for name in shot_names:
+        path = os.path.join(out_dir, f"{plat}-{name}.png")
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Missing expected screenshot: {path}")
+        with Image.open(path) as img:
+            images[name] = img.convert('RGB')
+
+    for i in range(len(shot_names)):
+        for j in range(i + 1, len(shot_names)):
+            n1, n2 = shot_names[i], shot_names[j]
+            diff = ImageChops.difference(images[n1], images[n2])
+            bbox = diff.getbbox()
+            if bbox is None:
+                raise ValueError(f"CRITICAL ASSET FAILURE: {plat}-{n1}.png is visually identical to {plat}-{n2}.png!")
+            print(f"    ✓ Distinct: {n1} vs {n2} (diff box: {bbox})")
 
 
 def capture_chrono_assets():
@@ -180,35 +246,43 @@ def capture_chrono_assets():
     print("▶ CAPTURING & VALIDATING CHRONOGRAPH ASSETS")
     print("=" * 60)
 
+    shot_names = ["chrono-ready", "chrono-running", "chrono-lap", "chrono-lap-review", "chrono-tachymeter"]
+
     for plat in PLATFORMS:
         print(f"\n[Platform: {plat.upper()}]")
-        run_cmd("pebble kill", check=False)
-        time.sleep(0.5)
-        run_cmd(f"pebble install --emulator {plat}", cwd=app_dir, check=False)
-        time.sleep(2.0)
+        install_and_boot(plat, app_dir)
 
         # 1. Ready State (00:00.00)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-chrono-ready.png"))
 
         # 2. Running Stopwatch (SELECT)
-        run_cmd(f"pebble emu-button --emulator {plat} select", check=False)
+        run_cmd(f"pebble emu-button --emulator {plat} click select", check=False)
         time.sleep(1.8)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-chrono-running.png"))
 
-        # 3. Lap Split Hold (UP button while running)
-        run_cmd(f"pebble emu-button --emulator {plat} up", check=False)
-        time.sleep(0.5)
+        # 3. Lap Split Hold (DOWN button while running freezes display with split)
+        run_cmd(f"pebble emu-button --emulator {plat} click down", check=False)
+        time.sleep(0.6)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-chrono-lap.png"))
 
         # 4. Stopped Lap Review (SELECT to stop, UP to browse)
-        time.sleep(3.2) # wait for lap hold unfreeze
-        run_cmd(f"pebble emu-button --emulator {plat} select", check=False) # stop
-        time.sleep(0.5)
-        run_cmd(f"pebble emu-button --emulator {plat} up", check=False) # browse laps
-        time.sleep(0.4)
+        time.sleep(1.0)
+        run_cmd(f"pebble emu-button --emulator {plat} click select", check=False) # stop
+        time.sleep(0.6)
+        run_cmd(f"pebble emu-button --emulator {plat} click up", check=False) # browse laps
+        time.sleep(0.6)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-chrono-lap-review.png"))
 
+        # 5. Tachymeter / Reset view
+        run_cmd(f"pebble emu-button --emulator {plat} click down", check=False) # unfreeze / reset
+        time.sleep(0.4)
+        run_cmd(f"pebble emu-button --emulator {plat} click select", check=False) # run again
+        time.sleep(4.2) # advance elapsed time significantly for distinct timer digits
+        capture_with_validation(plat, os.path.join(out_dir, f"{plat}-chrono-tachymeter.png"))
+
+        verify_pairwise_distinctness(out_dir, plat, shot_names)
         run_cmd("pebble kill", check=False)
+        time.sleep(1.5)
 
 
 def capture_timer_assets():
@@ -220,58 +294,61 @@ def capture_timer_assets():
     print("▶ CAPTURING & VALIDATING 5 COUNTDOWN TIMER ASSETS")
     print("=" * 60)
 
+    shot_names = ["timer-preset", "timer-running", "timer-pomodoro", "timer-custom-edit", "timer-alert"]
+
     for plat in PLATFORMS:
         print(f"\n[Platform: {plat.upper()}]")
-        run_cmd("pebble kill", check=False)
-        time.sleep(0.5)
-        run_cmd(f"pebble install --emulator {plat}", cwd=app_dir, check=False)
-        time.sleep(2.0)
+        install_and_boot(plat, app_dir)
 
         # 1. Preset Selection View (05:00)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-timer-preset.png"))
 
         # 2. Running Countdown View (SELECT)
-        run_cmd(f"pebble emu-button --emulator {plat} select", check=False)
-        time.sleep(1.5)
+        run_cmd(f"pebble emu-button --emulator {plat} click select", check=False)
+        time.sleep(2.0)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-timer-running.png"))
 
         # Pause and reset back to picker
-        run_cmd(f"pebble emu-button --emulator {plat} select", check=False) # pause
+        run_cmd(f"pebble emu-button --emulator {plat} click select", check=False) # pause
         time.sleep(0.3)
-        run_cmd(f"pebble emu-button --emulator {plat} --hold 700 select", check=False) # reset
-        time.sleep(0.5)
+        run_cmd(f"pebble emu-button --emulator {plat} click down", check=False) # reset when paused
+        time.sleep(0.3)
 
-        # 3. Pomodoro Focus Preset (navigate UP to 25m)
-        run_cmd(f"pebble emu-button --emulator {plat} up", check=False)
+        # 3. Pomodoro Focus Preset (navigate UP 3 times to 25m)
+        run_cmd(f"pebble emu-button --emulator {plat} click up", check=False)
         time.sleep(0.2)
-        run_cmd(f"pebble emu-button --emulator {plat} up", check=False)
+        run_cmd(f"pebble emu-button --emulator {plat} click up", check=False)
         time.sleep(0.2)
-        run_cmd(f"pebble emu-button --emulator {plat} up", check=False)
-        time.sleep(0.3)
+        run_cmd(f"pebble emu-button --emulator {plat} click up", check=False)
+        time.sleep(0.4)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-timer-pomodoro.png"))
 
         # 4. Custom Duration Editor (Hold SELECT 700ms)
-        run_cmd(f"pebble emu-button --emulator {plat} --hold 700 select", check=False)
+        run_cmd(f"pebble emu-button --emulator {plat} --duration 700 click select", check=False)
         time.sleep(0.6)
-        # Advance minute digit to show interactive editing
-        run_cmd(f"pebble emu-button --emulator {plat} up", check=False)
+        run_cmd(f"pebble emu-button --emulator {plat} click up", check=False) # 01:00
         time.sleep(0.2)
-        run_cmd(f"pebble emu-button --emulator {plat} up", check=False)
+        run_cmd(f"pebble emu-button --emulator {plat} click up", check=False) # 02:00
         time.sleep(0.3)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-timer-custom-edit.png"))
 
-        # 5. Alarm Firing Screen: start a 10s timer and let it fire
-        run_cmd(f"pebble emu-button --emulator {plat} back", check=False) # exit edit
-        time.sleep(0.4)
-        # Navigate down to 00:10 preset
+        # 5. Alarm Firing Screen:
+        # Finish edit mode (select minutes -> select seconds -> done)
+        run_cmd(f"pebble emu-button --emulator {plat} click select", check=False) # to seconds
+        time.sleep(0.2)
+        run_cmd(f"pebble emu-button --emulator {plat} click select", check=False) # save custom
+        time.sleep(0.3)
+        # Navigate UP 6 times from default 5m to 00:10 preset
         for _ in range(6):
-            run_cmd(f"pebble emu-button --emulator {plat} down", check=False)
-            time.sleep(0.15)
-        run_cmd(f"pebble emu-button --emulator {plat} select", check=False) # start 10s timer
-        time.sleep(10.8) # wait for timer to expire & ring
+            run_cmd(f"pebble emu-button --emulator {plat} click up", check=False)
+            time.sleep(0.12)
+        run_cmd(f"pebble emu-button --emulator {plat} click select", check=False) # start 10s timer
+        time.sleep(10.6) # wait for timer alert to fire
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-timer-alert.png"))
 
+        verify_pairwise_distinctness(out_dir, plat, shot_names)
         run_cmd("pebble kill", check=False)
+        time.sleep(1.5)
 
 
 def capture_alarm_assets():
@@ -283,46 +360,50 @@ def capture_alarm_assets():
     print("▶ CAPTURING & VALIDATING 5 ALARM CLOCK ASSETS")
     print("=" * 60)
 
+    shot_names = ["alarm-slot1", "alarm-slot2", "alarm-slot3", "alarm-edit", "alarm-slot4"]
+
     for plat in PLATFORMS:
         print(f"\n[Platform: {plat.upper()}]")
-        run_cmd("pebble kill", check=False)
-        time.sleep(0.5)
-        run_cmd(f"pebble install --emulator {plat}", cwd=app_dir, check=False)
-        time.sleep(2.0)
+        install_and_boot(plat, app_dir)
 
         # 1. Main Alarm Slot 1 View (07:00 DAILY)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-alarm-slot1.png"))
-        # Also maintain legacy alias
         shutil.copyfile(os.path.join(out_dir, f"{plat}-alarm-slot1.png"), os.path.join(out_dir, f"{plat}-alarm-view.png"))
 
         # 2. Alarm Slot 2 View (08:30 WEEKDAYS)
-        run_cmd(f"pebble emu-button --emulator {plat} down", check=False)
+        run_cmd(f"pebble emu-button --emulator {plat} click down", check=False)
         time.sleep(0.4)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-alarm-slot2.png"))
 
         # 3. Alarm Slot 3 View (09:00 WEEKENDS)
-        run_cmd(f"pebble emu-button --emulator {plat} down", check=False)
+        run_cmd(f"pebble emu-button --emulator {plat} click down", check=False)
         time.sleep(0.4)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-alarm-slot3.png"))
 
         # 4. Interactive Edit Mode (Hold SELECT 700ms)
-        run_cmd(f"pebble emu-button --emulator {plat} --hold 700 select", check=False)
-        time.sleep(0.5)
-        run_cmd(f"pebble emu-button --emulator {plat} up", check=False)
+        run_cmd(f"pebble emu-button --emulator {plat} --duration 700 click select", check=False)
+        time.sleep(0.6)
+        run_cmd(f"pebble emu-button --emulator {plat} click up", check=False)
         time.sleep(0.3)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-alarm-edit.png"))
 
-        # 5. Alarm Ringing Screen (or Snooze)
-        run_cmd(f"pebble emu-button --emulator {plat} back", check=False) # exit edit
-        time.sleep(0.4)
-        # Navigate to slot 4, toggle ON
-        run_cmd(f"pebble emu-button --emulator {plat} down", check=False)
+        # 5. Alarm Slot 4 / Multi-Schedule
+        # Cycle through edit mode to save
+        run_cmd(f"pebble emu-button --emulator {plat} click select", check=False) # hour -> minute
         time.sleep(0.3)
-        run_cmd(f"pebble emu-button --emulator {plat} select", check=False) # toggle on
+        run_cmd(f"pebble emu-button --emulator {plat} click select", check=False) # minute -> repeat
+        time.sleep(0.3)
+        run_cmd(f"pebble emu-button --emulator {plat} click select", check=False) # repeat -> done
+        time.sleep(0.4)
+        run_cmd(f"pebble emu-button --emulator {plat} click down", check=False) # navigate to slot 4
+        time.sleep(0.3)
+        run_cmd(f"pebble emu-button --emulator {plat} click select", check=False) # toggle ON
         time.sleep(0.4)
         capture_with_validation(plat, os.path.join(out_dir, f"{plat}-alarm-slot4.png"))
 
+        verify_pairwise_distinctness(out_dir, plat, shot_names)
         run_cmd("pebble kill", check=False)
+        time.sleep(1.5)
 
 
 # ==============================================================================
