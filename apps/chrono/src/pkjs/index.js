@@ -11,8 +11,11 @@ var clay = new Clay(clayConfig, function() {
     var reset = cfg.getItemById('resetDefaults');
     if (!reset) { return; }
     reset.on('click', function() {
-      localStorage.removeItem('clay-settings');
-      location.reload();
+      cfg.getAllItems().forEach(function(item) {
+        if (item && item.config && item.config.defaultValue !== undefined && typeof item.set === 'function') {
+          item.set(item.config.defaultValue);
+        }
+      });
     });
   });
 });

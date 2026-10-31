@@ -14,7 +14,7 @@ var BEAD_STEPS = '0';
 // itself on health_service_metric_accessible(), which is authoritative.
 var NO_HEALTH = ['aplite'];
 
-function platform() {
+function getPlatform() {
   try {
     var info = Pebble.getActiveWatchInfo && Pebble.getActiveWatchInfo();
     return (info && info.platform) || null;
@@ -23,43 +23,57 @@ function platform() {
   }
 }
 
-function dropOptions(item, values) {
-  if (!item || !item.config || !item.config.options) { return; }
-  item.config.options = item.config.options.filter(function(o) {
-    return values.indexOf(String(o.value)) === -1;
-  });
+function dropOptions(config, messageKey, dropValues) {
+  for (var i = 0; i < config.length; i++) {
+    var entry = config[i];
+    if (entry.items) {
+      dropOptions(entry.items, messageKey, dropValues);
+    } else if (entry.messageKey === messageKey && entry.options) {
+      entry.options = entry.options.filter(function(o) {
+        return dropValues.indexOf(String(o.value)) === -1;
+      });
+    }
+  }
 }
 
-// AIDEV-NOTE: Clay caches settings on the PHONE in localStorage['clay-settings'], separately from the
-// watch's own persist store. Clearing the cache and rebuilding the form is what makes a reset stick --
-// otherwise the next Save would re-send the stale cached values straight back to the watch. The wearer
-// still has to press Save, which is what actually pushes the defaults across.
+function removeItems(config, messageKeys) {
+  for (var i = config.length - 1; i >= 0; i--) {
+    var entry = config[i];
+    if (entry.items) {
+      removeItems(entry.items, messageKeys);
+    } else if (entry.messageKey && messageKeys.indexOf(entry.messageKey) !== -1) {
+      config.splice(i, 1);
+    }
+  }
+}
+
+function filterHealthConfig(config) {
+  var p = getPlatform();
+  if (p && NO_HEALTH.indexOf(p) !== -1) {
+    ['AppKeyCycleSlot1', 'AppKeyCycleSlot2', 'AppKeyCycleSlot3',
+     'AppKeyCycleSlot4', 'AppKeyCycleSlot5'].forEach(function(key) {
+      dropOptions(config, key, [MODE_STEPS, MODE_HEART_RATE]);
+    });
+    dropOptions(config, 'AppKeyBeadMode', [BEAD_STEPS]);
+    removeItems(config, ['AppKeyStepGoal', 'AppKeyStepCelebration']);
+  }
+}
+
+// Filter clayConfig in PKJS context before initializing Clay
+filterHealthConfig(clayConfig);
+
 var clay = new Clay(clayConfig, function() {
   var cfg = this;
 
   cfg.on(cfg.EVENTS.AFTER_BUILD, function() {
     var reset = cfg.getItemById('resetDefaults');
-    if (reset) {
-      reset.on('click', function() {
-        localStorage.removeItem('clay-settings');
-        location.reload();
+    if (!reset) { return; }
+    reset.on('click', function() {
+      cfg.getAllItems().forEach(function(item) {
+        if (item && item.config && item.config.defaultValue !== undefined && typeof item.set === 'function') {
+          item.set(item.config.defaultValue);
+        }
       });
-    }
-
-    // Offer only what this watch can actually measure.
-    var p = platform();
-    if (p && NO_HEALTH.indexOf(p) !== -1) {
-      ['AppKeyCycleSlot1', 'AppKeyCycleSlot2', 'AppKeyCycleSlot3',
-       'AppKeyCycleSlot4', 'AppKeyCycleSlot5'].forEach(function(key) {
-        dropOptions(cfg.getItemByMessageKey(key), [MODE_STEPS, MODE_HEART_RATE]);
-      });
-      dropOptions(cfg.getItemByMessageKey('AppKeyBeadMode'), [BEAD_STEPS]);
-
-      // Step Goal and its alert have nothing to act on without a pedometer.
-      ['AppKeyStepGoal', 'AppKeyStepCelebration'].forEach(function(key) {
-        var item = cfg.getItemByMessageKey(key);
-        if (item && item.hide) { item.hide(); }
-      });
-    }
+    });
   });
 });

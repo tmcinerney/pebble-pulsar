@@ -512,6 +512,9 @@ static void main_window_unload(Window *window) {
 
 static void init(void) {
   load_state();
+#if PBL_API_EXISTS(app_touch_navigation_enable)
+  app_touch_navigation_enable(true);
+#endif
   s_main_window = window_create();
   window_set_background_color(s_main_window, GColorBlack);
   window_set_click_config_provider(s_main_window, click_config_provider);

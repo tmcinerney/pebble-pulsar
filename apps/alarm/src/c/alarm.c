@@ -86,6 +86,7 @@ static bool s_is_ringing = false;
 static int s_ring_pulse_count = 0;
 static bool s_blink_state = true;
 static WakeupId s_scheduled_wakeup_id = -1;
+static bool s_backlight_pinned = false;
 
 static time_t compute_next_epoch_for_alarm(const AlarmSlot *slot, time_t now) {
   if (!slot->enabled) return 0;
@@ -162,7 +163,10 @@ static void ring_pulse_callback(void *data) {
     if (s_ring_pulse_count < 60) {
       s_ring_timer = app_timer_register(500, ring_pulse_callback, NULL);
     } else {
-      light_enable(false);
+      if (s_backlight_pinned) {
+        light_enable(false);
+        s_backlight_pinned = false;
+      }
     }
   }
 }
@@ -172,12 +176,16 @@ static void start_alarm_ringing(void) {
   s_edit_mode = EDIT_NONE;
   s_ring_pulse_count = 0;
   light_enable(true);
+  s_backlight_pinned = true;
   ring_pulse_callback(NULL);
 }
 
 static void dismiss_alarm(void) {
   s_is_ringing = false;
-  light_enable(false);
+  if (s_backlight_pinned) {
+    light_enable(false);
+    s_backlight_pinned = false;
+  }
   if (s_ring_timer) {
     app_timer_cancel(s_ring_timer);
     s_ring_timer = NULL;
@@ -192,7 +200,10 @@ static void dismiss_alarm(void) {
 
 static void snooze_alarm(void) {
   s_is_ringing = false;
-  light_enable(false);
+  if (s_backlight_pinned) {
+    light_enable(false);
+    s_backlight_pinned = false;
+  }
   if (s_ring_timer) {
     app_timer_cancel(s_ring_timer);
     s_ring_timer = NULL;
@@ -537,6 +548,9 @@ static void main_window_unload(Window *window) {
 
 static void init(void) {
   load_state();
+#if PBL_API_EXISTS(app_touch_navigation_enable)
+  app_touch_navigation_enable(true);
+#endif
   
   wakeup_service_subscribe(wakeup_handler);
 
@@ -567,7 +581,10 @@ static void init(void) {
 static void deinit(void) {
   pulsar_apply_backlight_tint(s_colorway % NUM_COLORWAYS, false);
   app_focus_service_unsubscribe();
-  light_enable(false);
+  if (s_backlight_pinned) {
+    light_enable(false);
+    s_backlight_pinned = false;
+  }
   save_state();
   if (s_ring_timer) {
     app_timer_cancel(s_ring_timer);

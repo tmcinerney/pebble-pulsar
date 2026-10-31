@@ -158,7 +158,7 @@
             "value": "0"
           },
           {
-            "label": "Stealth (Flick/Tap/Touch to Wake 4s)",
+            "label": "Stealth (Flick/Tap to Wake 4s)",
             "value": "1"
           }
         ]
@@ -200,6 +200,13 @@
         "messageKey": "AppKeyLeadingZero",
         "label": "Leading Zero on Hours",
         "defaultValue": false
+      },
+      {
+        "type": "toggle",
+        "messageKey": "AppKeyBlinkColon",
+        "label": "Blink Colon",
+        "defaultValue": true,
+        "description": "Turn off for improved battery life."
       }
     ]
   },

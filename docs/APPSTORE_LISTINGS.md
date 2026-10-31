@@ -4,7 +4,7 @@ This document provides ready-to-copy listings, metadata, release notes, and imag
 
 ---
 
-# 1. Pulsar 1970 Watchface `v2.3.0`
+# 1. Pulsar 1970 Watchface `v3.0.0`
 
 ### 📋 App Store Listing Fields
 
@@ -14,7 +14,7 @@ This document provides ready-to-copy listings, metadata, release notes, and imag
 | **Category** | `Watchfaces` |
 | **Type** | `Watchface` |
 | **Author / Developer** | `Travers McInerney` |
-| **Version** | `2.3.0` |
+| **Version** | `3.0.0` |
 | **Source Code URL** | `https://github.com/tmcinerney/pebble-pulsar` |
 | **Target Architectures** | `Emery (Pebble Time 2)`, `Basalt (Pebble Time/Steel)`, `Diorite (Pebble 2 HR)`, `Aplite (Pebble Classic)` |
 
@@ -31,40 +31,40 @@ A dot-matrix LED watchface modelled on the Hamilton Pulsar, the first electronic
 ```markdown
 Hamilton showed the Pulsar "Wrist Computer" as a prototype in May 1970, and sold the P1 from 1972. It was the first watch to tell the time with light-emitting diodes: the display stayed dark until you pressed a button, then lit red digits for a few seconds.
 
-This watchface reproduces that display on the Pebble. Digits are drawn as individual round LEDs on a 5x7 grid, unlit by default, with an optional slight rightward slant and a glow around each lit dot.
+This watchface reproduces that display on Pebble. Digits are drawn as individual round LEDs on a 5x7 matrix, unlit by default, with an optional slight rightward slant and a subtle optical glow around each lit dot.
 
-### Display modes
+### Display Modes
 - **Time** - `HH:MM`, with optional leading zero
 - **Seconds** - live `:SS`
-- **Date** - `MM.DD`
+- **Date** - `MM.DD` with day-of-week indicator
 - **Steps** - daily step count, where Pebble Health is available
-- **Battery** - charge percentage
-- **Heart rate** - BPM, on watches with the sensor
+- **Battery** - charge percentage (`BATT`)
+- **Heart Rate** - real-time pulse (BPM) on watches equipped with the sensor
 
-Raise your wrist to see the time. Tap the watch to page through the other screens, which return to the time after four seconds. Which screens appear, and in what order, is configurable.
+Raise your wrist to see the time. Tap the watch to cycle through your configured screens; the display returns to the time four seconds after you stop tapping, or immediately when the backlight turns off. Which screens appear, and in what order, is fully configurable.
 
-### Other features
-- **Micro-LED bar** - a row of ten dots showing progress toward your step goal, or battery level
-- **Charging animations** - the bar animates while the watch is charging
-- **Seven colourways** - ruby red, hot lava orange, phosphor green, amber gold, electric cyan, lunar white, and a dark-on-light inverted scheme
-- **Hourly chime** - optional vibration, and a tone on watches with a speaker
-- **Step goal alert** - fires once when you pass your daily goal
+### Other Features
+- **Micro-LED Bar** - a row of ten beads indicating progress toward your daily step goal or current battery level.
+- **Charging Animations** - progressive flow, Cylon scanner, marquee chaser, and heartbeat pulse while connected to power.
+- **Seven Colourways** - Ruby Red, Hot Lava Orange, Phosphor Green, Amber Gold, Electric Cyan, Lunar White, and an inverted high-contrast paper scheme.
+- **Backlight Tinting** - optionally tints your watch's backlight to match your chosen LED colour on supported hardware.
+- **Hourly Chime & Step Goal Alert** - optional hourly vibration, tone chimes on watches with a speaker, and a single celebration pulse when passing your step goal. All alerts respect system Quiet Time.
+- **Battery Saver Options** - toggle off the 1 Hz blinking colon or unlit ghost dots to minimize display updates and maximize battery life.
 
-The watchface does not control the backlight. When the screen lights, and in what colour, follows your watch's own settings, though you can optionally tint the backlight to match the LED colour.
+The watchface does not force the backlight on or off. Display illumination follows your Pebble's native motion, ambient light, and timeout settings.
 ```
 
 ---
 
-### Release notes (v2.3.0)
+### Release notes (v3.0.0)
 ```markdown
-- Added a glow around each lit dot, and a setting to turn off the dim unlit dots. Unlit dots are now hidden by default, which raises the contrast of the digits.
-- Wrist gestures now use the watch's own motion detection. Raising your wrist shows the time; tapping pages through the other screens.
-- The watchface no longer overrides the backlight. When it lights follows your watch settings; the backlight can optionally be tinted to match the LED colour.
-- Settings regrouped and relabelled.
-- Fixed: the sound settings did nothing, and the hourly beep played whenever hourly vibration was on.
-- Fixed: the step goal alert was never implemented.
-- Fixed: the micro-LED bar ignored the selected colourway.
-- Removed the LED brightness setting; measured on the panel it was not perceptibly brighter and cost most of the colour saturation.
+- Battery & Performance Overhaul: Eliminates background accelerometer polling and introduces dynamic 1 Hz to 1/min tick throttling, dropping CPU and display wakeups by over 98% (directly addressing the battery draw reported on Pebble Time 2).
+- Blink Colon Toggle: New setting under Time & Date to turn off the 1 Hz colon pulse, keeping the separator solid and allowing the watch to sleep between minutes.
+- Two-Step Gesture Interaction: First wrist flick from dark illuminates the backlight and stays locked on the Time screen; second flick or tap pages to secondary screens.
+- Palm-to-Sleep: Full integration with PebbleOS 4.41+ palm gestures to immediately sleep and return to Time.
+- Procedural LED Glow & Ghost Dots Toggle: Realistic solid-state diode bloom with high-contrast unlit matrix option.
+- Backlight Tinting: Optionally match your watch's backlight to the active LED colour on supported hardware.
+- Bug Fixes: Button presses to exit the watchface no longer extinguish the backlight prematurely, step celebrations trigger reliably once per day, and hourly beeps respect Quiet Time and speaker mute state.
 ```
 
 ---

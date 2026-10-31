@@ -1,8 +1,8 @@
 {
   "name": "pebble-pulsar-watchface",
   "author": "Travers McInerney",
-  "version": "2.3.0",
-  "versionLabel": "2.3.0",
+  "version": "3.0.0",
+  "versionLabel": "3.0.0",
   "keywords": [
     "watchface",
     "pulsar",
@@ -47,7 +47,8 @@
       "AppKeyStepCelebration": 10022,
       "AppKeyShowGhost": 10025,
       "AppKeyLedGlow": 10028,
-      "AppKeyBacklightTint": 10029
+      "AppKeyBacklightTint": 10029,
+      "AppKeyBlinkColon": 10030
     },
     "targetPlatforms": [
       "emery",

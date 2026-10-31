@@ -36,6 +36,7 @@
 #define STORAGE_KEY_SHOW_GHOST       10025
 #define STORAGE_KEY_LED_GLOW         10028
 #define STORAGE_KEY_BACKLIGHT_TINT   10029
+#define STORAGE_KEY_BLINK_COLON      10030
 #define STORAGE_KEY_SOUND_ENABLED    10020
 #define STORAGE_KEY_HOURLY_BEEP      10021
 #define STORAGE_KEY_STEP_CELEBRATION 10022
@@ -63,6 +64,8 @@
 #define MESSAGE_KEY_AppKeySoundEnabled    10020
 #define MESSAGE_KEY_AppKeyHourlyBeep      10021
 #define MESSAGE_KEY_AppKeyStepCelebration 10022
+#define MESSAGE_KEY_AppKeyBacklightTint   10029
+#define MESSAGE_KEY_AppKeyBlinkColon      10030
 #endif
 
 // Operating Modes
@@ -164,6 +167,7 @@ static bool s_nightlight = false;
 static bool s_show_ghost = false;
 static bool s_led_glow = true;
 static bool s_backlight_tint = false;
+static bool s_blink_colon = true;
 static int s_cycle_slot1 = 1; // Live Seconds
 static int s_cycle_slot2 = 2; // Date
 static int s_cycle_slot3 = 3; // Daily Steps
@@ -280,17 +284,62 @@ static int get_heart_rate(void) {
   return hr;
 }
 
+static void tick_handler(struct tm *tick_time, TimeUnits units_changed);
+
+static bool is_display_active(void) {
+  bool on_power = (s_battery_charging || s_battery_plugged);
+  return (s_operating_mode == MODE_ALWAYS_ON) || s_stealth_awake || (on_power && s_nightlight) || s_charging_preview;
+}
+
+static bool wearer_is_asleep(void) {
+#if defined(PBL_HEALTH)
+#if PBL_API_EXISTS(health_service_peek_current_activities)
+  return (health_service_peek_current_activities() & (HealthActivitySleep | HealthActivityRestfulSleep)) != 0;
+#else
+  return false;
+#endif
+#else
+  return false;
+#endif
+}
+
+static TimeUnits s_subscribed_tick_units = 0;
+
+static void update_tick_timer_subscription(void) {
+  bool is_active = is_display_active();
+  bool asleep = wearer_is_asleep();
+  int steps = get_step_count();
+  int goal = s_step_goal > 0 ? s_step_goal : 10000;
+
+  bool needs_seconds = is_active && !asleep && (
+    (s_display_mode == DISPLAY_MODE_SECONDS) ||
+    (s_display_mode == DISPLAY_MODE_TIME && s_blink_colon) ||
+    (s_bead_mode == BEAD_MODE_STEPS && steps >= goal)
+  );
+
+  TimeUnits desired_units = needs_seconds ? SECOND_UNIT : MINUTE_UNIT;
+  if (s_subscribed_tick_units != desired_units) {
+    s_subscribed_tick_units = desired_units;
+    tick_timer_service_subscribe(desired_units, tick_handler);
+  }
+}
+
 static void preview_timer_callback(void *data) {
   s_preview_timer = NULL;
   s_charging_preview = false;
   update_charging_animation();
+  update_tick_timer_subscription();
   layer_mark_dirty(s_canvas_layer);
 }
 
+static bool s_interacting = false;
+
 static void mode_timer_callback(void *data) {
   s_mode_timer = NULL;
+  s_interacting = false;
   s_stealth_awake = false;
   s_display_mode = DISPLAY_MODE_TIME;
+  update_tick_timer_subscription();
   layer_mark_dirty(s_canvas_layer);
 }
 
@@ -307,6 +356,7 @@ static void trigger_display_change(int mode) {
     app_timer_cancel(s_mode_timer);
   }
   s_mode_timer = app_timer_register(WAKE_DURATION_MS, mode_timer_callback, NULL);
+  update_tick_timer_subscription();
   layer_mark_dirty(s_canvas_layer);
 }
 
@@ -367,49 +417,55 @@ static void advance_display_mode_dir(int dir) {
 static time_t s_last_gesture_time_s = 0;
 static uint16_t s_last_gesture_time_ms = 0;
 
-static void execute_gesture_action_dir(int dir) {
-  if (s_operating_mode == MODE_STEALTH) {
-    if (!s_stealth_awake) {
-      s_stealth_awake = true;
-      s_display_mode = DISPLAY_MODE_TIME;
-      if (s_mode_timer) {
-        app_timer_cancel(s_mode_timer);
-      }
-      s_mode_timer = app_timer_register(WAKE_DURATION_MS, mode_timer_callback, NULL);
-      layer_mark_dirty(s_canvas_layer);
-      return;
-    }
-  }
-  advance_display_mode_dir(dir);
-}
-
-static void handle_gesture_dir(int dir, int debounce_ms) {
+// AIDEV-NOTE: Two-step gesture interaction state machine:
+// When idle (s_interacting == false), the watch is showing Time (or asleep in Stealth).
+// The FIRST flick or tap wakes the backlight, sets s_interacting = true, and ensures the watch
+// stays on the TIME screen for the 4-second interaction window.
+// A SUBSEQUENT flick or tap while s_interacting == true advances through secondary screens:
+// Time -> Seconds -> Date -> Steps -> Battery -> Time.
+// When the backlight turns off (or the 4s timer elapses), s_interacting resets to false and the display returns to Time.
+static void tap_handler(AccelAxisType axis, int32_t direction) {
   time_t now_s;
   uint16_t now_ms = time_ms(&now_s, NULL);
   int elapsed_ms = (int)((now_s - s_last_gesture_time_s) * 1000 + (now_ms - s_last_gesture_time_ms));
-  if (elapsed_ms < debounce_ms && elapsed_ms >= 0) {
-    return;
+  if (elapsed_ms < 650 && elapsed_ms >= 0) {
+    return; // 650ms debounce absorbs physical wrist flick bounce
   }
   s_last_gesture_time_s = now_s;
   s_last_gesture_time_ms = now_ms;
 
-  execute_gesture_action_dir(dir);
+  light_enable_interaction();
+
+  // If not currently interacting (watch was idle/viewed casually):
+  // FIRST flick/tap = Light up the backlight and show the TIME!
+  if (!s_interacting) {
+    s_interacting = true;
+    s_display_mode = DISPLAY_MODE_TIME;
+    if (s_operating_mode == MODE_STEALTH) {
+      s_stealth_awake = true;
+    }
+    if (s_mode_timer) {
+      app_timer_cancel(s_mode_timer);
+    }
+    s_mode_timer = app_timer_register(WAKE_DURATION_MS, mode_timer_callback, NULL);
+    update_tick_timer_subscription();
+    layer_mark_dirty(s_canvas_layer);
+    return; // STAY ON TIME!
+  }
+
+  // SECOND flick/tap while already interacting on Time:
+  // Advance through secondary screens!
+  advance_display_mode_dir(1);
 }
 
-// AIDEV-NOTE: Wake/advance is driven by the SYSTEM backlight event rather than our own accelerometer.
-// The firmware raises this using the wearer's configured Motion Sensitivity (Pebble app > Display), so we
-// inherit their preference for free and hold no accel subscription -- previously a permanent 10Hz wakeup
-// and the single largest non-display battery draw. Only fires on the off->on edge, one event per wake.
-// Stubbed to a no-op on aplite/basalt/chalk/diorite; see the MODE_STEALTH guard in load_settings().
-// AIDEV-NOTE: The backlight coming on means "the wearer is looking at the watch", which is a request to
-// see the TIME -- not to page past it. Wiring this to advance_display_mode made every wrist raise land on
-// the seconds screen. So the backlight edge only WAKES (and returns to Time); paging is the tap's job.
+// AIDEV-NOTE: BacklightService integration:
+// When PebbleOS turns on the backlight on wrist raise or touch, start the interaction window.
+// Debounce the accompanying tap_handler so the same physical wrist motion does not skip past Time.
+// When the backlight turns off (timeout, palm-to-sleep, or lowering wrist), end interaction and return to Time.
 #if PBL_API_EXISTS(backlight_service_subscribe)
 static void backlight_handler(bool on) {
-  // AIDEV-NOTE: The backlight going out is a better "they have stopped looking" signal than any timer we
-  // could pick, and it already follows the wearer's own timeout setting. WAKE_DURATION_MS stays as the
-  // backstop, because in daylight the backlight may never come on and so never go off.
   if (!on) {
+    s_interacting = false;
     if (s_display_mode != DISPLAY_MODE_TIME || s_stealth_awake) {
       if (s_mode_timer) {
         app_timer_cancel(s_mode_timer);
@@ -420,35 +476,19 @@ static void backlight_handler(bool on) {
     return;
   }
 
-  if (s_operating_mode == MODE_STEALTH && !s_stealth_awake) {
+  // Backlight turned ON: start the interaction window on Time and debounce accompanying tap
+  s_interacting = true;
+  time_ms(&s_last_gesture_time_s, &s_last_gesture_time_ms);
+  if (s_operating_mode == MODE_STEALTH) {
     s_stealth_awake = true;
-  } else if (s_display_mode == DISPLAY_MODE_TIME) {
-    return;   // already showing what they want; don't restart the timer
+    s_display_mode = DISPLAY_MODE_TIME;
   }
-
-  s_display_mode = DISPLAY_MODE_TIME;
   if (s_mode_timer) {
     app_timer_cancel(s_mode_timer);
   }
   s_mode_timer = app_timer_register(WAKE_DURATION_MS, mode_timer_callback, NULL);
+  update_tick_timer_subscription();
   layer_mark_dirty(s_canvas_layer);
-}
-#endif
-
-// AIDEV-NOTE: The backlight event fires once per off->on edge, so on its own it advances the display
-// exactly once and then goes quiet until the backlight times out. accel_tap_service supplies the repeat:
-// it is the firmware's own tap detector, so it carries no app-level sensitivity knob to duplicate a
-// system setting, and it fires per tap. handle_gesture_dir's debounce absorbs the overlap when one wrist
-// raise trips both sources.
-static void tap_handler(AccelAxisType axis, int32_t direction) {
-  handle_gesture_dir(1, 400);
-}
-
-#if PBL_API_EXISTS(touch_service_subscribe)
-static void touch_handler(const TouchEvent *event, void *context) {
-  if (event->type == TouchEvent_Touchdown) {
-    handle_gesture_dir(1, 500);
-  }
 }
 #endif
 
@@ -464,6 +504,7 @@ static void battery_callback(BatteryChargeState state) {
   s_battery_charging = state.is_charging;
   s_battery_plugged = state.is_plugged;
   update_charging_animation();
+  update_tick_timer_subscription();
   layer_mark_dirty(s_canvas_layer);
 }
 
@@ -473,6 +514,7 @@ static void battery_callback(BatteryChargeState state) {
 // it repeating; persisting it means relaunching the watchface mid-afternoon does not celebrate again.
 static void maybe_celebrate_steps(void) {
   if (s_step_celebration == 0) return;
+  if (quiet_time_is_active()) return;
 
   int goal = s_step_goal > 0 ? s_step_goal : 10000;
   if (get_step_count() < goal) return;
@@ -490,15 +532,24 @@ static void maybe_celebrate_steps(void) {
   }
 #if PBL_API_EXISTS(speaker_play_tone)
   if (s_sound_enabled && (s_step_celebration & 2)) {
-    speaker_play_tone(2093, 140, 70, SpeakerWaveformSquare);
+#if PBL_API_EXISTS(speaker_is_muted)
+    if (!speaker_is_muted())
+#endif
+    {
+      speaker_play_tone(2093, 140, 70, SpeakerWaveformSquare);
+    }
   }
 #endif
 }
 
 static void health_handler(HealthEventType event, void *context) {
-  if (event == HealthEventMovementUpdate || event == HealthEventHeartRateUpdate) {
+  if (event == HealthEventMovementUpdate || event == HealthEventHeartRateUpdate ||
+      event == HealthEventSignificantUpdate || event == HealthEventSleepUpdate) {
     if (event == HealthEventMovementUpdate) {
       maybe_celebrate_steps();
+    }
+    if (event == HealthEventSleepUpdate || event == HealthEventMovementUpdate) {
+      update_tick_timer_subscription();
     }
     layer_mark_dirty(s_canvas_layer);
   }
@@ -545,8 +596,9 @@ static void draw_step_beads(GContext *ctx, GRect bounds, const Colorway *palette
             lit = is_active;
           } else {
             int remaining = NUM_MICRO_BEADS - current_beads;
-            int cycle_pos = (remaining > 0) ? ((now_ms * (remaining + 2)) / 1000) : 0;
-            lit = is_active && (i == (current_beads + cycle_pos));
+            int cycle_pos = (remaining > 0) ? ((now_ms * remaining) / 1000) : 0;
+            if (cycle_pos >= remaining) cycle_pos = remaining - 1;
+            lit = is_active && (remaining > 0) && (i == (current_beads + cycle_pos));
           }
         }
       } else if (s_charging_style == CHARGING_STYLE_SOLID) {
@@ -682,7 +734,6 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
     // 4-Digit Layout for Time, Date, Battery
     int d1 = GLYPH_BLANK, d2 = GLYPH_BLANK, d3 = GLYPH_BLANK, d4 = GLYPH_BLANK;
     bool show_colon = false;
-    bool colon_blinking = false;
 
     if (s_display_mode == DISPLAY_MODE_DATE) {
       if (is_active) {
@@ -733,11 +784,10 @@ static void canvas_update_proc(Layer *layer, GContext *ctx) {
         d3 = mins / 10;
         d4 = mins % 10;
         show_colon = true;
-        colon_blinking = true;
       }
     }
 
-    bool colon_lit = show_colon && is_active && (!colon_blinking || (tick_time->tm_sec % 2 == 0));
+    bool colon_lit = show_colon && is_active && (!s_blink_colon || (tick_time->tm_sec % 2 == 0));
     pulsar_draw_4digits(ctx, bounds, d1, d2, d3, d4, show_colon, colon_lit, palette, is_active, s_italic_slant);
     
     // Middle separator dot for Date Mode
@@ -827,22 +877,29 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     bool chime = (s_hourly_vibe != HOURLY_VIBE_OFF) || (s_sound_enabled && s_hourly_beep);
     if (chime && tick_time->tm_hour != s_last_vibe_hour) {
       s_last_vibe_hour = tick_time->tm_hour;
-      if (s_hourly_vibe == HOURLY_VIBE_SINGLE) {
-        vibes_short_pulse();
-      } else if (s_hourly_vibe == HOURLY_VIBE_DOUBLE) {
-        vibes_double_pulse();
-      }
+      if (!quiet_time_is_active()) {
+        if (s_hourly_vibe == HOURLY_VIBE_SINGLE) {
+          vibes_short_pulse();
+        } else if (s_hourly_vibe == HOURLY_VIBE_DOUBLE) {
+          vibes_double_pulse();
+        }
 #if PBL_API_EXISTS(speaker_play_tone)
-      if (s_sound_enabled && s_hourly_beep) {
-        speaker_play_tone(s_hourly_vibe == HOURLY_VIBE_DOUBLE ? 2093 : 1760, 80, 50,
-                          SpeakerWaveformSquare);
-      }
+        if (s_sound_enabled && s_hourly_beep) {
+#if PBL_API_EXISTS(speaker_is_muted)
+          if (!speaker_is_muted())
 #endif
+          {
+            speaker_play_tone(s_hourly_vibe == HOURLY_VIBE_DOUBLE ? 2093 : 1760, 80, 50,
+                              SpeakerWaveformSquare);
+          }
+        }
+#endif
+      }
     }
   }
 
   bool animating_charge = (s_battery_charging || s_battery_plugged || s_charging_preview) && (s_charging_style != CHARGING_STYLE_OFF) && (s_charging_style != CHARGING_STYLE_SOLID);
-  if (s_display_mode == DISPLAY_MODE_SECONDS || animating_charge || (s_operating_mode == MODE_ALWAYS_ON && (units_changed & SECOND_UNIT))) {
+  if (s_display_mode == DISPLAY_MODE_SECONDS || animating_charge || (is_display_active() && (units_changed & SECOND_UNIT))) {
     layer_mark_dirty(s_canvas_layer);
   } else if (units_changed & MINUTE_UNIT) {
     layer_mark_dirty(s_canvas_layer);
@@ -1008,8 +1065,12 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     } else if (key == MESSAGE_KEY_AppKeyCycleSlot5) {
       s_cycle_slot5 = tuple_to_int(t, s_cycle_slot5);
       persist_write_int(STORAGE_KEY_CYCLE_SLOT_5, s_cycle_slot5);
+    } else if (key == MESSAGE_KEY_AppKeyBlinkColon) {
+      s_blink_colon = tuple_to_bool(t, s_blink_colon);
+      persist_write_bool(STORAGE_KEY_BLINK_COLON, s_blink_colon);
     }
   }
+  update_tick_timer_subscription();
   layer_mark_dirty(s_canvas_layer);
 }
 
@@ -1098,6 +1159,9 @@ static void load_settings(void) {
   if (persist_exists(STORAGE_KEY_CYCLE_SLOT_5)) {
     s_cycle_slot5 = persist_read_int(STORAGE_KEY_CYCLE_SLOT_5);
   }
+  if (persist_exists(STORAGE_KEY_BLINK_COLON)) {
+    s_blink_colon = persist_read_bool(STORAGE_KEY_BLINK_COLON);
+  }
 }
 
 static void main_window_load(Window *window) {
@@ -1114,6 +1178,7 @@ static void main_window_unload(Window *window) {
 }
 
 static void init(void) {
+  APP_LOG(APP_LOG_LEVEL_INFO, "=== PULSAR 1970 v3.0.0 (built %s %s) ===", __DATE__, __TIME__);
   load_settings();
   // AIDEV-NOTE: Apply on EVERY launch, including when the tint is off -- that branch calls
   // light_set_system_color(), so a tint stranded by a previous run is cleared here. deinit() is not
@@ -1134,7 +1199,7 @@ static void init(void) {
   app_message_register_outbox_failed(outbox_failed_callback);
   app_message_open(1024, 128);
 
-  tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
+  update_tick_timer_subscription();
 
 #if PBL_API_EXISTS(backlight_service_subscribe)
   backlight_service_subscribe(backlight_handler);
@@ -1145,11 +1210,6 @@ static void init(void) {
   // and re-tint only once we are genuinely back, so the LED never changes mid-animation.
   app_focus_service_subscribe_handlers((AppFocusHandlers){ .did_focus = focus_handler });
 
-#if PBL_API_EXISTS(touch_service_subscribe)
-  if (touch_service_is_enabled()) {
-    touch_service_subscribe(touch_handler, NULL);
-  }
-#endif
   connection_service_subscribe((ConnectionHandlers) {
     .pebble_app_connection_handler = bluetooth_callback
   });
@@ -1176,14 +1236,10 @@ static void deinit(void) {
 #if defined(PBL_HEALTH)
   health_service_events_unsubscribe();
 #endif
-#if PBL_API_EXISTS(touch_service_subscribe)
-  if (touch_service_is_enabled()) {
-    touch_service_unsubscribe();
-  }
-#endif
   battery_state_service_unsubscribe();
   connection_service_unsubscribe();
   tick_timer_service_unsubscribe();
+  s_subscribed_tick_units = 0;
   if (s_mode_timer) {
     app_timer_cancel(s_mode_timer);
     s_mode_timer = NULL;

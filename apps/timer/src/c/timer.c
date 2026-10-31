@@ -88,6 +88,7 @@ static bool s_is_alarm_firing = false;
 static time_t s_target_epoch = 0;
 static WakeupId s_wakeup_id = -1;
 static int s_alarm_flash_count = 0;
+static bool s_backlight_pinned = false;
 
 static enum EditMode s_edit_mode = EDIT_NONE;
 static int s_edit_minutes = 0;
@@ -166,7 +167,10 @@ static void alarm_pulse_callback(void *data) {
     if (s_alarm_flash_count < 60) {
       s_alarm_pulse_timer = app_timer_register(500, alarm_pulse_callback, NULL);
     } else {
-      light_enable(false);
+      if (s_backlight_pinned) {
+        light_enable(false);
+        s_backlight_pinned = false;
+      }
     }
   }
 }
@@ -178,6 +182,7 @@ static void trigger_alarm_firing(void) {
   s_remaining_sec = 0;
   s_alarm_flash_count = 0;
   light_enable(true);
+  s_backlight_pinned = true;
   
   if (s_tick_timer) {
     app_timer_cancel(s_tick_timer);
@@ -194,7 +199,10 @@ static void trigger_alarm_firing(void) {
 
 static void stop_alarm_firing(void) {
   s_is_alarm_firing = false;
-  light_enable(false);
+  if (s_backlight_pinned) {
+    light_enable(false);
+    s_backlight_pinned = false;
+  }
   if (s_alarm_pulse_timer) {
     app_timer_cancel(s_alarm_pulse_timer);
     s_alarm_pulse_timer = NULL;
@@ -236,7 +244,6 @@ static void pause_timer(void) {
   update_remaining_from_clock();
   s_is_running = false;
   s_is_paused = true;
-  light_enable(false);
 
   if (s_wakeup_id >= 0) {
     wakeup_cancel(s_wakeup_id);
@@ -256,7 +263,6 @@ static void reset_timer(void) {
   s_is_running = false;
   s_is_paused = false;
   s_is_alarm_firing = false;
-  light_enable(false);
 
   if (s_wakeup_id >= 0) {
     wakeup_cancel(s_wakeup_id);
@@ -666,6 +672,9 @@ static void main_window_unload(Window *window) {
 
 static void init(void) {
   load_state();
+#if PBL_API_EXISTS(app_touch_navigation_enable)
+  app_touch_navigation_enable(true);
+#endif
   
   wakeup_service_subscribe(wakeup_handler);
 
@@ -699,7 +708,10 @@ static void init(void) {
 static void deinit(void) {
   pulsar_apply_backlight_tint(s_colorway % NUM_COLORWAYS, false);
   app_focus_service_unsubscribe();
-  light_enable(false);
+  if (s_backlight_pinned) {
+    light_enable(false);
+    s_backlight_pinned = false;
+  }
   save_state();
   if (s_tick_timer) {
     app_timer_cancel(s_tick_timer);
