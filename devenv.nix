@@ -5,6 +5,7 @@
   packages = [
     pkgs.gcc-arm-embedded
     pkgs.freetype
+    pkgs.uv
   ];
 
   languages.python = {
