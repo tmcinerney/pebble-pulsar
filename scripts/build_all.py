@@ -30,6 +30,7 @@ def main():
     for app in APPS:
         app_dir = os.path.join(REPO_ROOT, "apps", app)
         print(f"\n▶ Building app: {app} (in {app_dir})")
+        subprocess.run(["pebble", "clean"], cwd=app_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         res = subprocess.run(["pebble", "build"], cwd=app_dir)
         if res.returncode != 0:
             print(f"❌ Failed to build {app}")
